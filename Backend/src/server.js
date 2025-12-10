@@ -31,7 +31,7 @@ app.post("/generate-audio", audioController.generateAudio);
 
 // Start server
 app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`🔗 URL: http://localhost:${PORT}`);
-    console.log(`🎵 Audio endpoint: POST http://localhost:${PORT}/generate-audio`);
+    console.log(`Server running on port ${PORT}`);
+    console.log(` URL: http://localhost:${PORT}`);
+    console.log(` Audio endpoint: POST http://localhost:${PORT}/generate-audio`);
 });
