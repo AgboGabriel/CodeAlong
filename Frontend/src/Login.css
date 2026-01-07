@@ -1,0 +1,91 @@
+
+.login-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #0f172a;
+  color: white;
+  font-weight: bold;
+  font-family: 'Nunito', sans-serif;
+}
+.login-container {
+  background: #1a2536;
+  padding: 40px 30px;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+.login-container h1 {
+  margin-bottom: 25px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  font-family: 'Nunito', sans-serif;
+}
+
+.login-form input {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #2b7cee;
+  background: #0f172a;
+  color: white;
+  font-size: 15px;
+  font-weight: bold;
+}
+.login-form input::placeholder {
+  color: #cbd5e1;
+    font-size: 15px;
+  font-weight: bold;
+  font-family: 'Nunito', sans-serif;
+}
+
+.login-form .btn-primary {
+  margin-top: 10px;
+  font-size: 15px;
+  font-weight: bold;
+  font-family: 'Nunito', sans-serif;
+}
+
+/* SIGNUP LINK */
+.signup-link {
+  margin-top: 15px;
+  font-size: 15px;
+  font-weight: bold;
+  color: #cbd5e1;
+}
+
+.signup-link a {
+  color: #2b7cee;
+  text-decoration: none;
+}
+
+.signup-link a:hover {
+  text-decoration: underline;
+}
+
+.forgot-password {
+  margin-top: 10px;
+  color: white; /* default white */
+  text-align: center;
+  font-size: 15px;
+  font-weight: bold;
+}
+
+.forgot-password a {
+  color: white; /* default white */
+  text-decoration: none;
+  transition: 0.2s ease;
+}
+
+.forgot-password a:hover {
+  color: #2b7cee; /* brand blue on hover */
+  text-decoration: underline;
+}
+

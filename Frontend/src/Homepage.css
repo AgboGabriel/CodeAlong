@@ -1,0 +1,176 @@
+
+/* Global */
+body {
+  margin: 0;
+  background: #0f172a;
+  color: white;
+}
+
+/* Button */
+.btn-primary {
+  padding: 10px 20px;
+  background: #2b7cee;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: 0.3s;
+  font-family: 'Inter', sans-serif;
+}
+
+.btn-primary:hover {
+  background: #1b6cd8;
+}
+
+/* NAVBAR */
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 40px;
+ font-family: 'Inter', sans-serif;
+}
+.logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+.logo-img{
+  height: 70px;
+  width:70px;
+}
+.logo-name{
+font-family: 'Orbitron', sans-serif;
+}
+.along{
+  color:#1b6cd8;
+}
+
+.nav-links {
+  display: flex;
+  gap: 30px;
+  list-style: none;
+  
+}
+
+.nav-links li {
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.nav-links li:hover {
+  color: #2b7cee;
+}
+
+.menu-icon {
+  display: none;
+  font-size: 28px;
+  cursor: pointer;
+}
+
+/* HERO */
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  padding: 70px 40px;
+  flex-wrap: wrap;
+  background-color: #0b1120;
+}
+
+.hero-content {
+  flex: 1;
+  min-width: 280px;
+   font-family: 'Inter', sans-serif;
+}
+
+.hero-content h1 {
+  font-size: 3rem;
+  margin-bottom: 15px;
+}
+
+.hero-content p {
+  color: #cbd5e1;
+  margin-bottom: 20px;
+  max-width: 450px;
+}
+
+.hero-image img {
+  width: 350px;
+  max-width: 100%;
+}
+
+/* FEATURES */
+.features {
+  padding: 60px 40px;
+  text-align: center;
+   font-family: 'Inter', sans-serif;
+}
+
+.features h2 {
+  font-size: 2rem;
+  margin-bottom: 40px;
+}
+
+.feature-grid {
+  display: grid;
+  gap: 25px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.feature-box {
+  background: #1a2536;
+  padding: 25px;
+  border-radius: 12px;
+  border: 1px solid #1e293b;
+}
+.feature-box:hover{
+transform: translateY(5px);
+ transition: 0.5s ease;
+}
+
+.feature-box h3 {
+  margin-bottom: 10px;
+  color: #2b7cee;
+}
+
+/* FOOTER */
+.footer {
+  text-align: center;
+  padding: 25px;
+  margin-top: 40px;
+  background: #0b1120;
+}
+
+/* RESPONSIVE */
+@media (max-width: 760px) {
+  .nav-links {
+    display: none;
+  }
+
+  .btn-primary {
+    display: none;
+  }
+
+  .menu-icon {
+    display: block;
+  }
+
+  .hero {
+    text-align: center;
+    justify-content: center;
+  }
+
+  .hero-content h1 {
+    font-size: 2.2rem;
+  }
+}
+.hero-login-btn {
+  background: #1b6cd8; /* slightly different shade */
+  padding: 10px 20px;
+  font-size: 0.95rem;
+}
+
+.hero-login-btn:hover {
+  background: #145ab8;
+}
