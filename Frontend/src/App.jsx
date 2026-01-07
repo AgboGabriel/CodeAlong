@@ -4,7 +4,8 @@ import Dashboard from "./Dashboard";
 import SignUp from "./SignUp";
 import Login from "./Login";
 import ForgotPassword from "./ForgotPassword";
-import CreateNewPassword from "./CreateNewPassword"; 
+import CreateNewPassword from "./CreateNewPassword";
+import Lessons from "./lessons";
 
 function App() {
   return (
@@ -14,8 +15,9 @@ function App() {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/lessons" element={<Lessons />} />
         <Route path="/reset-password" element={<ForgotPassword />} />
-        <Route path="/create-new-password" element={<CreateNewPassword />} /> 
+        <Route path="/create-new-password" element={<CreateNewPassword />} />
       </Routes>
     </Router>
   );

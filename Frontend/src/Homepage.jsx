@@ -7,7 +7,7 @@ export default function Homepage() {
   return (
     <div className="homepage">
       {/* NAVBAR */}            
-      <nav className="nav">
+      <nav className="homepage-nav">
         <img className="logo-img" src={logo}/>
         <h1 className="logo-name">Code<span className="along">Along</span></h1>
 
