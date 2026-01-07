@@ -1,0 +1,121 @@
+.signup-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #0f172a;
+  color: white;
+  font-family: 'Nunito', sans-serif;
+}
+
+.signup-container {
+  background: #1a2536;
+  padding: 40px 30px;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  font-family: 'Nunito', sans-serif;
+}
+
+.signup-container h1 {
+  margin-bottom: 25px;
+}
+
+.signup-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.signup-form input {
+  padding: 12px;
+  font-size: 15px;
+  font-weight: bold;
+  border-radius: 8px;
+  border: 1px solid #2b7cee;
+  background: #0f172a;
+  color: white;
+  font-family: 'Nunito', sans-serif;
+}
+
+.signup-form input::placeholder {
+  color: #cbd5e1;
+    font-size: 15px;
+  font-weight: bold;
+  font-family: 'Nunito', sans-serif;
+}
+
+.signup-form .btn-primary {
+  margin-top: 10px;
+  font-size: 15px;
+  font-weight: bold;
+  font-family: 'Nunito', sans-serif;
+}
+
+
+.divider {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.divider span {
+  color: #8fa3c4;
+  font-size: 14px;
+  position: relative;
+  padding: 0 10px;
+}
+
+.divider span::before,
+.divider span::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 80px;
+  height: 1px;
+  background: #24304a;
+}
+
+.divider span::before {
+  left: -90px;
+}
+
+.divider span::after {
+  right: -90px;
+}
+
+
+.google-section {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.google-btn {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background:white;
+  color:black;
+  cursor: pointer;
+  transition: transform 0.3s ease, background 0.3s ease;
+  font-family: 'Nunito', sans-serif;
+}
+
+.google-btn img {
+  width: 20px;
+  height: 20px;
+}
+
+.google-btn:hover {
+  transform: translateY(-2px);
+}
