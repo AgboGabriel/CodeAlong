@@ -1,10 +1,10 @@
-
+import dotenv from "dotenv";
+dotenv.config();
 import express from 'express';
-import dotenv from 'dotenv';
 import cors from 'cors';
 import audioController from './controllers/audio.controller.js';
 import judge0Routes from "./router/routes.js";
-dotenv.config();
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
