@@ -1,9 +1,9 @@
-
-import { ElevenLabsClient, play } from "@elevenlabs/elevenlabs-js";
 import dotenv from "dotenv";
+dotenv.config();
+import { ElevenLabsClient, play } from "@elevenlabs/elevenlabs-js";
 import fs from "fs";
 import path from "path";
-dotenv.config();
+
 
 const elevenlabs = new ElevenLabsClient({
     apiKey: process.env.ELEVENLABS_API_KEY // Defaults to process.env.ELEVENLABS_API_KEY
