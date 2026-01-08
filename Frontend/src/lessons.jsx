@@ -1,57 +1,10 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import logo from "./assets/Code along_logo-04.png";
 import "./lessons.css";
 
-const lessonsData = {
-  C: [
-    { title: "Introduction to C", desc: "Learn the basics of C.", progress: 40 },
-    { title: "Data Types", desc: "Understand variables and types.", completed: true },
-    { title: "Operators", desc: "Learn arithmetic and logical operators.", action: true },
-    { title: "Loops", desc: "For, while, and do-while loops.", progress: 20 },
-    { title: "Functions", desc: "Organize code into functions.", action: true },
-    { title: "Arrays", desc: "Store multiple values.", completed: true },
-  ],
-  "C#": [
-    { title: "Introduction to C#", desc: "Basics of C# language.", action: true },
-    { title: "Variables & Types", desc: "Learn C# data types.", completed: true },
-    { title: "Conditional Statements", desc: "If, else, and switch.", progress: 60 },
-    { title: "Loops", desc: "For, while, foreach loops.", action: true },
-    { title: "Methods", desc: "Reusable blocks of code.", completed: true },
-    { title: "Classes & Objects", desc: "OOP concepts in C#.", progress: 30 },
-  ],
-  "C++": [
-    { title: "C++ Basics", desc: "Learn the syntax and structure.", completed: true },
-    { title: "Variables & Data Types", desc: "Manage your data.", progress: 50 },
-    { title: "Operators", desc: "Arithmetic and logical operators.", action: true },
-    { title: "Loops", desc: "For, while, do-while loops.", action: true },
-    { title: "Functions", desc: "Organize code with functions.", completed: true },
-    { title: "OOP Concepts", desc: "Classes and objects in C++.", progress: 20 },
-  ],
-  Java: [
-    { title: "Introduction to Java", desc: "Setup and basics.", completed: true },
-    { title: "Data Types", desc: "Primitive and reference types.", progress: 40 },
-    { title: "Operators", desc: "Perform calculations.", action: true },
-    { title: "Loops", desc: "For, while, do-while.", action: true },
-    { title: "Methods", desc: "Reusable code blocks.", completed: true },
-    { title: "OOP Basics", desc: "Classes, objects, inheritance.", progress: 25 },
-  ],
-  JavaScript: [
-    { title: "Intro to JavaScript", desc: "Basics of JS.", completed: true },
-    { title: "Variables & Types", desc: "var, let, const.", progress: 50 },
-    { title: "Functions", desc: "Reusable code blocks.", action: true },
-    { title: "Arrays & Objects", desc: "Store and access data.", completed: true },
-    { title: "DOM Manipulation", desc: "Change webpage content.", progress: 30 },
-    { title: "Events", desc: "Handle user actions.", action: true },
-  ],
-  Python: [
-    { title: "Python Basics", desc: "Introduction to Python.", completed: true },
-    { title: "Variables & Types", desc: "Store and manipulate data.", progress: 40 },
-    { title: "Operators", desc: "Arithmetic and logical operations.", action: true },
-    { title: "Loops", desc: "Repeat tasks efficiently.", completed: true },
-    { title: "Functions", desc: "Reusable code blocks.", progress: 50 },
-    { title: "Modules & Packages", desc: "Organize your code.", action: true },
-  ],
-};
+/* LANGUAGES */
+const languages = ["Python", "JavaScript", "Java", "C", "C#", "C++"];
 
 const languageIcons = {
   Python: "🐍",
@@ -62,23 +15,25 @@ const languageIcons = {
   "C++": "➕",
 };
 
-const filterIcons = {
-  all: "📚",
-  completed: "✔",
-  inprogress: "⏳",
-  notstarted: "🛠️",
+/*
+  🚨 TEMP DATA STRUCTURE
+  This WILL be replaced by backend data later.
+  Admin adds/removes videos → backend updates → UI updates.
+*/
+const videosByLanguage = {
+  Python: [],
+  JavaScript: [],
+  Java: [],
+  C: [],
+  "C#": [],
+  "C++": [],
 };
 
 export default function Lessons() {
   const [activeLanguage, setActiveLanguage] = useState("Python");
-  const [filter, setFilter] = useState("all");
+  const navigate = useNavigate(); // React Router navigate
 
-  const filteredLessons = lessonsData[activeLanguage].filter((lesson) => {
-    if (filter === "completed") return lesson.completed;
-    if (filter === "inprogress") return typeof lesson.progress === "number" && !lesson.completed;
-    if (filter === "notstarted") return lesson.action && !lesson.completed && !lesson.progress;
-    return true; // 'all'
-  });
+  const videos = videosByLanguage[activeLanguage];
 
   return (
     <div className="app dark">
@@ -98,7 +53,7 @@ export default function Lessons() {
         </div>
 
         <nav className="nav">
-          {Object.keys(lessonsData).map((lang) => (
+          {languages.map((lang) => (
             <div
               key={lang}
               className={`nav-section ${lang === activeLanguage ? "active" : ""}`}
@@ -109,80 +64,51 @@ export default function Lessons() {
             </div>
           ))}
         </nav>
-
-        <button className="upgrade-btn">Upgrade to Pro</button>
       </aside>
 
       <main className="main">
         <header className="header">
-  <div className="header-left">
-    <h1>{activeLanguage} Lessons</h1>
-    <p>Pick a lesson and keep the grind going 🚀</p>
-  </div>
-  <div className="header-right">
-    <img className="logo-img" src={logo} alt="Logo" />
-  </div>
-</header>
+          <div className="header-left">
+            {/* BACK BUTTON */}
+            <button className="back-btn" onClick={() => navigate("/dashboard")}>
+              ← Back to Dashboard
+            </button>
 
-
-        <div className="search-container">
-          <input className="search" placeholder="Search for lessons..." />
-          <div className="filters">
-            {["all", "completed", "inprogress", "notstarted"].map((f) => (
-              <button
-                key={f}
-                className={`filter-btn ${filter === f ? "active" : ""}`}
-                onClick={() => setFilter(f)}
-              >
-                <span className="filter-icon">{filterIcons[f]}</span> {f.charAt(0).toUpperCase() + f.slice(1)}
-              </button>
-            ))}
+            <h1>{activeLanguage} Lessons</h1>
+            <p>Begin your {activeLanguage} programming journey</p>
           </div>
+          <div className="header-right">
+            <img className="logo-img" src={logo} alt="Logo" />
+          </div>
+        </header>
+
+        {/* SEARCH */}
+        <div className="search-container">
+          <input className="search" placeholder="Search lesson videos..." />
         </div>
 
-        <section className="lessons">
-          {filteredLessons.map((lesson, index) => (
-            <LessonCard key={index} {...lesson} tag={activeLanguage} />
-          ))}
-        </section>
-      </main>
-
-      <button className="ai-btn">🤖</button>
-    </div>
-  );
-}
-
-function LessonCard({ tag, title, desc, progress, completed, action }) {
-  return (
-    <div className="lesson-card">
-      <div className="lesson-content">
-        <span className="tag">{tag}</span>
-        <h3>{title}</h3>
-        <p>{desc}</p>
-      </div>
-
-      <div className="lesson-footer">
-        {completed && <span className="completed">✔ Completed</span>}
-
-        {typeof progress === "number" && !completed && (
-          <>
-            <div className="progress">
-              <div className="progress-info">
-                <span>In Progress</span>
-                <span>{progress}%</span>
-              </div>
-              <div className="bar">
-                <div className="fill" style={{ width: `${progress}%` }} />
-              </div>
+        {/* VIDEO GRID */}
+        {videos.length === 0 ? (
+          <section className="lessons empty-state">
+            <div className="no-content">
+              <h2>No lesson videos yet</h2>
+              <p>videos uploaded will show here</p>
             </div>
-            <button className="continue-btn">Continue Lesson</button>
-          </>
+          </section>
+        ) : (
+          <section className="lessons">
+            {videos.map((video) => (
+              <div className="lesson-card" key={video.id}>
+                <video className="lesson-video" src={video.url} controls />
+                <div className="lesson-content">
+                  <h3>{video.title}</h3>
+                  <p className="lesson-date">Added on {video.date}</p>
+                </div>
+              </div>
+            ))}
+          </section>
         )}
-
-        {action && !completed && !progress && (
-          <button className="start-btn">Start Lesson</button>
-        )}
-      </div>
+      </main>
     </div>
   );
 }
