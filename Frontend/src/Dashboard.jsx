@@ -13,7 +13,7 @@ function Dashboard() {
         <div className="nav-links">
           <Link to="/lessons">Lessons</Link>
           <Link to="/challenges">Challenges</Link>
-          <Link to="/profile">Profile</Link>
+          <Link to="/profile">Settings</Link>
         </div>
 
         <div className="profile-icon"></div>
@@ -78,26 +78,7 @@ function Dashboard() {
           </div>
         </div>
 
-        {/* Challenges */}
-        <h3 className="section-title">Test Your Skills</h3>
-
-        <div className="challenge-list">
-          <div className="challenge-item">
-            <span>
-              Palindrome Checker{" "}
-              <span className="difficulty easy">Easy</span>
-            </span>
-            <button className="challenge-btn">Start Challenge</button>
-          </div>
-
-          <div className="challenge-item">
-            <span>
-              Array Sorting Algorithm{" "}
-              <span className="difficulty intermediate">Intermediate</span>
-            </span>
-            <button className="challenge-btn">Start Challenge</button>
-          </div>
-        </div>
+      
       </div>
     </div>
   );

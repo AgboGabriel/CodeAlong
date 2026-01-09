@@ -6,7 +6,7 @@ import Login from "./Login";
 import ForgotPassword from "./ForgotPassword";
 import CreateNewPassword from "./CreateNewPassword";
 import Lessons from "./lessons";
-import Profile from "./profile"; // import your new Profile page
+import Settings from "./settings"; 
 
 function App() {
   return (
@@ -17,7 +17,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/lessons" element={<Lessons />} />
-        <Route path="/profile" element={<Profile />} /> {/* New route */}
+        <Route path="/profile" element={<Settings />} /> 
         <Route path="/reset-password" element={<ForgotPassword />} />
         <Route path="/create-new-password" element={<CreateNewPassword />} />
       </Routes>
