@@ -1,0 +1,190 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap");
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Space Grotesk", sans-serif;
+  background: #101822;
+  color: white;
+}
+
+.app {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ================= SIDEBAR ================= */
+.sidebar {
+  width: 260px;
+  background: #0f1a33;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  border-right: 2px solid #2b7cee;
+}
+
+.profile {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #2b7cee;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-size: cover;
+}
+
+.profile-info h3 {
+  font-size: 1rem;
+}
+
+.profile-info p {
+  font-size: 0.8rem;
+  color: #92a9c9;
+}
+
+/* Sidebar nav */
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.nav-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: #cbd5e1;
+  transition: all 0.2s ease;
+  min-height: 40px;
+  position: relative;
+}
+
+.nav-section .icon {
+  width: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.nav-section:hover {
+  background: rgba(43, 124, 238, 0.15);
+  color: white;
+}
+
+.nav-section.active {
+  background: rgba(43, 124, 238, 0.25);
+  color: white;
+}
+
+.nav-section::before {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  border-radius: 2px;
+}
+
+.nav-section.active::before {
+  background: #2b7cee;
+}
+
+/* ================= MAIN ================= */
+.main {
+  flex: 1;
+  padding: 24px;
+}
+
+/* Header */
+header.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.header-left h1 {
+  font-size: 2.5rem;
+}
+
+.header-left p {
+  color: #92a9c9;
+  margin-top: 8px;
+}
+
+.logo-img {
+  height: 50px;
+  width: auto;
+}
+
+/* Search */
+.search-container {
+  margin-top: 20px;
+}
+
+.search {
+  width: 100%;
+  max-width: 400px;
+  padding: 12px;
+  background: #233348;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: bold;
+  font-size: 15px;
+}
+
+.search::placeholder {
+  font-weight: bold;
+}
+
+/* ================= EMPTY STATE ================= */
+.lessons.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
+}
+
+.no-content {
+  text-align: center;
+  opacity: 0.85;
+}
+
+.no-content h2 {
+  font-size: 1.8rem;
+  margin-bottom: 8px;
+}
+
+.no-content p {
+  color: #92a9c9;
+}
+.back-btn {
+  background: transparent;
+  font-family: "Space Grotesk", sans-serif;
+  border: none;
+  color: #2b7cee;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+
+.back-btn:hover {
+  color: #1a5fc9;
+}
