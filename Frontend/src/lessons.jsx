@@ -4,7 +4,7 @@ import logo from "./assets/Code along_logo-04.png";
 import "./lessons.css";
 
 /* LANGUAGES */
-const languages = ["Python", "JavaScript", "Java", "C", "C#", "C++"];
+const languages = ["Python", "JavaScript", "Java", "C", "C#", "C++", "Go", "Ruby", "Rust"];
 
 const languageIcons = {
   Python: "🐍",
@@ -21,12 +21,15 @@ const languageIcons = {
   Admin adds/removes videos → backend updates → UI updates.
 */
 const videosByLanguage = {
-  Python: [],
-  JavaScript: [],
-  Java: [],
-  C: [],
+  "Python": [],
+  "JavaScript": [],
+  "Java": [],
+  "C": [],
   "C#": [],
   "C++": [],
+  "Go": [],
+  "Ruby": [],
+  "Rust": [],
 };
 
 export default function Lessons() {

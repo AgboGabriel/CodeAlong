@@ -37,16 +37,16 @@ function Dashboard() {
         <h3 className="section-title">My Progress</h3>
         <div className="progress-boxes">
           <div className="progress-card">
-            <h3>Overall Progress</h3>
-            <p>65%</p>
+            <h3>Programming Languages</h3>
+            <p>9</p>
+          </div>
+          <div className="progress-card">
+            <h3>Lessons Available</h3>
+            <p>32</p>
           </div>
           <div className="progress-card">
             <h3>Lessons Completed</h3>
-            <p>12</p>
-          </div>
-          <div className="progress-card">
-            <h3>XP Gained</h3>
-            <p>1500</p>
+            <p>16</p>
           </div>
         </div>
 

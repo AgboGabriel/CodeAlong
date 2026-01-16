@@ -1,0 +1,119 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap");
+
+.challenge-layout {
+  display: flex;
+  height: 100vh;
+  background: linear-gradient(135deg, #101822, #1b254b);
+  font-family: "Space Grotesk", sans-serif;
+  color: #cbd5e1;
+  overflow: hidden;
+}
+
+.challenge-layout > div {
+  overflow: hidden;
+}
+
+/* Video */
+.video-panel {
+  padding: 16px;
+  background: #101822;
+}
+.video-placeholder {
+  margin-top: 12px;
+  width: 100%;
+  height: calc(100% - 40px);
+  background: #1b254b;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 8px;
+  color: #cbd5e1;
+}
+
+/* Editor */
+.editor-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.editor-header {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: #161e3a;
+  border-bottom: 1px solid rgba(43,124,238,0.25);
+}
+.editor-wrapper { flex: 1; overflow: hidden; }
+.output-panel {
+  height: 140px;
+  background: #0f162a;
+  border-top: 1px solid rgba(43,124,238,0.25);
+  padding: 10px;
+  color: #22c55e;
+  font-family: "Space Grotesk", sans-serif;
+  overflow-y: auto;
+  font-weight: bold;
+  font-size: 15px;
+}
+
+/* AI */
+.ai-panel {
+  padding: 16px;
+  background: #101822;
+}
+.ai-placeholder {
+  flex: 1;
+  margin-top: 12px;
+  background: #1b254b;
+  border-radius: 8px;
+  padding: 12px;
+  overflow-y: auto;
+  color: #cbd5e1;
+}
+
+/* Buttons & Select */
+.run-btn {
+  background: #2b7cee;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 15px;
+  cursor: pointer;
+  color: white;
+}
+.run-btn:hover { background: #1a5fc9; }
+
+.editor-header select {
+  background: #1b254b;
+  color: #cbd5e1;
+  border: 1px solid rgba(43,124,238,0.25);
+    font-family: "Space Grotesk", sans-serif;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: bold;
+}
+.Split {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+
+/* Default gutter */
+.Split .gutter {
+  background-color: rgba(43,124,238,0.25);
+  cursor: col-resize;
+  z-index: 10;
+  transition: background-color 0.2s, transform 0.2s; /* smooth effect */
+  width: 6px; /* fixed for react-split */
+  transform-origin: center;
+}
+
+/* Hover effect: visually thicken gutter */
+.Split .gutter:hover {
+  background-color: rgba(43,124,238,0.5);
+  transform: scaleX(2); /* double the width visually */
+}
+
+
