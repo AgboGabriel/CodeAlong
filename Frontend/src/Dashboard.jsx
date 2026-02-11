@@ -24,7 +24,7 @@ function Dashboard() {
         {/* Welcome Section */}
         <div className="welcome-box">
           <div className="welcome-text">
-            <h2>Welcome back, Alex!</h2>
+            <h2>Welcome, Alex!</h2>
             <p>
               Ready to dive back into Python? Let’s master those coding skills.
             </p>

@@ -133,19 +133,7 @@ export default function Profile() {
                 />
               </label>
 
-              <label>
-                Pronouns
-                <select
-                  value={pronouns}
-                  onChange={(e) => setPronouns(e.target.value)}
-                >
-                  <option value="">Select your pronouns</option>
-                  <option value="she/her">She/Her</option>
-                  <option value="he/him">He/Him</option>
-                  <option value="they/them">They/Them</option>
-                  <option value="other">Other</option>
-                </select>
-              </label>
+  
 
               <button className="save-btn">Save Changes</button>
             </div>
