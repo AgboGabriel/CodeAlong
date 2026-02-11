@@ -1,9 +1,16 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom"; // <-- import useNavigate
 import "./Dashboard.css";
 import logo from "./assets/Code along_logo-04.png";
 
 function Dashboard() {
+  const navigate = useNavigate(); // <-- initialize navigate
+
+  const handleLogout = () => {
+    // TODO: clear auth tokens here if using authentication
+    navigate("/"); // navigate to homepage
+  };
+
   return (
     <div className="dashboard">
       {/* Navbar */}
@@ -16,7 +23,23 @@ function Dashboard() {
           <Link to="/profile">Settings</Link>
         </div>
 
-        <div className="profile-icon"></div>
+        {/* User profile + Logout */}
+        <div className="user-actions">
+
+          <button className="logout-btn" onClick={handleLogout}>
+            Logout
+          </button>
+          
+          <div
+            className="profile-icon"
+            style={{
+              backgroundImage:
+                'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCUF8I3FC-fsfea1K4rjwjF44ixDD3cnB32c-19qEkVoNHbtjmSuJYFh3Q8D0fzC7OzhDenitFwUDGirziIIsekmy34xYdk_-3VETY2-ztj_FwRHhWxLXqz1gNWuwUOtm6WloruFINK-sFK6hR9RJfDuzbxcdk9ChUYHc6gp_wWHZaYNbGPK4r75i5D7zT-J3wmiKDgQX77W4xlPMwL0C2xo0s4Evr2g3t4wmSKHBkKSVN9EPM1TMjAPuoS1UrTJD6Q_82oTtYNwMgD")',
+            }}
+          ></div>
+
+          
+        </div>
       </nav>
 
       {/* Content */}
@@ -24,12 +47,9 @@ function Dashboard() {
         {/* Welcome Section */}
         <div className="welcome-box">
           <div className="welcome-text">
-            <h2>Welcome, Alex!</h2>
-            <p>
-              Ready to dive back into Python? Let’s master those coding skills.
-            </p>
+            <h2>Welcome back!</h2>
+            <p>Ready to dive back into your last lesson?</p>
           </div>
-
           <button className="btn">Continue Your Last Lesson</button>
         </div>
 
@@ -52,33 +72,28 @@ function Dashboard() {
 
         {/* Recommended Lessons */}
         <h3 className="section-title">Recommended Lessons</h3>
-
         <div className="lesson-grid">
           <div className="recommended-lesson-card">
             <span className="dashboard-tag beginner">Beginner</span>
             <h4>Introduction to Variables</h4>
             <p>Learn the basics of storing and using data in Python.</p>
-            <button className="dashboard-start-btn ">Start Lesson</button>
+            <button className="dashboard-start-btn">Start Lesson</button>
           </div>
 
           <div className="recommended-lesson-card">
             <span className="dashboard-tag beginner">Beginner</span>
             <h4>Mastering For Loops</h4>
             <p>Understand how to iterate over sequences efficiently.</p>
-            <button className="dashboard-start-btn ">Start Lesson</button>
+            <button className="dashboard-start-btn">Start Lesson</button>
           </div>
 
           <div className="recommended-lesson-card">
             <span className="dashboard-tag intermediate">Intermediate</span>
             <h4>Functions and Scope</h4>
-            <p>
-              Deep dive into creating and using functions in your code.
-            </p>
-            <button className="dashboard-start-btn ">Start Lesson</button>
+            <p>Deep dive into creating and using functions in your code.</p>
+            <button className="dashboard-start-btn">Start Lesson</button>
           </div>
         </div>
-
-      
       </div>
     </div>
   );

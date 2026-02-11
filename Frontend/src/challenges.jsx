@@ -143,7 +143,7 @@ export default function Challenges() {
           {messages.length === 0 && (
             <div className="ai-empty">
               <img src={aiBg} alt="Code Along Logo" />
-              <p>Ask me anything about your code.</p>
+              <p>Ask me anything about your lesson.</p>
               <p>Always ready to assist.</p>
             </div>
           )}
