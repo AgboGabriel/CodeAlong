@@ -174,4 +174,39 @@ body {
 .dashboard-start-btn:hover {
   background: #1b6cd8;
 }
+/* User avatar + logout container */
+.user-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* User profile icon */
+.profile-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+}
+
+/* Logout button */
+.logout-btn {
+  padding: 8px 14px;
+  background: #2b7cee;
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 15px;
+  font-weight: bold;
+}
+
+.logout-btn:hover {
+  background: #1a5fc9;
+}
 

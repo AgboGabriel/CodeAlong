@@ -3,38 +3,47 @@ import { useNavigate } from "react-router-dom";
 import logo from "./assets/Code along_logo-04.png";
 import "./lessons.css";
 
-/* LANGUAGES */
-const languages = ["Python", "JavaScript", "Java", "C", "C#", "C++", "Go", "Ruby", "Rust"];
+const languages = [
+  "Python",
+  "JavaScript",
+  "Java",
+  "C",
+  "C#",
+  "C++",
+  "Go",
+  "Ruby",
+  "Rust",
+];
 
 const languageIcons = {
-  Python: "🐍",
-  JavaScript: "🟨",
-  Java: "☕",
-  C: "💻",
-  "C#": "🎯",
-  "C++": "➕",
+  Python: <i className="devicon-python-plain colored" />,
+  JavaScript: <i className="devicon-javascript-plain colored" />,
+  Java: <i className="devicon-java-plain colored" />,
+  C: <i className="devicon-c-plain colored" />,
+  "C#": <i className="devicon-csharp-plain colored" />,
+  "C++": <i className="devicon-cplusplus-plain colored" />,
+  Go: <i className="devicon-go-plain colored" />,
+  Ruby: <i className="devicon-ruby-plain colored" />,
+  Rust: <i className="devicon-rust-plain colored" />,
 };
 
-/*
-  🚨 TEMP DATA STRUCTURE
-  This WILL be replaced by backend data later.
-  Admin adds/removes videos → backend updates → UI updates.
-*/
+
+/* TEMP DATA */
 const videosByLanguage = {
-  "Python": [],
-  "JavaScript": [],
-  "Java": [],
-  "C": [],
+  Python: [],
+  JavaScript: [],
+  Java: [],
+  C: [],
   "C#": [],
   "C++": [],
-  "Go": [],
-  "Ruby": [],
-  "Rust": [],
+  Go: [],
+  Ruby: [],
+  Rust: [],
 };
 
 export default function Lessons() {
   const [activeLanguage, setActiveLanguage] = useState("Python");
-  const navigate = useNavigate(); // React Router navigate
+  const navigate = useNavigate();
 
   const videos = videosByLanguage[activeLanguage];
 
@@ -72,11 +81,9 @@ export default function Lessons() {
       <main className="main">
         <header className="header">
           <div className="header-left">
-            {/* BACK BUTTON */}
             <button className="back-btn" onClick={() => navigate("/dashboard")}>
               ← Back to Dashboard
             </button>
-
             <h1>{activeLanguage} Lessons</h1>
             <p>Begin your {activeLanguage} programming journey</p>
           </div>
@@ -85,17 +92,15 @@ export default function Lessons() {
           </div>
         </header>
 
-        {/* SEARCH */}
         <div className="search-container">
           <input className="search" placeholder="Search lesson videos..." />
         </div>
 
-        {/* VIDEO GRID */}
         {videos.length === 0 ? (
           <section className="lessons empty-state">
             <div className="no-content">
               <h2>No lesson videos yet</h2>
-              <p>videos uploaded will show here</p>
+              <p>Videos uploaded will show here</p>
             </div>
           </section>
         ) : (
