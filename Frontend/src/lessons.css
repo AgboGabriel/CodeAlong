@@ -72,12 +72,12 @@ body {
   font-size: 0.95rem;
   color: #cbd5e1;
   transition: all 0.2s ease;
-  min-height: 50px; /* taller nav items */
+  min-height: 50px; 
   position: relative;
 }
 
 .nav-section .icon {
-  width: 28px; /* bigger icon container */
+  width: 28px; 
   display: flex;
   justify-content: center;
 }
@@ -85,7 +85,6 @@ body {
 .nav-section:hover {
   background: rgba(43, 124, 238, 0.15);
   color: white;
-  transform: scale(1.02); /* slight hover lift */
 }
 
 .nav-section.active {
@@ -194,7 +193,7 @@ header.header {
 }
 
 .icon i {
-  font-size: 28px; /* slightly bigger icons */
+  font-size: 28px;
   display: inline-block;
   width: 28px;
   height: 28px;

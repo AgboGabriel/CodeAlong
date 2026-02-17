@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./Login.css";
+import "./AdminLogin.css"; 
 
-export default function Login() {
+export default function AdminLogin() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -10,24 +10,27 @@ export default function Login() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // TODO: Add real authentication logic here
-    navigate("/dashboard");
+    // TODO: Replace with real admin authentication logic
+    if (email === "admin@example.com" && password === "admin123") {
+      navigate("/admin-dashboard"); // go to admin dashboard after login
+    } else {
+      alert("Invalid admin credentials");
+    }
   };
 
   return (
     <div className="login-page">
       <div className="login-container">
-        <h1>Login</h1>
+        <h1>Admin Login</h1>
 
         <form className="login-form" onSubmit={handleSubmit}>
           <input
             type="email"
-            placeholder="Email"
+            placeholder="Admin Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
-
           <input
             type="password"
             placeholder="Password"
@@ -35,41 +38,17 @@ export default function Login() {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-
           <button type="submit" className="btn-primary">
             Login
           </button>
         </form>
 
-        {/* Signup Redirect */}
-        <p className="signup-link">
-          Don’t have an account?{" "}
-          <a href="/signup" style={{ color: "#2b7cee" }}>
-            Sign Up
-          </a>
-        </p>
-
-        {/* Forgot Password */}
         <p className="forgot-password">
           <a href="/reset-password" style={{ color: "#2b7cee" }}>
             Forgot Password?
           </a>
         </p>
-
-              {/* Admin Login Link */}
-        <p className="admin-link">
-          <a href="/admin-login" style={{ color: "#2b7cee" }}>
-            For Admins
-          </a>
-        </p>
-
-
-
       </div>
     </div>
   );
 }
-
-
-
-

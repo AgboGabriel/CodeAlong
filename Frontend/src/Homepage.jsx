@@ -76,7 +76,7 @@ export default function Homepage() {
 
       {/* FOOTER */}
       <footer className="footer">
-        <p>© {new Date().getFullYear()} ProgrammingTutor. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} CodeAlong. All rights reserved.</p>
       </footer>
     </div>
   );
