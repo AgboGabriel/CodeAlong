@@ -1,27 +1,24 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Homepage from "./Homepage";
+import LandingPage from "./LandingPage";
+import Questionnaire from "./Questionnaire";
 import Dashboard from "./Dashboard";
-import SignUp from "./SignUp";
 import Login from "./Login";
 import ForgotPassword from "./ForgotPassword";
 import CreateNewPassword from "./CreateNewPassword";
-import Lessons from "./lessons";
-import Settings from "./settings";
 import Challenges from "./challenges";
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Homepage />} />
-        <Route path="/signup" element={<SignUp />} />
+        {/* Public Routes */}
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/Questionnaire" element={<Questionnaire />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/lessons" element={<Lessons />} />
-        <Route path="/challenges" element={<Challenges />} />
-        <Route path="/profile" element={<Settings />} />
         <Route path="/reset-password" element={<ForgotPassword />} />
         <Route path="/create-new-password" element={<CreateNewPassword />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/challenges" element={<Challenges />} />
       </Routes>
     </Router>
   );

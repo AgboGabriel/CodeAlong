@@ -45,6 +45,19 @@
   font-weight: bold;
   font-family: 'Nunito', sans-serif;
 }
+.btn-primary {
+  background: #2b7cee;
+  padding: 12px;
+  border-radius: 6px;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-family: "Space Grotesk", sans-serif;
+   font-weight: bold;
+}
+.btn-primary:hover {
+  background: #1b6cd8;
+}
 
 .login-form .btn-primary {
   margin-top: 10px;
@@ -52,21 +65,20 @@
   font-weight: bold;
   font-family: 'Nunito', sans-serif;
 }
-
-/* SIGNUP LINK */
-.signup-link {
+.back-to-landing-page-link {
   margin-top: 15px;
   font-size: 15px;
   font-weight: bold;
   color: #cbd5e1;
 }
 
-.signup-link a {
+.back-to-landing-page-link a {
   color: #2b7cee;
   text-decoration: none;
 }
 
-.signup-link a:hover {
+.back-to-landing-page-link-link a:hover {
+  color: #2b7cee;
   text-decoration: underline;
 }
 
@@ -85,7 +97,6 @@
 }
 
 .forgot-password a:hover {
-  color: #2b7cee; /* brand blue on hover */
+  color: #2b7cee; 
   text-decoration: underline;
 }
-
