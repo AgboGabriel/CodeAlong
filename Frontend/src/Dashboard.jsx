@@ -1,102 +1,300 @@
-import React from "react";
-import { Link, useNavigate } from "react-router-dom"; // <-- import useNavigate
+import { useState, useRef, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import logo from "./assets/Code along_logo-03.png";
 import "./Dashboard.css";
-import logo from "./assets/Code along_logo-04.png";
 
-function Dashboard() {
-  const navigate = useNavigate(); // <-- initialize navigate
+import {
+  MdDashboard,
+  MdMenuBook,
+  MdAccountTree,
+  MdFolderOpen,
+  MdDataUsage,
+  MdLocalFireDepartment,
+  MdVerifiedUser,
+  MdSettings,
+  MdNotifications,
+  MdSearch,
+  MdPlayCircle,
+  MdCode
+} from "react-icons/md";
+
+const user = {
+  name: "Alex Rivera",
+  avatar:
+    "https://lh3.googleusercontent.com/aida-public/AB6AXuCHkmMqD5gKaMYLSydOBQc_Zi7wsLqmErMbtpFZ_5-AzR8-GBVVggx2vz3YzNgs5Hoy-od2NIrLSCZxHox3QfDozggMjyXwAkivdXCAnN8X0SPM_4icaBffmPVNgH8o7hrt7pZetO5A34GxGG7-Wo5ffA5JXpfZ9BYdN4-hnrlIM9xG9MtFYNRE-V08HC6Rw_Eeg7AFzzK5lLrWd9H9tOt37FmZS5CIAKG6brXAECIkUSxxGH6SXwrAFI7L8CN5DIz9nBnx5RSp6YE",
+};
+
+const NAV_ITEMS = [
+  { icon: MdDashboard, label: "Dashboard", path: "/dashboard" },
+  { icon: MdMenuBook, label: "My Lessons", path: "" },
+  { icon: MdAccountTree, label: "Learning Path", path: "" },
+  { icon: MdFolderOpen, label: "Assessment", path: "" },
+];
+
+const STATS = [
+  {
+    icon: MdDataUsage,
+    iconClass: "blue",
+    label: "Completion Rate",
+    value: "00.0%",
+    badgeText: "+0%",
+    badgeClass: "green",
+  },
+  {
+    icon: MdLocalFireDepartment,
+    iconClass: "orange",
+    label: "Coding Streak",
+    value: "0 Days",
+    badgeText: "Today",
+    badgeClass: "muted",
+  },
+  {
+    icon: MdVerifiedUser,
+    iconClass: "purple",
+    label: "Badges",
+    value: "0",
+    badgeText: "Earned",
+    badgeClass: "muted",
+  },
+];
+
+function UserProfile({ small, onClick }) {
+  return (
+    <>
+      <div className={`avatar ${small ? "avatar-sm" : ""}`} onClick={onClick}>
+        <img src={user.avatar} alt={user.name} />
+      </div>
+
+      {!small && (
+        <div className="user-info">
+          <div className="user-name">{user.name}</div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function Sidebar() {
+  const [activeItem, setActiveItem] = useState("Dashboard");
+
+  return (
+    <aside className="sidebar">
+      <div className="sidebar-logo">
+        <div className="logo-icon">
+          <img className="logo-img" src={logo} alt="Logo" />
+        </div>
+        <span className="logo-text">CodeAlong</span>
+      </div>
+
+      <nav className="sidebar-nav">
+        {NAV_ITEMS.map(({ icon, label, path }) => {
+          const Icon = icon;
+
+          return (
+            <Link
+              key={label}
+              to={path}
+              className={`nav-item ${activeItem === label ? "active" : ""}`}
+              onClick={() => setActiveItem(label)}
+            >
+              <Icon size={30} />
+              {label}
+            </Link>
+          );
+        })}
+      </nav>
+    </aside>
+  );
+}
+
+function Header() {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  const navigate = useNavigate();
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleLogout = () => {
-    // TODO: clear auth tokens here if using authentication
-    navigate("/"); // navigate to homepage
+    navigate("/"); // Redirect to landing page
   };
 
   return (
-    <div className="dashboard">
-      {/* Navbar */}
-      <nav className="navbar">
-        <img className="logo-img" src={logo} alt="Logo" />
+    <header className="header">
+      <div className="search-wrap">
+        <input
+          className="search-input"
+          type="text"
+          placeholder="Search lessons..."
+        />
+        <MdSearch className="search-icon" size={25} />
+      </div>
 
-        <div className="nav-links">
-          <Link to="/lessons">Lessons</Link>
-          <Link to="/challenges">Challenges</Link>
-          <Link to="/profile">Settings</Link>
-        </div>
+      <div className="header-right">
+        <button className="notif-btn" aria-label="Notifications">
+          <MdNotifications size={30} />
+          <span className="notif-dot" />
+        </button>
 
-        {/* User profile + Logout */}
-        <div className="user-actions">
+        <div className="divider-v" />
 
-          <button className="logout-btn" onClick={handleLogout}>
-            Logout
-          </button>
-          
+        <div className="header-user" ref={dropdownRef}>
           <div
-            className="profile-icon"
-            style={{
-              backgroundImage:
-                'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCUF8I3FC-fsfea1K4rjwjF44ixDD3cnB32c-19qEkVoNHbtjmSuJYFh3Q8D0fzC7OzhDenitFwUDGirziIIsekmy34xYdk_-3VETY2-ztj_FwRHhWxLXqz1gNWuwUOtm6WloruFINK-sFK6hR9RJfDuzbxcdk9ChUYHc6gp_wWHZaYNbGPK4r75i5D7zT-J3wmiKDgQX77W4xlPMwL0C2xo0s4Evr2g3t4wmSKHBkKSVN9EPM1TMjAPuoS1UrTJD6Q_82oTtYNwMgD")',
-            }}
-          ></div>
+            className="header-user-text"
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+          >
+            <div className="user-name">{user.name}</div>
+          </div>
 
-          
+          <UserProfile small onClick={() => setDropdownOpen(!dropdownOpen)} />
+
+          <button className="icon-btn" aria-label="Settings">
+            <MdSettings size={30} />
+          </button>
+
+          {dropdownOpen && (
+            <div className="user-dropdown">
+              <button className="dropdown-item" onClick={handleLogout}>
+                Logout
+              </button>
+            </div>
+          )}
         </div>
-      </nav>
+      </div>
+    </header>
+  );
+}
 
-      {/* Content */}
-      <div className="container">
-        {/* Welcome Section */}
-        <div className="welcome-box">
-          <div className="welcome-text">
-            <h2>Welcome back!</h2>
-            <p>Ready to dive back into your last lesson?</p>
-          </div>
-          <button className="btn">Continue Your Last Lesson</button>
+function LessonHero() {
+  const navigate = useNavigate();
+
+  return (
+    <div className="lesson-hero">
+      <div className="lesson-hero-content">
+        <span className="badge badge-primary">Current Lesson</span>
+
+        <h3>Programming Fundamentals</h3>
+
+        <p>
+          Master the core concepts of variables, loops, and conditional logic
+          to build a strong foundation.
+        </p>
+
+        <div className="lesson-hero-actions">
+          <button
+            className="btn btn-primary"
+            onClick={() => navigate("")}
+          >
+            <MdPlayCircle size={20} />
+            Resume Learning
+          </button>
+
+          <button
+            className="btn btn-secondary"
+            onClick={() => navigate("")}
+          >
+            View Outline
+          </button>
         </div>
+      </div>
 
-        {/* Progress */}
-        <h3 className="section-title">My Progress</h3>
-        <div className="progress-boxes">
-          <div className="progress-card">
-            <h3>Programming Languages</h3>
-            <p>9</p>
-          </div>
-          <div className="progress-card">
-            <h3>Lessons Available</h3>
-            <p>32</p>
-          </div>
-          <div className="progress-card">
-            <h3>Lessons Completed</h3>
-            <p>16</p>
-          </div>
-        </div>
-
-        {/* Recommended Lessons */}
-        <h3 className="section-title">Recommended Lessons</h3>
-        <div className="lesson-grid">
-          <div className="recommended-lesson-card">
-            <span className="dashboard-tag beginner">Beginner</span>
-            <h4>Introduction to Variables</h4>
-            <p>Learn the basics of storing and using data in Python.</p>
-            <button className="dashboard-start-btn">Start Lesson</button>
-          </div>
-
-          <div className="recommended-lesson-card">
-            <span className="dashboard-tag beginner">Beginner</span>
-            <h4>Mastering For Loops</h4>
-            <p>Understand how to iterate over sequences efficiently.</p>
-            <button className="dashboard-start-btn">Start Lesson</button>
-          </div>
-
-          <div className="recommended-lesson-card">
-            <span className="dashboard-tag intermediate">Intermediate</span>
-            <h4>Functions and Scope</h4>
-            <p>Deep dive into creating and using functions in your code.</p>
-            <button className="dashboard-start-btn">Start Lesson</button>
-          </div>
-        </div>
+      <div className="lesson-hero-bg-icon">
+        <MdCode size={120} />
       </div>
     </div>
   );
 }
 
-export default Dashboard;
+function StatCard({ icon, iconClass, label, value, badgeText, badgeClass }) {
+  const Icon = icon;
+
+  return (
+    <div className="stat-card">
+      <div className="stat-card-top">
+        <div className={`stat-icon ${iconClass}`}>
+          <Icon size={22} />
+        </div>
+
+        <span className={`stat-badge ${badgeClass}`}>{badgeText}</span>
+      </div>
+
+      <div className="stat-label">{label}</div>
+      <div className="stat-value">{value}</div>
+    </div>
+  );
+}
+
+function ProgressSection() {
+  return (
+    <section>
+      <div className="section-header">
+        <h3 className="section-title">My Progress</h3>
+        <button className="link-btn">Full Analytics</button>
+      </div>
+
+      <div className="stats-grid">
+        {STATS.map((stat) => (
+          <StatCard key={stat.label} {...stat} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function CtaBanner() {
+  const navigate = useNavigate();
+
+  return (
+    <div className="cta-banner">
+      <div>
+        <h3>Tailor Your Path</h3>
+        <p>Interact with our AI to create your own learning path.</p>
+      </div>
+
+      <button
+        className="btn btn-white"
+        onClick={() => navigate("")}
+      >
+        Go to Learning Path
+      </button>
+    </div>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <div className="app-shell">
+      <Sidebar />
+
+      <main className="main">
+        <Header />
+
+        <div className="content">
+          <div className="content-inner">
+            <div className="welcome">
+              <h2>Welcome back, {user.name}! 👋</h2>
+              <p>
+                You've completed 65% of your current path. Keep the momentum
+                going.
+              </p>
+            </div>
+
+            <div className="section-stack">
+              <LessonHero />
+              <ProgressSection />
+              <CtaBanner />
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}

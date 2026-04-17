@@ -115,7 +115,7 @@ export default function Profile() {
               </label>
 
               <label>
-                Name
+                Edit Name
                 <input
                   type="text"
                   placeholder="Enter your name"

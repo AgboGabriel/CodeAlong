@@ -41,12 +41,15 @@ export default function Login() {
           </button>
         </form>
 
-        {/* Signup Redirect */}
-        <p className="signup-link">
+        {/* Landing Page Redirect */}
+        <p className="back-to-landing-page-link">
           Don’t have an account?{" "}
-          <a href="/signup" style={{ color: "#2b7cee" }}>
-            Sign Up
-          </a>
+          <span
+            onClick={() => navigate("/")}
+            style={{ color: "#2b7cee", cursor: "pointer" }}
+          >
+            Back to Landing Page
+          </span>
         </p>
 
         {/* Forgot Password */}
@@ -55,21 +58,7 @@ export default function Login() {
             Forgot Password?
           </a>
         </p>
-
-              {/* Admin Login Link */}
-        <p className="admin-link">
-          <a href="/admin-login" style={{ color: "#2b7cee" }}>
-            For Admins
-          </a>
-        </p>
-
-
-
       </div>
     </div>
   );
 }
-
-
-
-
