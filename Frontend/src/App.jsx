@@ -6,6 +6,8 @@ import Login from "./Login";
 import ForgotPassword from "./ForgotPassword";
 import CreateNewPassword from "./CreateNewPassword";
 import Challenges from "./challenges";
+import Assessments from "./Assessments";
+import MyLessons  from "./MyLessons";
 
 function App() {
   return (
@@ -19,6 +21,8 @@ function App() {
         <Route path="/create-new-password" element={<CreateNewPassword />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/challenges" element={<Challenges />} />
+        <Route path="/Assessments" element={<Assessments />} />
+        <Route path="/MyLessons" element={<MyLessons />} />
       </Routes>
     </Router>
   );

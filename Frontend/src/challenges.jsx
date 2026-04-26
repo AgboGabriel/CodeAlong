@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import Editor from "@monaco-editor/react";
 import Split from "react-split";
 import "./challenges.css";
-import aiBg from "./assets/Code along_logo-04.png";
 
-const languages = [
+// Language configuration
+const LANGUAGES = [
   { id: 63, name: "JavaScript", monaco: "javascript" },
   { id: 71, name: "Python", monaco: "python" },
   { id: 62, name: "Java", monaco: "java" },
@@ -16,97 +16,83 @@ const languages = [
   { id: 73, name: "Rust", monaco: "rust" }
 ];
 
+// Starter templates
+const CODE_TEMPLATES = {
+  javascript: "// Write JavaScript here\n",
+  python: "# Write Python here\n",
+  java: "// Write Java code here\n",
+  cpp: "// Write C++ code here\n",
+  c: "// Write C code here\n",
+  csharp: "// Write C# code here\n",
+  go: "// Write Go code here\n",
+  ruby: "# Write Ruby code here\n",
+  rust: "// Write Rust code here\n"
+};
+
 export default function Challenges() {
-  const [selectedLang, setSelectedLang] = useState(languages[0]);
-  const [code, setCode] = useState("");
+  const [selectedLang, setSelectedLang] = useState(LANGUAGES[0]);
+  const [code, setCode] = useState(
+    CODE_TEMPLATES[LANGUAGES[0].monaco]
+  );
   const [output, setOutput] = useState("");
 
-  // AI STATE
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const messagesEndRef = useRef(null);
-  const textareaRef = useRef(null);
-
-  // Scroll chat to bottom
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isTyping]);
-
-  // Auto-grow textarea
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = textareaRef.current.scrollHeight + "px";
-    }
-  }, [input]);
-
-  const handleSend = () => {
-    if (!input.trim()) return;
-
-    const userMessage = { role: "user", content: input };
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
-    setIsTyping(true);
-
-    setTimeout(() => {
-      const aiReply = {
-        role: "assistant",
-        content:
-          "Frontend AI simulation active. Real backend integration coming soon 🚀"
-      };
-      setMessages((prev) => [...prev, aiReply]);
-      setIsTyping(false);
-    }, 1000);
+  // Handle language switch
+  const handleLanguageChange = (id) => {
+    const lang = LANGUAGES.find((l) => l.id === Number(id));
+    setSelectedLang(lang);
+    setCode(CODE_TEMPLATES[lang.monaco] || "");
+    setOutput("");
   };
 
-  const handleClearChat = () => {
-    setMessages([]);
-    setInput("");
-    setIsRecording(false);
+  // Handle code execution (placeholder)
+  const handleRun = () => {
+    setOutput("Execution engine not connected yet.");
   };
+
+  const handleSubmit = () => {
+  // Replace this with your backend call later
+  setOutput("Your code has been submitted for evaluation...");
+};
 
   return (
     <div className="challenge-container">
       <Split
         className="challenge-layout"
-        sizes={[35, 35, 30]}
-        minSize={100}
+        sizes={[40, 60]}
+        minSize={120}
         gutterSize={6}
       >
-        {/* LEFT: Video */}
-        <div className="video-panel">
-          <h3>Lesson Title</h3>
-          <div className="video-placeholder">🎥 Video Player Here</div>
+        {/* LEFT: Question Panel */}
+        <div className="question-panel">
+          <h3>Question</h3>
+          <div className="question-placeholder">
+            Problem description will appear here.
+          </div>
         </div>
 
-        {/* MIDDLE: Editor */}
+        {/* RIGHT: Editor Panel */}
         <div className="editor-panel">
           <div className="editor-header">
             <select
               value={selectedLang.id}
-              onChange={(e) => {
-                const lang = languages.find(
-                  (l) => l.id === Number(e.target.value)
-                );
-                setSelectedLang(lang);
-                setCode("");
-              }}
+              onChange={(e) => handleLanguageChange(e.target.value)}
             >
-              {languages.map((lang) => (
+              {LANGUAGES.map((lang) => (
                 <option key={lang.id} value={lang.id}>
                   {lang.name}
                 </option>
               ))}
             </select>
 
-            <button
-              className="run-btn"
-              onClick={() => setOutput("Backend not connected yet 👀")}
-            >
-              Run
-            </button>
+            <div className="editor-actions">
+          <button className="run-btn" onClick={handleRun}>
+            Run
+          </button>
+
+          <button className="submit-btn" onClick={handleSubmit}>
+            Submit
+          </button>
+        </div>
           </div>
 
           <div className="editor-wrapper">
@@ -115,113 +101,22 @@ export default function Challenges() {
               theme="vs-dark"
               language={selectedLang.monaco}
               value={code}
-              onChange={setCode}
+              onChange={(value) => setCode(value || "")}
               options={{
                 minimap: { enabled: false },
-                fontSize: 17,
-                lineHeight: 30
+                fontSize: 16,
+                lineHeight: 24,
+                scrollBeyondLastLine: false,
+                automaticLayout: true
               }}
             />
           </div>
 
-          <div className="output-panel">{output}</div>
-        </div>
-
-        {/* RIGHT: AI PANEL */}
-        <div className="ai-panel">
-          {/* Header with Clear Chat */}
-          <div className="ai-header">
-            <h3>AI Tutor</h3>
-            {messages.length > 0 && (
-              <button className="clear-chat-btn" onClick={handleClearChat}>
-                Clear Chat
-              </button>
-            )}
-          </div>
-
-          {/* Empty state */}
-          {messages.length === 0 && (
-            <div className="ai-empty">
-              <img src={aiBg} alt="Code Along Logo" />
-              <p>Ask me anything about your lesson.</p>
-              <p>Always ready to assist.</p>
-            </div>
-          )}
-
-          {/* Chat messages */}
-          {messages.length > 0 && (
-            <div className="ai-chat">
-              {messages.map((msg, index) => (
-                <div key={index} className={`chat-message ${msg.role}`}>
-                  <div className="chat-bubble">{msg.content}</div>
-                </div>
-              ))}
-              {isTyping && (
-                <div className="chat-message assistant">
-                  <div className="chat-bubble typing">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                  </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-          )}
-
-          {/* Input */}
-          <div className="ai-input-container">
-            <div className={`input-wrapper ${isRecording ? "recording" : ""}`}>
-              <textarea
-                ref={textareaRef}
-                placeholder="Message AI Tutor..."
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) =>
-                  e.key === "Enter" && !e.shiftKey && handleSend()
-                }
-                className="ai-input"
-                rows={1}
-              />
-
-              {/* Microphone Button inside input */}
-              <button
-                className="mic-btn"
-                onClick={() => setIsRecording(!isRecording)}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 14 0h-2zm-5 9a7 7 0 0 0 7-7h-2a5 5 0 0 1-10 0H5a7 7 0 0 0 7 7z" />
-                </svg>
-              </button>
-
-              <button
-                className="send-btn"
-                onClick={handleSend}
-                disabled={!input.trim()}
-              >
-                Send
-              </button>
-            </div>
-
-            {/* Recording indicator */}
-            {isRecording && (
-              <div className="recording-indicator">
-                <div className="dot"></div>
-                <span>Recording...</span>
-              </div>
-            )}
+          <div className="output-panel">
+            {output || "Run your code to see output here."}
           </div>
         </div>
       </Split>
     </div>
   );
 }
-
-
-
