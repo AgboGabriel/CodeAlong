@@ -5,42 +5,23 @@ CREATE TABLE users(
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
-    -- Password can be NULL for Google OAuth users
     password_hash VARCHAR(255),
-    avatar_url TEXT DEFAULT 'default-avatar.png',
-    full_name VARCHAR(100),
-    
-    -- Authentication method
-    auth_provider VARCHAR(20) DEFAULT 'email' CHECK (auth_provider IN ('email', 'google', 'github', 'microsoft')),
-    provider_id VARCHAR(100), -- Google/Facebook user ID
-    provider_data JSONB, -- Store additional OAuth provider data
-    
-    -- Email verification
-    email_verified BOOLEAN DEFAULT false,
-    verification_token VARCHAR(100),
-    verification_token_expires TIMESTAMP,
-    
-    -- Password reset
-    reset_password_token VARCHAR(100),
-    reset_token_expires TIMESTAMP,
-    
-    -- User status
-    is_active BOOLEAN DEFAULT true,
-    role VARCHAR(20) DEFAULT 'student' CHECK (role IN ('student', 'instructor', 'admin')),
-    
-    -- Timestamps
+    auth_provider VARCHAR(20) NOT NULL DEFAULT 'email'
+        CHECK (auth_provider IN ('email', 'google')),
+    google_id VARCHAR(255) UNIQUE,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
-    last_login TIMESTAMP
+    last_login TIMESTAMP,
+    CONSTRAINT users_auth_method_check CHECK (
+        (auth_provider = 'email' AND password_hash IS NOT NULL)
+        OR
+        (auth_provider = 'google' AND google_id IS NOT NULL)
+    )
 );
-
--- Add a partial unique index for provider-specific accounts
-CREATE UNIQUE INDEX idx_users_provider ON users(provider_id) 
-WHERE provider_id IS NOT NULL AND auth_provider != 'email';
 
 -- Index for faster lookups
 CREATE INDEX idx_users_auth_provider ON users(auth_provider);
-CREATE INDEX idx_users_email_verified ON users(email_verified) WHERE email_verified = true;
+CREATE INDEX idx_users_google_id ON users(google_id) WHERE google_id IS NOT NULL;
 
 -- Admins table for managing platform
 CREATE TABLE admins(

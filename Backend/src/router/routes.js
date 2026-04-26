@@ -1,15 +1,11 @@
-
 import express from 'express';
+import passport from 'passport';
 import Judge0Controller from "../controllers/judge0_compiler.controller.js";
-import cors from 'cors';
+import audioController from '../controllers/audio.controller.js';
+import authController from '../controllers/authController.js';
 import { ChatController } from '../controllers/chat.controller.js';
 import { groqService } from '../services/Chat.service.js';
-
-const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }))
-app.use(cors());
-
+import userModel from '../models/userModel.js';
 
 const router = express.Router();
 const groqServiceInstance = new groqService();
@@ -20,6 +16,56 @@ function getUserID(req) {
     return req.headers['x-user-id'] || 'guest_user';
 }
 
+router.get('/', (req, res) => {
+    res.json({
+        message: 'ElevenLabs Audio API Server',
+        endpoints: {
+            generateAudio: 'POST /generate-audio'
+        }
+    });
+});
+
+router.get('/health', (req, res) => {
+    res.status(200).json({ status: 'OK', timestamp: new Date() });
+});
+
+router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+router.get(
+    '/auth/google/callback',
+    passport.authenticate('google', {
+        failureRedirect: '/auth/google/failure',
+        session: true,
+    }),
+    (req, res) => {
+        res.redirect('/auth/me');
+    }
+);
+router.get('/auth/google/failure', (req, res) => {
+    res.status(401).json({ error: 'Google authentication failed' });
+});
+
+router.post('/generate-audio', audioController.generateAudio);
+router.post('/auth/register', (req, res) => authController.register(req, res));
+router.post('/auth/login', (req, res, next) => authController.login(req, res, next));
+router.post('/auth/logout', (req, res, next) => authController.logout(req, res, next));
+router.get('/auth/me', (req, res) => authController.me(req, res));
+
+router.post('/db-test/users',async(req,res)=>{
+    try{
+        const {username,email,password_hash,auth_provider,google_id}= req.body;
+        const new_user= await userModel.createUser({
+            username,
+            email,
+            password_hash,
+            auth_provider,
+            google_id
+        })
+        res.status(201).json({ success: true, user: new_user });
+    }catch(error){
+        console.error('Error creating user:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
 //POST /chat which is to send messages
 router.post('/chat',async(req,res)=>{
     try{
