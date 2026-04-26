@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "./assets/Code along_logo-03.png";
-import "./Dashboard.css";
+import "./MyLessons.css";
 
 
 import {
@@ -9,13 +9,9 @@ import {
   MdMenuBook,
   MdAccountTree,
   MdFolderOpen,
-  MdLocalFireDepartment,
-  MdVerifiedUser,
   MdSettings,
   MdNotifications,
   MdSearch,
-  MdPlayCircle,
-  MdCode
 } from "react-icons/md";
 
 const user = {
@@ -31,24 +27,7 @@ const NAV_ITEMS = [
   { icon: MdFolderOpen, label: "Assessments", path: "/Assessments" },
 ];
 
-const STATS = [
-  {
-    icon: MdLocalFireDepartment,
-    iconClass: "orange",
-    label: "Coding Streak",
-    value: "0 Days",
-    badgeText: "Today",
-    badgeClass: "muted",
-  },
-  {
-    icon: MdVerifiedUser,
-    iconClass: "purple",
-    label: "Badges",
-    value: "0",
-    badgeText: "Earned",
-    badgeClass: "muted",
-  },
-];
+
 
 function UserProfile({ small, onClick }) {
   return (
@@ -67,7 +46,7 @@ function UserProfile({ small, onClick }) {
 }
 
 function Sidebar() {
-  const [activeItem, setActiveItem] = useState("Dashboard");
+  const [activeItem, setActiveItem] = useState("MyLessons");
 
   return (
     <aside className="sidebar">
@@ -122,6 +101,12 @@ function Header() {
   return (
     <header className="header">
       <div className="search-wrap">
+        <input
+          className="search-input"
+          type="text"
+          placeholder="Search lessons..."
+        />
+        <MdSearch className="search-icon" size={25} />
       </div>
 
       <div className="header-right">
@@ -159,123 +144,11 @@ function Header() {
   );
 }
 
-function LessonHero() {
-  const navigate = useNavigate();
+  
 
-  return (
-    <div className="lesson-hero">
-      <div className="lesson-hero-content">
-        <span className="badge badge-primary">Current Lesson</span>
+  
 
-        <h3>Programming Fundamentals</h3>
-
-        <p>
-          Master the core concepts of variables, loops, and conditional logic
-          to build a strong foundation.
-        </p>
-
-        <div className="lesson-hero-actions">
-          <button
-            className="btn btn-primary"
-            onClick={() => navigate("")}
-          >
-            <MdPlayCircle size={20} />
-            Resume Learning
-          </button>
-
-          <button
-            className="btn btn-secondary"
-            onClick={() => navigate("")}
-          >
-            View Outline
-          </button>
-        </div>
-      </div>
-
-      <div className="lesson-hero-bg-icon">
-        <MdCode size={120} />
-      </div>
-    </div>
-  );
-}
-
-function StatCard({ icon, iconClass, label, value, badgeText, badgeClass }) {
-  const Icon = icon;
-
-  return (
-    <div className="stat-card">
-      <div className="stat-card-top">
-        <div className={`stat-icon ${iconClass}`}>
-          <Icon size={22} />
-        </div>
-
-        <span className={`stat-badge ${badgeClass}`}>{badgeText}</span>
-      </div>
-
-      <div className="stat-label">{label}</div>
-      <div className="stat-value">{value}</div>
-    </div>
-  );
-}
-
-function ProgressSection() {
-  return (
-    <section>
-      <div className="section-header">
-        <h3 className="section-title">My Progress</h3>
-        <button className="link-btn">Full Analytics</button>
-      </div>
-
-      <div className="stats-grid">
-        {STATS.map((stat) => (
-          <StatCard key={stat.label} {...stat} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function CtaBanner() {
-  const navigate = useNavigate();
-
-  return (
-    <div className="cta-banner">
-      <div>
-        <h3>Tailor Your Path</h3>
-        <p>Interact with our AI to create your own learning path.</p>
-      </div>
-
-      <button
-        className="btn btn-white"
-        onClick={() => navigate("")}
-      >
-        Go to Learning Path
-      </button>
-    </div>
-  );
-}
-
-function AssessmentsBanner() {
-  const navigate = useNavigate();
-
-  return (
-    <div className="cta-banner">
-      <div>
-        <h3>Challenge of the day</h3>
-        <p>Get random challenges daily to test your knowledge on the programming languages you already know.</p>
-      </div>
-
-      <button
-        className="btn btn-white"
-        onClick={() => navigate("/challenges")}
-      >
-        Go to Challenges
-      </button>
-    </div>
-  );
-}
-
-export default function Dashboard() {
+export default function MyLessons() {
   return (
     <div className="app-shell">
       <Sidebar />
@@ -285,21 +158,7 @@ export default function Dashboard() {
 
         <div className="content">
           <div className="content-inner">
-            <div className="welcome">
-              <h2>Welcome back, {user.name}! 👋</h2>
-              <p>
-                You've completed 65% of your current path. Keep the momentum
-                going.
-              </p>
-            </div>
-
-            <div className="section-stack">
-              <LessonHero />
-              <ProgressSection />
-              <CtaBanner />
-              <AssessmentsBanner />
-              
-            </div>
+            
           </div>
         </div>
       </main>

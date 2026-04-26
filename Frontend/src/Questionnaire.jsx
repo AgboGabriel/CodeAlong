@@ -47,8 +47,8 @@ const CAREER_PATHS = [
 ];
 
 const LANGUAGES = [
-  "Python","JavaScript","C++","Rust","C",
-  "Swift","C#","TypeScript","Go","Ruby","Java"
+  "Python","JavaScript","C++","Java","C",
+  "C#","Swift","PHP","TypeScript","R","Go","Ruby","Rust"
 ];
 
 const SKILL_LEVELS = [
@@ -70,25 +70,32 @@ export default function LearningJourney() {
   const navigate = useNavigate();
 
   const [careerPath, setCareerPath] = useState("backend");
-  const [language, setLanguage] = useState("Python");
+  const [knownLanguages, setKnownLanguages] = useState([]);
+  const [learningLanguages, setLearningLanguages] = useState([]);
   const [skillLevel, setSkillLevel] = useState("intermediate");
   const [goal, setGoal] = useState("projects");
 
-  /* Save questionnaire answers */
+  /* Toggle function for multi-select */
+  const toggleLanguage = (lang, list, setList) => {
+    if (list.includes(lang)) {
+      setList(list.filter((l) => l !== lang));
+    } else {
+      setList([...list, lang]);
+    }
+  };
 
+  /* Save questionnaire answers */
   const handleSave = () => {
 
     const userPreferences = {
       careerPath,
-      language,
+      knownLanguages,
+      learningLanguages,
       skillLevel,
       goal
     };
 
-    /* Save locally (temporary storage) */
     localStorage.setItem("learningPreferences", JSON.stringify(userPreferences));
-
-    /* Navigate to dashboard */
     navigate("/dashboard");
   };
 
@@ -98,7 +105,7 @@ export default function LearningJourney() {
       <main className="Qn-main">
         <div className="Qn-content">
 
-          {/* Progress */}
+                 {/* Progress */}
 
           <div className="Qn-progress-block">
 
@@ -118,25 +125,19 @@ export default function LearningJourney() {
           </div>
 
           {/* Career Path */}
-
           <section className="Qn-section">
-
             <h2 className="Qn-section-title">
               What career path are you interested in?
             </h2>
 
             <div className="Qn-career-grid">
-
               {CAREER_PATHS.map((p) => (
-
                 <button
                   key={p.id}
                   className={`Qn-career-card ${careerPath === p.id ? "selected" : ""}`}
                   onClick={() => setCareerPath(p.id)}
                 >
-
                   <div className="Qn-career-thumb" style={{ background: `${p.color}18` }}>
-
                     <span className="Qn-career-emoji">{p.icon}</span>
 
                     {careerPath === p.id && (
@@ -144,66 +145,68 @@ export default function LearningJourney() {
                         <CheckIcon />
                       </div>
                     )}
-
                   </div>
 
                   <div className="Qn-career-info">
                     <p className="Qn-career-name">{p.title}</p>
                     <p className="Qn-career-sub">{p.sub}</p>
                   </div>
-
                 </button>
-
               ))}
-
             </div>
-
           </section>
 
-          {/* Languages */}
-
+          {/* Known Languages */}
           <section className="Qn-section">
-
             <h2 className="Qn-section-title">
-              Which programming language do you want to learn?
+              Which programming language(s) are you efficient in?
             </h2>
 
             <div className="Qn-pills">
-
               {LANGUAGES.map((lang) => (
-
                 <button
                   key={lang}
-                  className={`Qn-pill ${language === lang ? "selected" : ""}`}
-                  onClick={() => setLanguage(lang)}
+                  className={`Qn-pill ${knownLanguages.includes(lang) ? "selected" : ""}`}
+                  onClick={() => toggleLanguage(lang, knownLanguages, setKnownLanguages)}
                 >
                   {lang}
                 </button>
-
               ))}
-
             </div>
+          </section>
 
+          {/* Learning Languages */}
+          <section className="Qn-section">
+            <h2 className="Qn-section-title">
+              Which programming language(s) do you want to learn?
+            </h2>
+
+            <div className="Qn-pills">
+              {LANGUAGES.map((lang) => (
+                <button
+                  key={lang}
+                  className={`Qn-pill ${learningLanguages.includes(lang) ? "selected" : ""}`}
+                  onClick={() => toggleLanguage(lang, learningLanguages, setLearningLanguages)}
+                >
+                  {lang}
+                </button>
+              ))}
+            </div>
           </section>
 
           {/* Skill Level */}
-
           <section className="Qn-section">
-
             <h2 className="Qn-section-title">
               What is your current programming skill level?
             </h2>
 
             <div className="Qn-skill-grid">
-
               {SKILL_LEVELS.map((s) => (
-
                 <button
                   key={s.id}
                   className={`Qn-skill-card ${skillLevel === s.id ? "selected" : ""}`}
                   onClick={() => setSkillLevel(s.id)}
                 >
-
                   {skillLevel === s.id && (
                     <div className="Qn-skill-check">
                       <CheckIcon />
@@ -216,33 +219,24 @@ export default function LearningJourney() {
                     <p className="Qn-skill-name">{s.label}</p>
                     <p className="Qn-skill-sub">{s.sub}</p>
                   </div>
-
                 </button>
-
               ))}
-
             </div>
-
           </section>
 
           {/* Goals */}
-
           <section className="Qn-section">
-
             <h2 className="Qn-section-title">
               What is your primary goal?
             </h2>
 
             <div className="Qn-goal-grid">
-
               {GOALS.map((g) => (
-
                 <button
                   key={g.id}
                   className={`Qn-goal-card ${goal === g.id ? "selected" : ""}`}
                   onClick={() => setGoal(g.id)}
                 >
-
                   {goal === g.id && (
                     <div className="Qn-goal-check">
                       <CheckCircleIcon />
@@ -255,50 +249,25 @@ export default function LearningJourney() {
 
                   <h3 className="Qn-goal-name">{g.label}</h3>
                   <p className="Qn-goal-sub">{g.sub}</p>
-
                 </button>
-
               ))}
-
             </div>
-
           </section>
 
           {/* Actions */}
-
           <div className="Qn-actions">
-
-            <button
-              className="Qn-back-btn"
-              onClick={() => navigate("/")}
-            >
+            <button className="Qn-back-btn" onClick={() => navigate("/")}>
               <ArrowBackIcon />
               Back
             </button>
 
-            <div className="Qn-actions-right">
-
-              <button
-                className="Qn-save-btn"
-                onClick={handleSave}
-              >
-                Save
-              </button>
-
-            </div>
-
+            <button className="Qn-save-btn" onClick={handleSave}>
+              Save
+            </button>
           </div>
 
         </div>
       </main>
-
-      <footer className="Qn-footer">
-        <p>
-          We'll use your answers to create a personalized experience just for you.
-          <a href="#"> Learn more</a>
-        </p>
-      </footer>
-
     </div>
   );
 }
