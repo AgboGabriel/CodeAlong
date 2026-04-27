@@ -1,17 +1,44 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { FcGoogle } from "react-icons/fc";
 import "./Login.css";
 
 export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loginMessage, setLoginMessage] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoginMessage("");
 
-    // TODO: Add real authentication logic here
-    navigate("/dashboard");
+    try {
+      const response = await fetch("http://localhost:3000/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+      console.log("Login response:", data);
+
+      if (response.ok) {
+        navigate("/dashboard");
+      } else {
+        setLoginMessage(data.error || "Login failed");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      setLoginMessage("Unable to connect to the server");
+    }
+  };
+
+  const handleGoogleLogin = () => {
+    window.location.href = "http://localhost:3000/auth/google";
   };
 
   return (
@@ -41,9 +68,13 @@ export default function Login() {
           </button>
         </form>
 
-        {/* Landing Page Redirect */}
+        {loginMessage ? <p className="forgot-password">{loginMessage}</p> : null}
+        
+
+        
+
         <p className="back-to-landing-page-link">
-          Don’t have an account?{" "}
+          Don't have an account?{" "}
           <span
             onClick={() => navigate("/")}
             style={{ color: "#2b7cee", cursor: "pointer" }}
@@ -52,12 +83,15 @@ export default function Login() {
           </span>
         </p>
 
-        {/* Forgot Password */}
         <p className="forgot-password">
           <a href="/reset-password" style={{ color: "#2b7cee" }}>
             Forgot Password?
           </a>
         </p>
+        <button type="button" className="Lp-social-btn" onClick={handleGoogleLogin}>
+            <FcGoogle size={30} />
+            Continue with Google
+          </button>
       </div>
     </div>
   );

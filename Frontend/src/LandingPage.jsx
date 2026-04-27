@@ -48,7 +48,43 @@ export default function CodeAI() {
       [name]: type === "checkbox" ? checked : value,
     }));
   };
+  const handleRegister = async (e)=>{
+    e.preventDefault();
+    if(!form.terms){
+      alert("You must agree to the terms and conditions");
+      return;
+    }
+    try{
+      const response= await fetch("http://localhost:3000/auth/register",{
+      method: "POST",
+      headers:{
+        "Content-Type":"application/json"
+      },
+      body: JSON.stringify({
+        username: form.username,
+        email:form.email,
+        password: form.password
+      })
+    });
+    const data= await response.json();
+    console.log("Registration response:", data);
+    
+    if(response.ok){
+      navigate("/Questionnaire");
+    }else{
+      alert(data.error || "Registration failed");
+    }
 
+    }catch(error){
+      console.error("Error during registration:", error);
+      alert("Unable to connect to the server");}
+   
+  }
+
+  const handleGoogleLogin = ()=>{
+    window.location.href= "http://localhost:3000/auth/google";
+  }
+ 
   return (
     <div className="Lp-root">
       {/* Header */}
@@ -212,10 +248,7 @@ export default function CodeAI() {
 
                 <button
                   className="Lp-btn-primary Lp-submit"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    navigate("/Questionnaire");
-                  }}
+                  onClick={handleRegister}
                 >
                   Get Started Now
                 </button>
@@ -228,7 +261,7 @@ export default function CodeAI() {
 
               <div className="Lp-social-btns">
 
-                <button className="Lp-social-btn">
+                <button className="Lp-social-btn" onClick={handleGoogleLogin}>
                   <FcGoogle size={24} /> Google
                 </button>
 

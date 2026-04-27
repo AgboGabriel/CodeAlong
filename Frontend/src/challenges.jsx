@@ -45,13 +45,44 @@ export default function Challenges() {
   };
 
   // Handle code execution (placeholder)
-  const handleRun = () => {
-    setOutput("Execution engine not connected yet.");
+  const handleRun = async() => {
+    setOutput("Executing your code...");
+    try{
+      const response=await fetch("http://localhost:3000/compile-poll",{
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body: JSON.stringify({
+          source_code: code,
+          language_id: selectedLang.id,
+          stdin: ""
+        })
+      })
+      const data= await response.json();
+      console.log("Execution response:", data);
+      if(!response.ok){
+        setOutput(data.error || "Execution failed");
+        return;
+      }
+      const result=data.data;
+      const finalOutput =
+      result.stdout ||
+      result.stderr ||
+      result.compile_output ||
+      result.status?.description ||
+      "No output";
+      setOutput(finalOutput);
+    }catch(error){
+      console.error("Execution error:", error);
+      setOutput("Unable to connect to the server");
+    }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async() => {
   // Replace this with your backend call later
   setOutput("Your code has been submitted for evaluation...");
+  await handleRun();
 };
 
   return (
