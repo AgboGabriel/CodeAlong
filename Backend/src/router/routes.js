@@ -29,6 +29,7 @@ router.get('/health', (req, res) => {
     res.status(200).json({ status: 'OK', timestamp: new Date() });
 });
 
+
 router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get(
     '/auth/google/callback',
@@ -37,7 +38,7 @@ router.get(
         session: true,
     }),
     (req, res) => {
-        res.redirect('/auth/me');
+        res.redirect('http://localhost:5173/dashboard');
     }
 );
 router.get('/auth/google/failure', (req, res) => {
@@ -46,6 +47,8 @@ router.get('/auth/google/failure', (req, res) => {
 
 router.post('/generate-audio', audioController.generateAudio);
 router.post('/auth/register', (req, res) => authController.register(req, res));
+router.post('/auth/forgot-password', (req, res) => authController.forgotPassword(req, res));
+router.post('/auth/reset-password', (req, res) => authController.resetPassword(req, res));
 router.post('/auth/login', (req, res, next) => authController.login(req, res, next));
 router.post('/auth/logout', (req, res, next) => authController.logout(req, res, next));
 router.get('/auth/me', (req, res) => authController.me(req, res));

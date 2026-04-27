@@ -23,6 +23,18 @@ CREATE TABLE users(
 CREATE INDEX idx_users_auth_provider ON users(auth_provider);
 CREATE INDEX idx_users_google_id ON users(google_id) WHERE google_id IS NOT NULL;
 
+CREATE TABLE password_reset_tokens (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash VARCHAR(255) NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    used_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_password_reset_tokens_user ON password_reset_tokens(user_id);
+CREATE INDEX idx_password_reset_tokens_hash ON password_reset_tokens(token_hash);
+
 -- Admins table for managing platform
 CREATE TABLE admins(
     id SERIAL PRIMARY KEY,

@@ -25,6 +25,35 @@ class AuthController {
         }
     }
 
+    async forgotPassword(req, res) {
+        try {
+            const { email } = req.body;
+            const result = await this.authService.requestPasswordReset(email);
+
+            return res.status(200).json({
+                message: result.message,
+                ...(process.env.NODE_ENV !== "production" && result.resetLink
+                    ? { devResetLink: result.resetLink }
+                    : {}),
+            });
+        } catch (error) {
+            console.error("Error in forgotPassword:", error);
+            return res.status(400).json({ error: error.message });
+        }
+    }
+
+    async resetPassword(req, res) {
+        try {
+            const { token, newPassword, password } = req.body;
+            const result = await this.authService.resetPassword(token, newPassword || password);
+
+            return res.status(200).json(result);
+        } catch (error) {
+            console.error("Error in resetPassword:", error);
+            return res.status(400).json({ error: error.message });
+        }
+    }
+
     login(req, res, next) {
         if (!req.body.password && req.body.password_hash) {
             req.body.password = req.body.password_hash;
