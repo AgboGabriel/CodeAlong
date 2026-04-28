@@ -9,7 +9,6 @@ import {
   FaLock,
 } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
-import { AiFillGithub } from "react-icons/ai";
 import logo from "./assets/Code along_logo-03.png";
 import "./LandingPage.css";
 
@@ -17,12 +16,12 @@ const features = [
   {
     icon: <FaBrain size={32} color="#256af4" />,
     title: "Adaptive Curriculum",
-    desc: "Our AI analyzes your progress and adjusts the difficulty in real-time to keep you in the flow state.",
+    desc: "Our system analyzes your performance and adapts your learning path to match your pace and skill level.",
   },
   {
     icon: <FaLaptopCode size={32} color="#256af4" />,
     title: "In-Browser IDE",
-    desc: "Write, test, and deploy code directly in your browser with our powerful integrated development environment.",
+    desc: "Write, run, and submit code directly in your browser for instant assessment.",
   },
   {
     icon: <FaUsers size={32} color="#256af4" />,
@@ -60,11 +59,7 @@ export default function CodeAI() {
           <span className="Lp-logo-text">CodeAlong</span>
         </div>
 
-        <nav className="Lp-nav">
-          <a href="#">Courses</a>
-          <a href="#">Features</a>
-          <a href="#">Pricing</a>
-        </nav>
+       
 
         <button
           className="Lp-btn-primary Lp-login"
@@ -92,8 +87,7 @@ export default function CodeAI() {
               </h1>
 
               <p className="Lp-subhead">
-                Master coding with your own AI tutor. Personalized paths, real-time feedback,
-                and interactive challenges designed to get you hired.
+                Master coding with our AI-powered tutoring system. Personalized learning paths, real-time feedback, adaptive curriculum, and daily challenges to take you from beginner to confident developer.
               </p>
             </div>
 

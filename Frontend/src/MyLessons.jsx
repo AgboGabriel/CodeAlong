@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import logo from "./assets/Code along_logo-03.png";
 import "./MyLessons.css";
 
@@ -46,7 +46,7 @@ function UserProfile({ small, onClick }) {
 }
 
 function Sidebar() {
-  const [activeItem, setActiveItem] = useState("MyLessons");
+  const location = useLocation();
 
   return (
     <aside className="sidebar">
@@ -65,8 +65,9 @@ function Sidebar() {
             <Link
               key={label}
               to={path}
-              className={`nav-item ${activeItem === label ? "active" : ""}`}
-              onClick={() => setActiveItem(label)}
+              className={`nav-item ${
+                location.pathname === path ? "active" : ""
+              }`}
             >
               <Icon size={30} />
               {label}

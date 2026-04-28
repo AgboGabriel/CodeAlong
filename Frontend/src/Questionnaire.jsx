@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "./Questionnaire.css";
+
 
 import {
   FaLaptopCode,
@@ -14,8 +16,8 @@ import {
   FaBook
 } from "react-icons/fa";
 
-import logo from "./assets/Code along_logo-04.png";
-import "./Questionnaire.css";
+
+
 
 /* ───────── Icons ───────── */
 
@@ -69,11 +71,11 @@ export default function LearningJourney() {
 
   const navigate = useNavigate();
 
-  const [careerPath, setCareerPath] = useState("backend");
-  const [knownLanguages, setKnownLanguages] = useState([]);
-  const [learningLanguages, setLearningLanguages] = useState([]);
-  const [skillLevel, setSkillLevel] = useState("intermediate");
-  const [goal, setGoal] = useState("projects");
+    const [careerPath, setCareerPath] = useState(null);
+    const [knownLanguages, setKnownLanguages] = useState([]);
+    const [learningLanguages, setLearningLanguages] = useState([]);
+    const [skillLevel, setSkillLevel] = useState(null);
+    const [goal, setGoal] = useState(null);
 
   /* Toggle function for multi-select */
   const toggleLanguage = (lang, list, setList) => {
@@ -85,19 +87,33 @@ export default function LearningJourney() {
   };
 
   /* Save questionnaire answers */
-  const handleSave = () => {
+const handleSave = () => {
+  if (!careerPath || !skillLevel || !goal) {
+    alert("Please complete all required fields.");
+    return;
+  }
 
-    const userPreferences = {
-      careerPath,
-      knownLanguages,
-      learningLanguages,
-      skillLevel,
-      goal
-    };
-
-    localStorage.setItem("learningPreferences", JSON.stringify(userPreferences));
-    navigate("/dashboard");
+  const userPreferences = {
+    careerPath,
+    knownLanguages,
+    learningLanguages,
+    skillLevel,
+    goal
   };
+
+  localStorage.setItem("learningPreferences", JSON.stringify(userPreferences));
+  navigate("/dashboard");
+};
+      const totalFields = 5;
+
+      const completed =
+        (careerPath ? 1 : 0) +
+        (knownLanguages.length ? 1 : 0) +
+        (learningLanguages.length ? 1 : 0) +
+        (skillLevel ? 1 : 0) +
+        (goal ? 1 : 0);
+
+      const progress = (completed / totalFields) * 100;
 
   return (
     <div className="Qn-root">
@@ -115,11 +131,16 @@ export default function LearningJourney() {
                 <h1 className="Qn-page-title">Personalizing your experience</h1>
               </div>
 
-              <span className="Qn-pct">50% Complete</span>
-            </div>
+              <span className="Qn-pct">
+                {Math.round(progress)}% Complete
+              </span>
 
-            <div className="Qn-progress-track">
-              <div className="Qn-progress-fill" style={{ width: "50%" }} />
+              <div className="Qn-progress-track">
+                <div
+                  className="Qn-progress-fill"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
             </div>
 
           </div>
@@ -135,7 +156,9 @@ export default function LearningJourney() {
                 <button
                   key={p.id}
                   className={`Qn-career-card ${careerPath === p.id ? "selected" : ""}`}
-                  onClick={() => setCareerPath(p.id)}
+                  onClick={() =>
+                  setCareerPath(careerPath === p.id ? null : p.id)
+                  }
                 >
                   <div className="Qn-career-thumb" style={{ background: `${p.color}18` }}>
                     <span className="Qn-career-emoji">{p.icon}</span>
@@ -205,7 +228,9 @@ export default function LearningJourney() {
                 <button
                   key={s.id}
                   className={`Qn-skill-card ${skillLevel === s.id ? "selected" : ""}`}
-                  onClick={() => setSkillLevel(s.id)}
+                  onClick={() =>
+                    setSkillLevel(skillLevel === s.id ? null : s.id)
+                  }
                 >
                   {skillLevel === s.id && (
                     <div className="Qn-skill-check">
@@ -235,7 +260,9 @@ export default function LearningJourney() {
                 <button
                   key={g.id}
                   className={`Qn-goal-card ${goal === g.id ? "selected" : ""}`}
-                  onClick={() => setGoal(g.id)}
+                  onClick={() =>
+                  setGoal(goal === g.id ? null : g.id)
+                }
                 >
                   {goal === g.id && (
                     <div className="Qn-goal-check">
