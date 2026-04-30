@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import logo from "./assets/Code along_logo-03.png";
 import "./Dashboard.css";
 
@@ -13,7 +13,6 @@ import {
   MdVerifiedUser,
   MdSettings,
   MdNotifications,
-  MdSearch,
   MdPlayCircle,
   MdCode
 } from "react-icons/md";
@@ -67,7 +66,7 @@ function UserProfile({ small, onClick }) {
 }
 
 function Sidebar() {
-  const [activeItem, setActiveItem] = useState("Dashboard");
+  const location = useLocation();
 
   return (
     <aside className="sidebar">
@@ -86,8 +85,9 @@ function Sidebar() {
             <Link
               key={label}
               to={path}
-              className={`nav-item ${activeItem === label ? "active" : ""}`}
-              onClick={() => setActiveItem(label)}
+              className={`nav-item ${
+                location.pathname === path ? "active" : ""
+              }`}
             >
               <Icon size={30} />
               {label}
@@ -247,7 +247,7 @@ function CtaBanner() {
 
       <button
         className="btn btn-white"
-        onClick={() => navigate("")}
+        onClick={() => navigate("/LearningPath")}
       >
         Go to Learning Path
       </button>
@@ -269,7 +269,7 @@ function AssessmentsBanner() {
         className="btn btn-white"
         onClick={() => navigate("/challenges")}
       >
-        Go to Challenges
+        Start challenge
       </button>
     </div>
   );

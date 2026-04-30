@@ -123,25 +123,6 @@ a:hover {
   letter-spacing: -0.025em;
     font-family: "Space Grotesk", sans-serif;
 }
-
-.Lp-nav {
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-}
-
-.Lp-nav a {
-  color: var(--text-muted);
-  font-size: 18px;
-  font-weight: bold;
-  transition: color 0.2s;
-  text-decoration: none;
-}
-.Lp-nav a:hover {
-  color: var(--primary);
-  text-decoration: none;
-}
-
 /* ========== Shared Buttons ========== */
 .Lp-btn-primary {
   display: inline-flex;
