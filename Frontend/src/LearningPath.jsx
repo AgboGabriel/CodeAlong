@@ -106,13 +106,9 @@ function Header() {
 
   return (
     <header className="header">
-      <div className="search-wrap">
-        <input
-          className="search-input"
-          type="text"
-          placeholder="Search learning path..."
-        />
-        <MdSearch className="search-icon" size={25} />
+      <div>
+        
+        
       </div>
 
       <div className="header-right">
@@ -154,6 +150,9 @@ function LpBody() {
 
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const chatContainerRef = useRef(null);
+const bottomRef = useRef(null);
 
   const fileInputRef = useRef(null);
   const [attachments, setAttachments] = useState([]);
@@ -259,6 +258,12 @@ const handleFileChange = (e) => {
 
    const [isRecording, setIsRecording] = useState(false);
 
+   useEffect(() => {
+  bottomRef.current?.scrollIntoView({
+    behavior: "smooth",
+  });
+}, [messages, loading]);
+
   const handleSend = () => {
     if (!input.trim() || loading) return;
 
@@ -311,7 +316,7 @@ setTimeout(() => {
       </div>
 
       {/* CHAT AREA */}
-      <div className="chat-container">
+      <div className="chat-container" ref={chatContainerRef}>
 
         {messages.map((msg, index) => (
           <div key={index}>
@@ -444,6 +449,8 @@ setTimeout(() => {
             </div>
           </div>
         )}
+
+        <div ref={bottomRef}></div>
 
       </div>
 
