@@ -252,11 +252,6 @@ box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   z-index: 10;
   flex-shrink: 0;
 }
-
-
-
-
-
 .header-right {
   display: flex;
   align-items: center;
@@ -639,10 +634,10 @@ box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   padding: 8px 14px;
   border-radius: 8px;
   cursor: pointer;
-  font-weight: 500;
+  font-weight: bold;
   transition: 0.2s;
+  font-family: "Space Grotesk", sans-serif;
 }
-
 .clear-btn:hover {
   background: #e63939;
 }

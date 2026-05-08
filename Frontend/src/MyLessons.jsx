@@ -3,7 +3,6 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import logo from "./assets/Code along_logo-03.png";
 import "./MyLessons.css";
 
-
 import {
   MdDashboard,
   MdMenuBook,
@@ -12,6 +11,7 @@ import {
   MdSettings,
   MdNotifications,
   MdSearch,
+  MdDelete,
 } from "react-icons/md";
 
 const user = {
@@ -26,8 +26,6 @@ const NAV_ITEMS = [
   { icon: MdAccountTree, label: "Learning Path", path: "/LearningPath" },
   { icon: MdFolderOpen, label: "Assessments", path: "/Assessments" },
 ];
-
-
 
 function UserProfile({ small, onClick }) {
   return (
@@ -84,19 +82,23 @@ function Header() {
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target)
+      ) {
         setDropdownOpen(false);
       }
     }
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleLogout = () => {
-    navigate("/"); // Redirect to landing page
+    navigate("/");
   };
 
   return (
@@ -126,7 +128,10 @@ function Header() {
             <div className="user-name">{user.name}</div>
           </div>
 
-          <UserProfile small onClick={() => setDropdownOpen(!dropdownOpen)} />
+          <UserProfile
+            small
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+          />
 
           <button className="icon-btn" aria-label="Settings">
             <MdSettings size={30} />
@@ -145,11 +150,87 @@ function Header() {
   );
 }
 
-  
-
-  
-
 export default function MyLessons() {
+  const [selectedPath, setSelectedPath] = useState(null);
+
+  const [learningPaths, setLearningPaths] = useState([
+    {
+      id: 1,
+      title: "Frontend Development with React",
+      progress: 28,
+      hours: 14,
+    },
+  ]);
+
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
+  const handleDelete = (id) => {
+    setLearningPaths((prev) =>
+      prev.filter((path) => path.id !== id)
+    );
+    setDeleteTarget(null);
+  };
+
+  if (!selectedPath) {
+    return (
+      <div className="app-shell">
+        <Sidebar />
+
+        <main className="main">
+          <Header />
+
+          <div className="content">
+            <div className="content-inner">
+              <div className="lessons-header">
+                <div>
+                  <p className="lesson-badge">✨ Custom Learning Paths</p>
+                  <h1>Choose Your Learning Path</h1>
+                  <p className="lesson-subtitle">
+                    Start exploring your personalized learning paths.
+                  </p>
+                </div>
+              </div>
+
+              {learningPaths.length === 0 ? (
+                <div className="empty-state">
+                  Ooops! There's nothing here
+                </div>
+              ) : (
+                <div className="curriculum-grid">
+                  {learningPaths.map((path) => (
+                    <div className="curriculum-card" key={path.id}>
+                      <div className="curriculum-content">
+                        <h3>{path.title}</h3>
+
+                        <p>
+                          Learn frontend development and React skills
+                          through structured modules.
+                        </p>
+
+                        <div className="curriculum-meta">
+                          <span>{path.progress}% Complete</span>
+                          <span>•</span>
+                          <span>⏱ {path.hours} Hours</span>
+                        </div>
+
+                        <button
+                          className="curriculum-btn"
+                          onClick={() => setSelectedPath(path)}
+                        >
+                          Go to Path
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="app-shell">
       <Sidebar />
@@ -159,7 +240,140 @@ export default function MyLessons() {
 
         <div className="content">
           <div className="content-inner">
-            
+            <div className="learning-header">
+
+                                <button
+                      className="back-btn"
+                      onClick={() => setSelectedPath(null)}
+                    >
+                      ← Back
+                    </button>
+
+              <h1>{selectedPath.title}</h1>
+
+              <div className="progress-row">
+                <div className="progress-wrap">
+                  <div className="progress-bar">
+                    <div
+                      className="progress-fill"
+                      style={{
+                        width: `${selectedPath.progress}%`,
+                      }}
+                    />
+                  </div>
+
+                  <span>
+                    {selectedPath.progress}% Overall Progress
+                  </span>
+                </div>
+
+                <div className="time-left">
+                  ⏱ {selectedPath.hours} hours
+                </div>
+              </div>
+            </div>
+
+            <div className="modules">
+              <div className="module-card completed">
+                <div className="module-icon complete-icon">✓</div>
+
+                <div className="module-content">
+                  <div className="module-top">
+                    <h3>Programming Fundamentals</h3>
+                    <span className="status completed-status">
+                      COMPLETED
+                    </span>
+                  </div>
+
+                  <p>
+                    Variables, loops, data types, and logic. The
+                    building blocks of any modern application.
+                  </p>
+
+                  <button className="primary-btn">
+                    Review Lessons
+                  </button>
+                </div>
+              </div>
+
+              <div className="module-card active-module">
+                <div className="module-icon active-icon">▶</div>
+
+                <div className="module-content">
+                  <div className="module-top">
+                    <h3>HTML Basics</h3>
+                    <span className="status active-status">
+                      40% IN PROGRESS
+                    </span>
+                  </div>
+
+                  <p>
+                    Master semantic elements, document structure,
+                    and accessibility standards for the web.
+                  </p>
+
+                  <div className="module-actions">
+                    <button className="primary-btn">
+                      Continue Learning
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="module-card locked-module">
+                <div className="module-icon locked-icon">▶</div>
+
+                <div className="module-content">
+                  <div className="module-top">
+                    <h3>CSS Basics</h3>
+                    <span className="status locked-status">
+                      LOCKED
+                    </span>
+                  </div>
+
+                  <p>
+                    Learn selectors, styling, layouts, spacing,
+                    colors, typography, and responsive design
+                    fundamentals.
+                  </p>
+
+                  <button className="locked-btn">
+                    Start Module
+                  </button>
+
+                  <div className="locked-tooltip">
+                    Unlock this module by completing HTML Basics
+                  </div>
+                </div>
+              </div>
+
+              <div className="module-card locked-module">
+                <div className="module-icon locked-icon">▶</div>
+
+                <div className="module-content">
+                  <div className="module-top">
+                    <h3>JavaScript Fundamentals</h3>
+                    <span className="status locked-status">
+                      LOCKED
+                    </span>
+                  </div>
+
+                  <p>
+                    Learn variables, functions, arrays, objects,
+                    DOM manipulation, events, and core JavaScript
+                    logic.
+                  </p>
+
+                  <button className="locked-btn">
+                    Start Module
+                  </button>
+
+                  <div className="locked-tooltip">
+                    Unlock this module after mastering CSS Basics
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </main>

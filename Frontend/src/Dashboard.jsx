@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
 import logo from "./assets/Code along_logo-03.png";
 import "./Dashboard.css";
 
@@ -48,6 +49,10 @@ const STATS = [
     badgeClass: "muted",
   },
 ];
+
+
+
+
 
 function UserProfile({ small, onClick }) {
   return (
@@ -275,7 +280,90 @@ function AssessmentsBanner() {
   );
 }
 
+
+function RecommendedLessons() {
+  const videos = [
+    {
+      title: "HTML Crash Course for Beginners",
+      channel: "Traversy Media",
+      videoId: "UB1O30fR-EE",
+    },
+    {
+      title: "JavaScript Full Course (2025)",
+      channel: "freeCodeCamp",
+      videoId: "PkZNo7MFNFg",
+    },
+    {
+      title: "React JS Basics Explained",
+      channel: "Programming with Mosh",
+      videoId: "w7ejDZ8SWv8",
+    },
+  ];
+
+  return (
+    <div className="lesson-hero recommended-wrapper">
+      
+      <div className="lesson-hero-content">
+        <span className="badge badge-primary">
+          Recommended Videos
+        </span>
+
+        <h3>Start Learning with Recommended videos</h3>
+
+        <p>
+          Curated beginner-friendly YouTube lessons to help you build real coding skills step by step.
+        </p>
+      </div>
+
+      {/* VIDEO GRID */}
+      <div className="video-grid">
+        {videos.map((video, index) => (
+          <a
+            key={index}
+            className="video-card"
+            href={`https://www.youtube.com/watch?v=${video.videoId}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <div className="video-thumbnail">
+              <img
+                src={`https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`}
+                alt={video.title}
+              />
+            </div>
+
+            <div className="video-info">
+              <h4>{video.title}</h4>
+              <p>{video.channel}</p>
+            </div>
+          </a>
+        ))}
+      </div>
+
+    </div>
+  );
+}
+
 export default function Dashboard() {
+  const [hasStartedLearning, setHasStartedLearning] = useState(false);
+   const greeting = user.isNew ? "Welcome" : "Welcome back";
+
+   const getProgressMessage = (user) => {
+  if (user?.isNew) {
+    return "Start your learning journey today. Let’s build momentum.";
+  }
+
+  if (!user?.progress || user.progress === 0) {
+    return "You’ve started your learning path. Let’s keep going.";
+  }
+
+  if (user.progress < 100) {
+    return `You've completed ${user.progress}% of your current path. Keep the momentum going.`;
+  }
+
+  return "You’ve completed your learning path. Great work!";
+};
+
   return (
     <div className="app-shell">
       <Sidebar />
@@ -285,16 +373,17 @@ export default function Dashboard() {
 
         <div className="content">
           <div className="content-inner">
+          
+
             <div className="welcome">
-              <h2>Welcome back, {user.name}! 👋</h2>
-              <p>
-                You've completed 65% of your current path. Keep the momentum
-                going.
-              </p>
+              <h2>
+                {greeting}, {user.name}! 👋
+              </h2>
+              <p>{getProgressMessage(user)}</p>
             </div>
 
             <div className="section-stack">
-              <LessonHero />
+             {hasStartedLearning ? <LessonHero /> : <RecommendedLessons />}
               <ProgressSection />
               <CtaBanner />
               <AssessmentsBanner />
