@@ -737,5 +737,122 @@ box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   visibility: visible;
   transform: translate(-50%, -50%) scale(1);
 }
+.filter-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.filter-icon {
+  position: absolute;
+  left: 14px;
+  color: #64748b;
+  pointer-events: none;
+}
+
+.lesson-filter {
+  height: 52px;
+  padding: 0 18px 0 46px;
+  border-radius: 14px;
+  border: 1px solid #dbe3ee;
+  background: white;
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+  cursor: pointer;
+  outline: none;
+  min-width: 190px;
+  font-family: "Space Grotesk", sans-serif;
+  transition: 0.2s ease;
+  appearance: none;
+}
+.lessons-header {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+/* Controls Row */
+
+.lesson-controls {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+/* Search */
+
+.lesson-search {
+  position: relative;
+  flex: 1;
+  min-width: 280px;
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.lesson-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+}
+
+.lesson-search-input {
+  width: 100%;
+  height: 52px;
+  border: 1px solid #dbe3ee;
+  background: white;
+  border-radius: 14px;
+  padding: 0 18px 0 48px;
+  font-size: 16px;
+  font-family: "Space Grotesk", sans-serif;
+  outline: none;
+  transition: 0.2s ease;
+}
+
+.lesson-search-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+/* Filter */
+
+.lesson-filter:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+.difficulty-badge {
+  padding: 6px 12px;
+  border-radius: 999px;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+/* Beginner */
+
+.difficulty-badge.beginner {
+  background: rgba(34, 197, 94, 0.12);
+  color: #16a34a;
+}
+
+/* Intermediate */
+
+.difficulty-badge.intermediate {
+  background: rgba(249, 115, 22, 0.12);
+  color: #ea580c;
+}
+
+/* Advanced */
+
+.difficulty-badge.advanced {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+}
 
 

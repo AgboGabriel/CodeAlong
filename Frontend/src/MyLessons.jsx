@@ -12,6 +12,7 @@ import {
   MdNotifications,
   MdSearch,
   MdDelete,
+  MdFilterList,
 } from "react-icons/md";
 
 const user = {
@@ -104,12 +105,7 @@ function Header() {
   return (
     <header className="header">
       <div className="search-wrap">
-        <input
-          className="search-input"
-          type="text"
-          placeholder="Search lessons..."
-        />
-        <MdSearch className="search-icon" size={25} />
+        
       </div>
 
       <div className="header-right">
@@ -153,13 +149,42 @@ function Header() {
 export default function MyLessons() {
   const [selectedPath, setSelectedPath] = useState(null);
 
+  const [filter, setFilter] = useState("All Paths");
+const [searchTerm, setSearchTerm] = useState("");
+
   const [learningPaths, setLearningPaths] = useState([
-    {
-      id: 1,
-      title: "Frontend Development with React",
-      progress: 28,
-      hours: 14,
-    },
+   {
+    id: 1,
+    title: "Frontend Development with React",
+    progress: 28,
+    hours: 14,
+    level: "Beginner",
+    status: "In Progress",
+    description:
+      "Learn frontend development and React skills through structured modules.",
+  },
+
+  {
+    id: 2,
+    title: "Fullstack JavaScript Engineering",
+    progress: 72,
+    hours: 32,
+    level: "Intermediate",
+    status: "Completed",
+    description:
+      "Master Node.js, Express, MongoDB, APIs, and advanced React workflows.",
+  },
+
+  {
+    id: 3,
+    title: "AI Powered Web Applications",
+    progress: 0,
+    hours: 48,
+    level: "Advanced",
+    status: "Not Started",
+    description:
+      "Build intelligent apps using OpenAI APIs, vector databases, and AI tooling.",
+  },
   ]);
 
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -171,6 +196,19 @@ export default function MyLessons() {
     setDeleteTarget(null);
   };
 
+  const filteredPaths = learningPaths.filter((path) => {
+  const matchesSearch = path.title
+    .toLowerCase()
+    .includes(searchTerm.toLowerCase());
+
+  const matchesFilter =
+    filter === "All Paths" ||
+    path.level === filter ||
+    path.status === filter;
+
+  return matchesSearch && matchesFilter;
+});
+
   if (!selectedPath) {
     return (
       <div className="app-shell">
@@ -181,37 +219,74 @@ export default function MyLessons() {
 
           <div className="content">
             <div className="content-inner">
-              <div className="lessons-header">
-                <div>
-                  <p className="lesson-badge">✨ Custom Learning Paths</p>
-                  <h1>Choose Your Learning Path</h1>
-                  <p className="lesson-subtitle">
-                    Start exploring your personalized learning paths.
-                  </p>
-                </div>
-              </div>
+             <div className="lessons-header">
+                          <div>
+                            <p className="lesson-badge">✨ Custom Learning Paths</p>
+                            <h1>Choose Your Learning Path</h1>
+                            <p className="lesson-subtitle">
+                              Start exploring your personalized learning paths.
+                            </p>
+                          </div>
 
-              {learningPaths.length === 0 ? (
+                          <div className="lesson-controls">
+                            <div className="lesson-search">
+                              <MdSearch className="lesson-search-icon" size={22} />
+
+                              <input
+                                type="text"
+                                placeholder="Search learning paths..."
+                                className="lesson-search-input"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                              />
+                            </div>
+
+                            <div className="filter-wrap">
+                                  <MdFilterList className="filter-icon" size={22} />
+
+                                 <select
+                                    className="lesson-filter"
+                                    value={filter}
+                                    onChange={(e) => setFilter(e.target.value)}
+                                  >
+                                    <option>All Paths</option>
+                                    <option>In Progress</option>
+                                    <option>Completed</option>
+                                    <option>Not Started</option>
+                                    <option>Intermediate</option>
+                                    <option>Beginner</option>
+                                    <option>Advanced</option>
+                                  </select>
+                                </div>
+                          </div>
+                        </div>
+
+              {filteredPaths.length === 0 ? (
                 <div className="empty-state">
                   Ooops! There's nothing here
                 </div>
               ) : (
                 <div className="curriculum-grid">
-                  {learningPaths.map((path) => (
+                  {filteredPaths.map((path) => (
                     <div className="curriculum-card" key={path.id}>
                       <div className="curriculum-content">
                         <h3>{path.title}</h3>
 
-                        <p>
-                          Learn frontend development and React skills
-                          through structured modules.
-                        </p>
+                           <p>{path.description}</p>
 
-                        <div className="curriculum-meta">
-                          <span>{path.progress}% Complete</span>
-                          <span>•</span>
-                          <span>⏱ {path.hours} Hours</span>
-                        </div>
+                         <div className="curriculum-meta">
+                            <span>{path.progress}% Completed</span>
+
+                            <span>•</span>
+
+                            <span>⏱ {path.hours} Hours</span>
+
+                            <span>•</span>
+
+                            <span className={`difficulty-badge ${path.level.toLowerCase()}`}>
+                              {path.level}
+                            </span>
+                         </div>
 
                         <button
                           className="curriculum-btn"
