@@ -170,7 +170,7 @@ const [searchTerm, setSearchTerm] = useState("");
     progress: 72,
     hours: 32,
     level: "Intermediate",
-    status: "Completed",
+    status: "In Progress",
     description:
       "Master Node.js, Express, MongoDB, APIs, and advanced React workflows.",
   },
