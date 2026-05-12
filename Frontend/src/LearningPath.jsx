@@ -150,17 +150,17 @@ function LpBody() {
 
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [confirmError, setConfirmError] = useState("");
 
   const chatContainerRef = useRef(null);
-const bottomRef = useRef(null);
+  const bottomRef = useRef(null);
 
   const fileInputRef = useRef(null);
   const [attachments, setAttachments] = useState([]);
   const removeAttachment = (index) => {
-  setAttachments((prev) => prev.filter((_, i) => i !== index));
-
- 
-};
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const initialMessage = {
     role: "ai",
@@ -175,10 +175,10 @@ const bottomRef = useRef(null);
   const [activeModuleIndex, setActiveModuleIndex] = useState(null);
 
   const handleModuleClick = (module, index) => {
-  if (module.placeholder) return;
+    if (module.placeholder) return;
 
-  setActiveModuleIndex((prev) => (prev === index ? null : index));
-};
+    setActiveModuleIndex((prev) => (prev === index ? null : index));
+  };
 
 
   // Clear chat
@@ -187,6 +187,54 @@ const bottomRef = useRef(null);
     setInput("");
     setLoading(false);
     setAttachments([]);
+    setConfirmError("");
+  };
+
+  const handleConfirmCurriculum = async (curriculum) => {
+    if (!curriculum || !curriculum.modules?.length) {
+      setConfirmError("No curriculum available to confirm.");
+      return;
+    }
+
+    setConfirmError("");
+    setConfirming(true);
+
+    try {
+      const response = await fetch("/api/curriculum/confirm", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ curriculum }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Failed to confirm curriculum.");
+      }
+
+      const activeModule = data.activeModule;
+      if (activeModule?.id) {
+        await fetch(`/api/videos/module/${activeModule.id}`, {
+          method: "POST",
+          credentials: "include",
+        });
+      }
+
+      localStorage.setItem(
+        "myLessonsCurriculum",
+        JSON.stringify({ curriculum: data.curriculum, activeModule })
+      );
+
+      navigate("/MyLessons");
+    } catch (error) {
+      console.error("Confirm curriculum error:", error);
+      setConfirmError(error.message || "Unable to start this curriculum.");
+    } finally {
+      setConfirming(false);
+    }
   };
 
   // Open file picker
@@ -202,65 +250,64 @@ const handleFileChange = (e) => {
 
   setAttachments((prev) => [...prev, ...files]);
 };
-
   // Mock AI generator
-  const generateCurriculum = (topic) => {
-  return {
-    level: "Beginner",
+//   const generateCurriculum = (topic) => {
+//   return {
+//     level: "Beginner",
 
-    description: `Your personalized learning path for "${topic}" is ready.`,
+//     description: `Your personalized learning path for "${topic}" is ready.`,
 
-    modules: [
-      {
-        title: "Frontend Fundamentals",
-        week: "Week 1-2",
-        desc: "JS ES6+, CSS Grid/Flexbox, DOM manipulation.",
-        icon: "terminal",
-        color: "blue",
-        topics: [
-          "HTML Basics",
-          "CSS Flexbox & Grid",
-          "JavaScript Fundamentals",
-          "DOM Manipulation",
-        ],
-      },
+//     modules: [
+//       {
+//         title: "Frontend Fundamentals",
+//         week: "Week 1-2",
+//         desc: "JS ES6+, CSS Grid/Flexbox, DOM manipulation.",
+//         icon: "terminal",
+//         color: "blue",
+//         topics: [
+//           "HTML Basics",
+//           "CSS Flexbox & Grid",
+//           "JavaScript Fundamentals",
+//           "DOM Manipulation",
+//         ],
+//       },
 
-      {
-        title: "React Components",
-        week: "Week 3-6",
-        desc: "Hooks, Context API, state management.",
-        icon: "layers",
-        topics: [
-          "JSX & Components",
-          "useState & useEffect",
-          "Props & State",
-          "Context API",
-        ],
-      },
+//       {
+//         title: "React Components",
+//         week: "Week 3-6",
+//         desc: "Hooks, Context API, state management.",
+//         icon: "layers",
+//         topics: [
+//           "JSX & Components",
+//           "useState & useEffect",
+//           "Props & State",
+//           "Context API",
+//         ],
+//       },
 
-      {
-        title: "API Integration",
-        week: "Week 7-9",
-        desc: "REST APIs, async data handling.",
-        icon: "api",
-        topics: [
-          "Fetch API",
-          "Axios",
-          "Async/Await",
-          "Error Handling",
-        ],
-      },
+//       {
+//         title: "API Integration",
+//         week: "Week 7-9",
+//         desc: "REST APIs, async data handling.",
+//         icon: "api",
+//         topics: [
+//           "Fetch API",
+//           "Axios",
+//           "Async/Await",
+//           "Error Handling",
+//         ],
+//       },
 
-      {
-        title: "Backend Structure",
-        week: "Planned",
-        desc: "Node.js, databases, authentication systems.",
-        icon: "pending",
-        placeholder: true,
-      },
-    ],
-  };
-};
+//       {
+//         title: "Backend Structure",
+//         week: "Planned",
+//         desc: "Node.js, databases, authentication systems.",
+//         icon: "pending",
+//         placeholder: true,
+//       },
+//     ],
+//   };
+// };
 
    const [isRecording, setIsRecording] = useState(false);
 
@@ -464,8 +511,15 @@ const handleFileChange = (e) => {
                   </div>
 
                   <div className="actions">
-                    <button className="primary-btn">
-                      Confirm & Start
+                    {confirmError && (
+                      <div className="error-message">{confirmError}</div>
+                    )}
+                    <button
+                      className="primary-btn"
+                      onClick={() => handleConfirmCurriculum(msg.data)}
+                      disabled={confirming}
+                    >
+                      {confirming ? "Starting..." : "Confirm & Start"}
                     </button>
                   </div>
 
