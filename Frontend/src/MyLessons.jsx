@@ -13,6 +13,10 @@ import {
   MdSearch,
   MdDelete,
   MdFilterList,
+  MdPlayCircleFilled,
+  MdKeyboardArrowDown,
+  MdKeyboardArrowUp, 
+  MdFolder,
 } from "react-icons/md";
 
 const user = {
@@ -196,7 +200,25 @@ const [searchTerm, setSearchTerm] = useState("");
     setDeleteTarget(null);
   };
 
-  const filteredPaths = learningPaths.filter((path) => {
+const [view, setView] = useState("modules");
+const [selectedModule, setSelectedModule] = useState(null);
+const [expandedTopics, setExpandedTopics] = useState(new Set());
+
+const toggleTopic = (index) => {
+  setExpandedTopics((prev) => {
+    const updated = new Set(prev);
+
+    if (updated.has(index)) {
+      updated.delete(index); 
+    } else {
+      updated.add(index);
+    }
+
+    return updated;
+  });
+};
+
+const filteredPaths = learningPaths.filter((path) => {
   const matchesSearch = path.title
     .toLowerCase()
     .includes(searchTerm.toLowerCase());
@@ -209,6 +231,76 @@ const [searchTerm, setSearchTerm] = useState("");
   return matchesSearch && matchesFilter;
 });
 
+
+const handleBack = () => {
+  if (view === "topics") {
+    setView("modules");
+    setSelectedModule(null);
+    return;
+  }
+
+  if (view === "modules") {
+    setSelectedPath(null);
+    setSelectedModule(null);
+    return;
+  }
+};
+
+const modules = [
+  {
+    id: 1,
+    title: "Programming Fundamentals",
+    status: "completed",
+    description:
+      "Variables, loops, data types, and logic.",
+    topics: [
+      {
+        title: "Variables & Data Types",
+        videos: ["Intro Video", "Practice Video"]
+      },
+      {
+        title: "Loops",
+        videos: ["For Loop Explained", "While Loop Demo"]
+      },
+      {
+        title: "Functions",
+        videos: ["Function Basics", "Arrow Functions"]
+      }
+    ]
+  },
+
+  {
+    id: 2,
+    title: "HTML Basics",
+    status: "in-progress",
+    description:
+      "Master semantic HTML, structure, and forms.",
+    topics: [
+      {
+        title: "HTML Structure",
+        videos: ["HTML Intro", "Page Structure"]
+      },
+      {
+        title: "Forms",
+        videos: ["Input Types", "Form Validation"]
+      }
+    ]
+  },
+
+  {
+    id: 3,
+    title: "CSS Basics",
+    status: "locked",
+    description:
+      "Learn layouts, styling, and responsiveness.",
+    topics: [
+      {
+        title: "Selectors",
+        videos: ["Basic Selectors", "Advanced Selectors"]
+      }
+    ]
+  }
+];
   if (!selectedPath) {
     return (
       <div className="app-shell">
@@ -306,66 +398,92 @@ const [searchTerm, setSearchTerm] = useState("");
     );
   }
 
-  return (
-    <div className="app-shell">
-      <Sidebar />
+ return (
+  <div className="app-shell">
+    <Sidebar />
 
-      <main className="main">
-        <Header />
+    <main className="main">
+      <Header />
 
-        <div className="content">
-          <div className="content-inner">
-            <div className="learning-header">
+      <div className="content">
+        <div className="content-inner">
 
-                                <button
-                      className="back-btn"
-                      onClick={() => setSelectedPath(null)}
-                    >
-                      ← Back
-                    </button>
+          {/* HEADER (always visible when path selected) */}
+          <div className="learning-header">
 
-              <h1>{selectedPath.title}</h1>
+            <button className="back-btn" onClick={handleBack}>
+        ← Back
+      </button>
 
-              <div className="progress-row">
-                <div className="progress-wrap">
-                  <div className="progress-bar">
-                    <div
-                      className="progress-fill"
-                      style={{
-                        width: `${selectedPath.progress}%`,
-                      }}
-                    />
-                  </div>
+            <h1>{selectedPath.title}</h1>
 
-                  <span>
-                    {selectedPath.progress}% Overall Progress
-                  </span>
+            <div className="progress-row">
+              <div className="progress-wrap">
+                <div className="progress-bar">
+                  <div
+                    className="progress-fill"
+                    style={{
+                      width: `${selectedPath.progress}%`,
+                    }}
+                  />
                 </div>
 
-                <div className="time-left">
-                  ⏱ {selectedPath.hours} hours
-                </div>
+                <span>
+                  {selectedPath.progress}% Overall Progress
+                </span>
+              </div>
+
+              <div className="time-left">
+                ⏱ {selectedPath.hours} hours
               </div>
             </div>
+          </div>
 
+          {/* ===================== MODULE VIEW ===================== */}
+          {view === "modules" && (
             <div className="modules">
+
               <div className="module-card completed">
                 <div className="module-icon complete-icon">✓</div>
 
                 <div className="module-content">
                   <div className="module-top">
                     <h3>Programming Fundamentals</h3>
+
                     <span className="status completed-status">
                       COMPLETED
                     </span>
                   </div>
 
                   <p>
-                    Variables, loops, data types, and logic. The
-                    building blocks of any modern application.
+                    Variables, loops, data types, and logic.
+                    The building blocks of any modern application.
                   </p>
 
-                  <button className="primary-btn">
+                  <button
+                    className="primary-btn"
+                    onClick={() => {
+                      setSelectedModule({
+                        title: "Programming Fundamentals",
+                        topics: [
+                          {
+                            title: "Variables & Data Types",
+                            videos: ["Intro Video", "Practice Video"]
+                          },
+                          {
+                            title: "Loops",
+                            videos: ["For Loop Explained", "While Loop Demo"]
+                          },
+                          {
+                            title: "Functions",
+                            videos: ["Function Basics", "Arrow Functions"]
+                          }
+                        ]
+                      });
+
+                      setView("topics");
+                    }}
+                  >
                     Review Lessons
                   </button>
                 </div>
@@ -377,6 +495,7 @@ const [searchTerm, setSearchTerm] = useState("");
                 <div className="module-content">
                   <div className="module-top">
                     <h3>HTML Basics</h3>
+
                     <span className="status active-status">
                       40% IN PROGRESS
                     </span>
@@ -388,7 +507,10 @@ const [searchTerm, setSearchTerm] = useState("");
                   </p>
 
                   <div className="module-actions">
-                    <button className="primary-btn">
+                    <button
+                      className="primary-btn"
+                      onClick={() => setView("modules")}
+                    >
                       Continue Learning
                     </button>
                   </div>
@@ -401,6 +523,7 @@ const [searchTerm, setSearchTerm] = useState("");
                 <div className="module-content">
                   <div className="module-top">
                     <h3>CSS Basics</h3>
+
                     <span className="status locked-status">
                       LOCKED
                     </span>
@@ -408,11 +531,13 @@ const [searchTerm, setSearchTerm] = useState("");
 
                   <p>
                     Learn selectors, styling, layouts, spacing,
-                    colors, typography, and responsive design
-                    fundamentals.
+                    colors, typography, and responsive design fundamentals.
                   </p>
 
-                  <button className="locked-btn">
+                  <button
+                    className="locked-btn"
+                    onClick={() => setView("modules")}
+                  >
                     Start Module
                   </button>
 
@@ -428,6 +553,7 @@ const [searchTerm, setSearchTerm] = useState("");
                 <div className="module-content">
                   <div className="module-top">
                     <h3>JavaScript Fundamentals</h3>
+
                     <span className="status locked-status">
                       LOCKED
                     </span>
@@ -435,11 +561,13 @@ const [searchTerm, setSearchTerm] = useState("");
 
                   <p>
                     Learn variables, functions, arrays, objects,
-                    DOM manipulation, events, and core JavaScript
-                    logic.
+                    DOM manipulation, events, and core JavaScript logic.
                   </p>
 
-                  <button className="locked-btn">
+                  <button
+                    className="locked-btn"
+                    onClick={() => setView("modules")}
+                  >
                     Start Module
                   </button>
 
@@ -448,10 +576,62 @@ const [searchTerm, setSearchTerm] = useState("");
                   </div>
                 </div>
               </div>
+
             </div>
-          </div>
+          )}
+
+          {/* ===================== TOPICS VIEW ===================== */}
+          {view === "topics" && selectedModule && (
+            <div className="curriculum-page">
+
+              <div className="curriculum-header">
+                <h1>{selectedModule.title}</h1>
+                <p>Select a topic to expand lessons</p>
+              </div>
+
+              <div className="topics-list">
+                {selectedModule.topics.map((topic, index) => (
+                  <div key={index} className="topic-card">
+
+                    {/* Topic Header */}
+                    <div
+                      className="topic-header"
+                    onClick={() => toggleTopic(index)}
+                    >
+                      <div className="topic-title">
+                        <MdFolder className="topic-icon" />
+                        <h3>{topic.title}</h3>
+                      </div>
+                       <span className="chevron-icon">
+                       {expandedTopics.has(index) ? (
+                          <MdKeyboardArrowUp />
+                        ) : (
+                          <MdKeyboardArrowDown />
+                        )}
+                        </span>
+                    </div>
+
+                    {/* Dropdown Videos */}
+                    {expandedTopics.has(index) && (
+                      <div className="video-list">
+                        {topic.videos.map((video, i) => (
+                          <div key={i} className="video-item">
+                            <MdPlayCircleFilled className="video-icon" /> {video}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                  </div>
+                ))}
+              </div>
+
+            </div>
+          )}
+
         </div>
-      </main>
-    </div>
-  );
+      </div>
+    </main>
+  </div>
+);
 }
