@@ -79,6 +79,46 @@ export class ChatController {
             return this.createErrorResponse(error);
         }
     }
+
+    async buildCurriculum(userId, message, options = {}) {
+        try {
+            console.log('ChatController.buildCurriculum called:', {
+                userId,
+                message: message ? `"${message.substring(0, 50)}${message.length > 50 ? '...' : ''}"` : 'null',
+                options
+            });
+
+            this.validateInput(message);
+
+            const conversation = this._getConversationArray(userId);
+            conversation.push({
+                role: 'user',
+                content: message,
+                timestamp: new Date()
+            });
+
+            const curriculum = await this.groqService.generateCurriculum(message, options);
+
+            conversation.push({
+                role: 'assistant',
+                content: JSON.stringify(curriculum),
+                timestamp: new Date()
+            });
+
+            this._limitConversationHistory(conversation);
+
+            return {
+                success: true,
+                curriculum,
+                conversationId: userId,
+                timestamp: new Date().toISOString(),
+                historyLength: conversation.length
+            };
+        } catch (error) {
+            console.error('ChatController error in buildCurriculum:', error);
+            return this.createErrorResponse(error);
+        }
+    }
     
     /**
      * Validate user input

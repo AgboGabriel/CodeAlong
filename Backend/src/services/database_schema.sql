@@ -1,41 +1,204 @@
 -- Drop existing table if needed (careful with production data!)
 -- DROP TABLE IF EXISTS users CASCADE;
-
-CREATE TABLE users(
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255),
-    auth_provider VARCHAR(20) NOT NULL DEFAULT 'email'
-        CHECK (auth_provider IN ('email', 'google')),
-    google_id VARCHAR(255) UNIQUE,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW(),
-    last_login TIMESTAMP,
-    CONSTRAINT users_auth_method_check CHECK (
-        (auth_provider = 'email' AND password_hash IS NOT NULL)
-        OR
-        (auth_provider = 'google' AND google_id IS NOT NULL)
-    )
-);
-
--- Index for faster lookups
-CREATE INDEX idx_users_auth_provider ON users(auth_provider);
-CREATE INDEX idx_users_google_id ON users(google_id) WHERE google_id IS NOT NULL;
+codeAlong_Database_local -db name
 
 CREATE TABLE password_reset_tokens (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    token_hash VARCHAR(255) NOT NULL,
+    token_hash TEXT NOT NULL,
     expires_at TIMESTAMP NOT NULL,
-    used_at TIMESTAMP,
+    used BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT NOW()
 );
+CREATE TABLE user_questionnaires (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    career_path VARCHAR(50) NOT NULL,
+    known_languages TEXT[], -- Array of languages
+    learning_languages TEXT[], -- Array of languages
+    skill_level VARCHAR(20) NOT NULL CHECK (skill_level IN ('beginner', 'intermediate', 'advanced')),
+    goal VARCHAR(50) NOT NULL,
+    completed BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(user_id) -- One questionnaire per user (or remove this if you want multiple attempts)
+);
+CREATE INDEX idx_user_questionnaires_user ON user_questionnaires(user_id);
+CREATE TABLE users(
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    -- Password can be NULL for Google OAuth users
+    password_hash VARCHAR(255),
+    avatar_url TEXT DEFAULT 'default-avatar.png',
+    full_name VARCHAR(100),
+    
+    -- Authentication method
+    auth_provider VARCHAR(20) DEFAULT 'email' CHECK (auth_provider IN ('email', 'google', 'github', 'microsoft')),
+    provider_id VARCHAR(100), -- Google/Facebook user ID
+    provider_data JSONB, -- Store additional OAuth provider data
+    
+    -- Email verification
+    email_verified BOOLEAN DEFAULT false,
+    verification_token VARCHAR(100),
+    verification_token_expires TIMESTAMP,
+    
+    -- Password reset
+    reset_password_token VARCHAR(100),
+    reset_token_expires TIMESTAMP,
+    
+    -- User status
+    is_active BOOLEAN DEFAULT true,
+    role VARCHAR(20) DEFAULT 'student' CHECK (role IN ('student', 'instructor', 'admin')),
+    
+    -- Timestamps
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    last_login TIMESTAMP
+);
 
-CREATE INDEX idx_password_reset_tokens_user ON password_reset_tokens(user_id);
-CREATE INDEX idx_password_reset_tokens_hash ON password_reset_tokens(token_hash);
+-- Add a partial unique index for provider-specific accounts
+CREATE UNIQUE INDEX idx_users_provider ON users(provider_id) 
+WHERE provider_id IS NOT NULL AND auth_provider != 'email';
 
--- Admins table for managing platform
+-- Index for faster lookups
+CREATE INDEX idx_users_auth_provider ON users(auth_provider);
+CREATE INDEX idx_users_email_verified ON users(email_verified) WHERE email_verified = true;
+
+CREATE TABLE user_curriculums (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  description TEXT NOT NULL,
+  status VARCHAR(20) DEFAULT 'active',
+  current_module_index INTEGER DEFAULT 0,
+  current_topic_index INTEGER DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+CREATE TABLE curriculum_modules (
+  id SERIAL PRIMARY KEY,
+  curriculum_id INTEGER NOT NULL REFERENCES user_curriculums(id) ON DELETE CASCADE,
+  module_index INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  week TEXT,
+  description TEXT,
+  icon TEXT,
+  color TEXT,
+  status VARCHAR(20) DEFAULT 'locked',
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(curriculum_id, module_index)
+);
+CREATE TABLE curriculum_topics (
+  id SERIAL PRIMARY KEY,
+  module_id INTEGER NOT NULL REFERENCES curriculum_modules(id) ON DELETE CASCADE,
+  topic_index INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  status VARCHAR(20) DEFAULT 'locked',
+  has_prior_knowledge BOOLEAN,
+  pretest_required BOOLEAN DEFAULT false,
+  posttest_required BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(module_id, topic_index)
+);
+CREATE TABLE topic_videos (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  curriculum_id INTEGER NOT NULL REFERENCES user_curriculums(id) ON DELETE CASCADE,
+  module_id INTEGER NOT NULL REFERENCES curriculum_modules(id) ON DELETE CASCADE,
+  topic_id INTEGER NOT NULL REFERENCES curriculum_topics(id) ON DELETE CASCADE,
+
+  video_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  channel_title TEXT,
+  thumbnail TEXT,
+  url TEXT NOT NULL,
+  view_count INTEGER DEFAULT 0,
+  like_count INTEGER DEFAULT 0,
+  duration TEXT,
+  score NUMERIC DEFAULT 0,
+
+  is_replacement BOOLEAN DEFAULT false,
+  replaced_video_id INTEGER REFERENCES topic_videos(id),
+  replacement_reason TEXT,
+
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+CREATE TABLE topic_quizzes (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  curriculum_id INTEGER NOT NULL REFERENCES user_curriculums(id) ON DELETE CASCADE,
+  module_id INTEGER NOT NULL REFERENCES curriculum_modules(id) ON DELETE CASCADE,
+  topic_id INTEGER NOT NULL REFERENCES curriculum_topics(id) ON DELETE CASCADE,
+
+  quiz_type VARCHAR(20) NOT NULL CHECK (quiz_type IN ('pretest', 'posttest')),
+  questions JSONB NOT NULL,
+  score NUMERIC,
+  passed BOOLEAN,
+  created_at TIMESTAMP DEFAULT NOW(),
+  submitted_at TIMESTAMP
+);
+CREATE TABLE topic_mastery (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  topic_id INTEGER NOT NULL REFERENCES curriculum_topics(id) ON DELETE CASCADE,
+
+  mastery_probability NUMERIC DEFAULT 0.20,
+  attempts INTEGER DEFAULT 0,
+  correct_answers INTEGER DEFAULT 0,
+  incorrect_answers INTEGER DEFAULT 0,
+
+  last_quiz_id INTEGER REFERENCES topic_quizzes(id),
+  updated_at TIMESTAMP DEFAULT NOW(),
+
+  UNIQUE(user_id, topic_id)
+);
+
+
+-- drop this table
+CREATE TABLE module_topic_videos (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+
+  module_title TEXT NOT NULL,
+  topic TEXT NOT NULL,
+
+  video_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  channel_title TEXT,
+  thumbnail TEXT,
+  url TEXT NOT NULL,
+
+  view_count INTEGER DEFAULT 0,
+  like_count INTEGER DEFAULT 0,
+  duration TEXT,
+  score NUMERIC DEFAULT 0,
+
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+
+  UNIQUE(user_id, module_title, topic)
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- below not being used for reference only
 CREATE TABLE admins(
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
@@ -407,3 +570,4 @@ CREATE TABLE exercise_submissions (
 CREATE INDEX idx_exercise_submissions_user ON exercise_submissions(user_id);
 CREATE INDEX idx_exercise_submissions_exercise ON exercise_submissions(exercise_id);
 CREATE INDEX idx_exercise_submissions_correct ON exercise_submissions(is_correct) WHERE is_correct = true;
+

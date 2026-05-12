@@ -67,17 +67,22 @@ class AuthService{
                 throw new Error("Email is required");
             }
 
-            const user = await this.userModel.findByEmail(email);
+            const normalizedEmail = email.trim().toLowerCase();
+            const user = await this.userModel.findByEmail(normalizedEmail);
             const message = "If that email exists, a reset link has been sent.";
 
             if (!user || user.auth_provider !== "email" || !user.password_hash) {
-                return { message };
+                const devReason = `Password reset skipped for ${normalizedEmail}: no email/password account found.`;
+                if (process.env.NODE_ENV !== "production") {
+                    console.log(devReason);
+                }
+                return { message, devReason };
             }
 
             const rawToken = crypto.randomBytes(32).toString("hex");
             const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
             const expiresAt = new Date(Date.now() + resetTokenTTLMinutes * 60 * 1000);
-            const frontendBaseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+            const frontendBaseUrl = process.env.FRONTEND_URL || `http://localhost:${process.env.PORT || 3000}`;
             const resetLink = `${frontendBaseUrl}/create-new-password?token=${rawToken}`;
 
             await this.passwordResetModel.invalidateUserTokens(user.id);
@@ -86,10 +91,10 @@ class AuthService{
                 token_hash: tokenHash,
                 expires_at: expiresAt,
             });
-            await mailService.sendPasswordResetEmail(email, resetLink);
+            await mailService.sendPasswordResetEmail(normalizedEmail, resetLink);
 
 
-            console.log(`Password reset link for ${email}: ${resetLink}`);
+            console.log(`Password reset link for ${normalizedEmail}: ${resetLink}`);
 
             return {
                 message,

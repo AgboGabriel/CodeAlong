@@ -15,9 +15,16 @@ class AuthController {
                 password_hash: password || password_hash,
             });
 
-            res.status(201).json({
-                message: "User registered successfully",
-                user: newUser,
+            req.login(newUser, (loginError) => {
+                if (loginError) {
+                    console.error("Error logging in after register:", loginError);
+                    return res.status(500).json({ error: loginError.message });
+                }
+
+                return res.status(201).json({
+                    message: "User registered and logged in successfully",
+                    user: newUser,
+                });
             });
         } catch (error) {
             console.error("Error in register:", error);
@@ -34,6 +41,9 @@ class AuthController {
                 message: result.message,
                 ...(process.env.NODE_ENV !== "production" && result.resetLink
                     ? { devResetLink: result.resetLink }
+                    : {}),
+                ...(process.env.NODE_ENV !== "production" && result.devReason
+                    ? { devReason: result.devReason }
                     : {}),
             });
         } catch (error) {

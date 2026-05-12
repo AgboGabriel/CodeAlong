@@ -4,20 +4,31 @@ dotenv.config();
 
 class MailService {
     constructor() {
-        this.transporter =nodemailer.createTransport({
+        this.emailUser = process.env.Google_email || process.env.GOOGLE_EMAIL;
+        this.emailPassword = process.env.Google_app_password || process.env.GOOGLE_APP_PASSWORD;
+
+        if (!this.emailUser || !this.emailPassword) {
+            console.warn("Mail service is missing Google email credentials. Password reset emails will fail until Google_email and Google_app_password are set.");
+        }
+
+        this.transporter = nodemailer.createTransport({
             secure: true,
-            host:"smtp.gmail.com",
-            port:465,
-            auth:{
-                user:process.env.Google_email,
-                pass:process.env.Google_app_password
+            host: "smtp.gmail.com",
+            port: 465,
+            auth: {
+                user: this.emailUser,
+                pass: this.emailPassword
             }
         })
     }
 
     async sendPasswordResetEmail(to, resetLink){
-        return await this.transporter.sendMail({
-            from: process.env.Google_email,
+        if (!this.emailUser || !this.emailPassword) {
+            throw new Error("Mail service is not configured. Set Google_email and Google_app_password in .env.");
+        }
+
+        const result = await this.transporter.sendMail({
+            from: `"CodeAlong" <${this.emailUser}>`,
             to,
             subject: "Password Reset",
             html: `
@@ -27,6 +38,8 @@ class MailService {
             `
         });
 
+        console.log(`Password reset email accepted for ${to}. Message ID: ${result.messageId}`);
+        return result;
     }
 }
  

@@ -6,10 +6,20 @@ import authController from '../controllers/authController.js';
 import { ChatController } from '../controllers/chat.controller.js';
 import { groqService } from '../services/Chat.service.js';
 import userModel from '../models/userModel.js';
+import questionnaireController from '../controllers/questionnaire.controller.js';
+import curriculumController from '../controllers/curriculumController.js';
+import youtubeController from '../controllers/youtubeController.js';
 
 const router = express.Router();
 const groqServiceInstance = new groqService();
 const chatController = new ChatController(groqServiceInstance);
+
+function ensureAuthenticated(req, res, next) {
+    if (req.isAuthenticated && req.isAuthenticated()) {
+        return next();
+    }
+    return res.status(401).json({ error: 'Not authenticated' });
+}
 
 function getUserID(req) {
     // In production, extract user ID from auth token or session
@@ -29,7 +39,7 @@ router.get('/health', (req, res) => {
     res.status(200).json({ status: 'OK', timestamp: new Date() });
 });
 
-
+//auth routes
 router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get(
     '/auth/google/callback',
@@ -38,7 +48,8 @@ router.get(
         session: true,
     }),
     (req, res) => {
-        res.redirect('http://localhost:5173/dashboard');
+        const backendUrl = process.env.FRONTEND_URL || `http://localhost:${process.env.PORT || 3000}`;
+        res.redirect(`${backendUrl}/dashboard`);
     }
 );
 router.get('/auth/google/failure', (req, res) => {
@@ -52,6 +63,27 @@ router.post('/auth/reset-password', (req, res) => authController.resetPassword(r
 router.post('/auth/login', (req, res, next) => authController.login(req, res, next));
 router.post('/auth/logout', (req, res, next) => authController.logout(req, res, next));
 router.get('/auth/me', (req, res) => authController.me(req, res));
+
+//questionnaire routes
+router.post("/api/questionnaire", ensureAuthenticated, (req,res)=>{
+    questionnaireController.saveQuestionnaireResponse(req,res);
+});
+router.get("/api/questionnaire", ensureAuthenticated, (req,res)=>{
+    questionnaireController.getQuestionnaireByUserId(req,res);
+});
+
+//curriculum routes
+router.post("/api/curriculum/confirm", ensureAuthenticated, (req,res)=>{
+    curriculumController.confirmCurriculum(req,res);
+});
+router.get("/api/curriculum/:curriculumId", ensureAuthenticated, (req,res)=>{
+    curriculumController.getCurriculum(req,res);
+});
+
+//youtube video routes
+router.post("/api/videos/module/:moduleId", ensureAuthenticated, (req,res)=>{
+    youtubeController.getVideosForModule(req,res);
+});
 
 router.post('/db-test/users',async(req,res)=>{
     try{
@@ -82,6 +114,26 @@ router.post('/chat',async(req,res)=>{
     }
     } catch(error){
         console.error('Chat route error:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Internal server error'
+        });
+    }
+});
+
+// POST /chat/curriculum which returns structured curriculum JSON
+router.post('/chat/curriculum', async(req,res)=>{
+    try{
+        const {message, options} = req.body;
+        const userId = getUserID(req);
+        const response = await chatController.buildCurriculum(userId, message, options);
+        if(response.success){
+            res.status(200).json(response);
+        } else{
+            res.status(response.statusCode || 500).json(response);
+        }
+    } catch(error){
+        console.error('Curriculum route error:', error);
         res.status(500).json({
             success: false,
             error: error.message || 'Internal server error'

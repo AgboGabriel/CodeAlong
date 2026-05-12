@@ -259,7 +259,7 @@ const handleFileChange = (e) => {
 
    const [isRecording, setIsRecording] = useState(false);
 
-  const handleSend = () => {
+  const handleSend = async() => {
     if (!input.trim() || loading) return;
 
     const userMessage = input.trim();
@@ -279,21 +279,52 @@ const handleFileChange = (e) => {
     setInput("");
     setLoading(true);
     setAttachments([]);
+    
+    try{
+      const response=await fetch("/chat/curriculum",
+        {
+          method:"POST",
+          headers:{
+            "Content-Type":"application/json",
+          },
+          credentials:"include",
+          body: JSON.stringify({
+            message: userMessage,
+            options: {
+              model:"llama-3.1-8b-instant",
+            }
+          })
+        }
+      );
+      const responseData=await response.json();
+      console.log("AI curriculum response:", responseData);
 
-setTimeout(() => {
-  const curriculum = generateCurriculum(userMessage);
+      if(!response.ok || !responseData.success){
+        throw new Error(responseData.error || "Failed to get response from AI");
+      }
 
-  setMessages((prev) => [
-    ...prev,
-    {
-      role: "ai",
-      type: "curriculum",
-      data: curriculum,
-    },
-  ]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          type: "curriculum",
+          data: responseData.curriculum,
+        },
+      ]);
+    }catch(error){
+      console.error("Error generating curriculum:", error);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          type: "text",
+          content: "Sorry, I couldn't build your curriculum. Please try again.",
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
 
-  setLoading(false);
-}, 1500);
   }
 
 

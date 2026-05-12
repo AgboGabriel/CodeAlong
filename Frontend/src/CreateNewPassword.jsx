@@ -23,7 +23,7 @@ export default function CreateNewPassword() {
       return;
     };
     try{
-       const response=await fetch("http://localhost:3000/auth/reset-password", {
+       const response=await fetch("/auth/reset-password", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

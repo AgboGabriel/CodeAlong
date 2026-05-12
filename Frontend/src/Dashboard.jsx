@@ -17,10 +17,9 @@ import {
   MdCode
 } from "react-icons/md";
 
-const user = {
-  name: "Alex Rivera",
-  avatar:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuCHkmMqD5gKaMYLSydOBQc_Zi7wsLqmErMbtpFZ_5-AzR8-GBVVggx2vz3YzNgs5Hoy-od2NIrLSCZxHox3QfDozggMjyXwAkivdXCAnN8X0SPM_4icaBffmPVNgH8o7hrt7pZetO5A34GxGG7-Wo5ffA5JXpfZ9BYdN4-hnrlIM9xG9MtFYNRE-V08HC6Rw_Eeg7AFzzK5lLrWd9H9tOt37FmZS5CIAKG6brXAECIkUSxxGH6SXwrAFI7L8CN5DIz9nBnx5RSp6YE",
+const fallbackUser = {
+  name: "Learner",
+  avatar: logo,
 };
 
 const NAV_ITEMS = [
@@ -49,16 +48,29 @@ const STATS = [
   },
 ];
 
-function UserProfile({ small, onClick }) {
+function getDisplayName(currentUser) {
+  return currentUser?.username || currentUser?.full_name || currentUser?.email || fallbackUser.name;
+}
+
+function getAvatar(currentUser) {
+  return currentUser?.avatar_url && currentUser.avatar_url !== "default-avatar.png"
+    ? currentUser.avatar_url
+    : fallbackUser.avatar;
+}
+
+function UserProfile({ currentUser, small, onClick }) {
+  const displayName = getDisplayName(currentUser);
+  const avatar = getAvatar(currentUser);
+
   return (
     <>
       <div className={`avatar ${small ? "avatar-sm" : ""}`} onClick={onClick}>
-        <img src={user.avatar} alt={user.name} />
+        <img src={avatar} alt={displayName} />
       </div>
 
       {!small && (
         <div className="user-info">
-          <div className="user-name">{user.name}</div>
+          <div className="user-name">{displayName}</div>
         </div>
       )}
     </>
@@ -99,10 +111,11 @@ function Sidebar() {
   );
 }
 
-function Header() {
+function Header({ currentUser }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  const displayName = getDisplayName(currentUser);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -115,8 +128,12 @@ function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    navigate("/"); // Redirect to landing page
+  const handleLogout = async () => {
+    await fetch("/auth/logout", {
+      method: "POST",
+      credentials: "include",
+    });
+    navigate("/");
   };
 
   return (
@@ -137,10 +154,10 @@ function Header() {
             className="header-user-text"
             onClick={() => setDropdownOpen(!dropdownOpen)}
           >
-            <div className="user-name">{user.name}</div>
+            <div className="user-name">{displayName}</div>
           </div>
 
-          <UserProfile small onClick={() => setDropdownOpen(!dropdownOpen)} />
+          <UserProfile currentUser={currentUser} small onClick={() => setDropdownOpen(!dropdownOpen)} />
 
           <button className="icon-btn" aria-label="Settings">
             <MdSettings size={30} />
@@ -276,17 +293,41 @@ function AssessmentsBanner() {
 }
 
 export default function Dashboard() {
+  const [currentUser,setCurrentUser]= useState(null);
+
+  useEffect(()=>{
+    async function loadCurrentUser(){
+      try{
+        const response=await fetch("/auth/me",{
+          credentials:"include",
+  
+          });
+          if(!response.ok){
+            console.log("No user logged in user found");
+            return;
+          }
+          const userData=await response.json();
+          console.log("Current user:", userData.user);
+          setCurrentUser(userData.user);
+        }catch(error){
+          console.error("Error fetching current user:", error);
+        }
+      }
+      loadCurrentUser();
+
+    },[]);
+    const displayName = getDisplayName(currentUser);
   return (
     <div className="app-shell">
       <Sidebar />
 
       <main className="main">
-        <Header />
+        <Header currentUser={currentUser} />
 
         <div className="content">
           <div className="content-inner">
             <div className="welcome">
-              <h2>Welcome back, {user.name}! 👋</h2>
+              <h2>Welcome back, {displayName}! 👋</h2>
               <p>
                 You've completed 65% of your current path. Keep the momentum
                 going.

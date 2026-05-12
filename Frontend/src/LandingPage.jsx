@@ -54,8 +54,9 @@ export default function CodeAI() {
       return;
     }
     try{
-      const response= await fetch("http://localhost:3000/auth/register",{
+      const response= await fetch("/auth/register",{
       method: "POST",
+      credentials: "include",
       headers:{
         "Content-Type":"application/json"
       },
@@ -81,7 +82,7 @@ export default function CodeAI() {
   }
 
   const handleGoogleLogin = ()=>{
-    window.location.href= "http://localhost:3000/auth/google";
+    window.location.href= "/auth/google";
   }
  
   return (
