@@ -61,7 +61,6 @@ function getAvatar(currentUser) {
 function UserProfile({ currentUser, small, onClick }) {
   const displayName = getDisplayName(currentUser);
   const avatar = getAvatar(currentUser);
-
   return (
     <>
       <div className={`avatar ${small ? "avatar-sm" : ""}`} onClick={onClick}>
@@ -292,8 +291,73 @@ function AssessmentsBanner() {
   );
 }
 
+
+function RecommendedLessons() {
+  const videos = [
+    {
+      title: "HTML Crash Course for Beginners",
+      channel: "Traversy Media",
+      videoId: "UB1O30fR-EE",
+    },
+    {
+      title: "JavaScript Full Course (2025)",
+      channel: "freeCodeCamp",
+      videoId: "PkZNo7MFNFg",
+    },
+    {
+      title: "React JS Basics Explained",
+      channel: "Programming with Mosh",
+      videoId: "w7ejDZ8SWv8",
+    },
+  ];
+
+  return (
+    <div className="lesson-hero recommended-wrapper">
+      
+      <div className="lesson-hero-content">
+        <span className="badge badge-primary">
+          Recommended Videos
+        </span>
+
+        <h3>Start Learning with Recommended videos</h3>
+
+        <p>
+          Curated beginner-friendly YouTube lessons to help you build real coding skills step by step.
+        </p>
+      </div>
+
+      {/* VIDEO GRID */}
+      <div className="video-grid">
+        {videos.map((video, index) => (
+          <a
+            key={index}
+            className="video-card"
+            href={`https://www.youtube.com/watch?v=${video.videoId}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <div className="video-thumbnail">
+              <img
+                src={`https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`}
+                alt={video.title}
+              />
+            </div>
+
+            <div className="video-info">
+              <h4>{video.title}</h4>
+              <p>{video.channel}</p>
+            </div>
+          </a>
+        ))}
+      </div>
+
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const [currentUser,setCurrentUser]= useState(null);
+  const [hasStartedLearning, setHasStartedLearning] = useState(false);
 
   useEffect(()=>{
     async function loadCurrentUser(){
@@ -316,7 +380,11 @@ export default function Dashboard() {
       loadCurrentUser();
 
     },[]);
-    const displayName = getDisplayName(currentUser);
+  const displayName = getDisplayName(currentUser);
+  const greeting = currentUser ? "Welcome back" : "Welcome";
+  const progressMessage = hasStartedLearning
+    ? "You've started your learning path. Let's keep going."
+    : "Start your learning journey today. Let's build momentum.";
   return (
     <div className="app-shell">
       <Sidebar />
@@ -326,16 +394,17 @@ export default function Dashboard() {
 
         <div className="content">
           <div className="content-inner">
+          
+
             <div className="welcome">
-              <h2>Welcome back, {displayName}! 👋</h2>
-              <p>
-                You've completed 65% of your current path. Keep the momentum
-                going.
-              </p>
+              <h2>
+                {greeting}, {displayName}!
+              </h2>
+              <p>{progressMessage}</p>
             </div>
 
             <div className="section-stack">
-              <LessonHero />
+             {hasStartedLearning ? <LessonHero /> : <RecommendedLessons />}
               <ProgressSection />
               <CtaBanner />
               <AssessmentsBanner />

@@ -106,13 +106,9 @@ function Header() {
 
   return (
     <header className="header">
-      <div className="search-wrap">
-        <input
-          className="search-input"
-          type="text"
-          placeholder="Search learning path..."
-        />
-        <MdSearch className="search-icon" size={25} />
+      <div>
+        
+        
       </div>
 
       <div className="header-right">
@@ -155,6 +151,9 @@ function LpBody() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const chatContainerRef = useRef(null);
+const bottomRef = useRef(null);
+
   const fileInputRef = useRef(null);
   const [attachments, setAttachments] = useState([]);
   const removeAttachment = (index) => {
@@ -167,7 +166,7 @@ function LpBody() {
     role: "ai",
     type: "text",
     content:
-      "Hi 👋 Tell me what you want to learn and I’ll build a structured curriculum for you.",
+      "Hi 👋 Tell me what you want to learn and I’ll build a structured learning path for you.",
   };
 
   const [messages, setMessages] = useState([initialMessage]);
@@ -206,58 +205,70 @@ const handleFileChange = (e) => {
 
   // Mock AI generator
   const generateCurriculum = (topic) => {
-    return {
-      description: `Your personalized learning path for "${topic}" is ready.`,
-      modules: [
-  {
-    title: "Frontend Fundamentals",
-    week: "Week 1-2",
-    desc: "JS ES6+, CSS Grid/Flexbox, DOM manipulation.",
-    icon: "terminal",
-    color: "blue",
-    topics: [
-      "HTML Basics",
-      "CSS Flexbox & Grid",
-      "JavaScript Fundamentals",
-      "DOM Manipulation",
+  return {
+    level: "Beginner",
+
+    description: `Your personalized learning path for "${topic}" is ready.`,
+
+    modules: [
+      {
+        title: "Frontend Fundamentals",
+        week: "Week 1-2",
+        desc: "JS ES6+, CSS Grid/Flexbox, DOM manipulation.",
+        icon: "terminal",
+        color: "blue",
+        topics: [
+          "HTML Basics",
+          "CSS Flexbox & Grid",
+          "JavaScript Fundamentals",
+          "DOM Manipulation",
+        ],
+      },
+
+      {
+        title: "React Components",
+        week: "Week 3-6",
+        desc: "Hooks, Context API, state management.",
+        icon: "layers",
+        topics: [
+          "JSX & Components",
+          "useState & useEffect",
+          "Props & State",
+          "Context API",
+        ],
+      },
+
+      {
+        title: "API Integration",
+        week: "Week 7-9",
+        desc: "REST APIs, async data handling.",
+        icon: "api",
+        topics: [
+          "Fetch API",
+          "Axios",
+          "Async/Await",
+          "Error Handling",
+        ],
+      },
+
+      {
+        title: "Backend Structure",
+        week: "Planned",
+        desc: "Node.js, databases, authentication systems.",
+        icon: "pending",
+        placeholder: true,
+      },
     ],
-  },
-  {
-    title: "React Components",
-    week: "Week 3-6",
-    desc: "Hooks, Context API, state management.",
-    icon: "layers",
-    topics: [
-      "JSX & Components",
-      "useState & useEffect",
-      "Props & State",
-      "Context API",
-    ],
-  },
-  {
-    title: "API Integration",
-    week: "Week 7-9",
-    desc: "REST APIs, async data handling.",
-    icon: "api",
-    topics: [
-      "Fetch API",
-      "Axios",
-      "Async/Await",
-      "Error Handling",
-    ],
-  },
-  {
-    title: "Backend Structure",
-    week: "Planned",
-    desc: "Node.js, databases, authentication systems.",
-    icon: "pending",
-    placeholder: true,
-  },
-]
-    };
   };
+};
 
    const [isRecording, setIsRecording] = useState(false);
+
+   useEffect(() => {
+    bottomRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages, loading]);
 
   const handleSend = async() => {
     if (!input.trim() || loading) return;
@@ -342,7 +353,7 @@ const handleFileChange = (e) => {
       </div>
 
       {/* CHAT AREA */}
-      <div className="chat-container">
+      <div className="chat-container" ref={chatContainerRef}>
 
         {messages.map((msg, index) => (
           <div key={index}>
@@ -386,7 +397,11 @@ const handleFileChange = (e) => {
                        <FaRobot size={24} />
                       </span>
                     </div>
-                    <span className="ai-label">AI curriculum builder</span>
+                       <span
+                            className={`difficulty ${(msg.data.level || "Beginner").toLowerCase()}`}
+                          >
+                            {msg.data.level || "Beginner"}
+                        </span>
                   </div>
 
                  {loading ? (
@@ -475,6 +490,8 @@ const handleFileChange = (e) => {
             </div>
           </div>
         )}
+
+        <div ref={bottomRef}></div>
 
       </div>
 
