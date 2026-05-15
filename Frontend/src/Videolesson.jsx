@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import Editor from "@monaco-editor/react";
 import Split from "react-split";
-import "./challenges.css";
+import { useNavigate, useLocation } from "react-router-dom";
+import "./Videolesson.css";
 
 // Language configuration
 const LANGUAGES = [
@@ -30,7 +30,7 @@ const CODE_TEMPLATES = {
   rust: "// Write Rust code here\n"
 };
 
-export default function Challenges() {
+export default function Videolesson() {
   const [selectedLang, setSelectedLang] = useState(LANGUAGES[0]);
   const [code, setCode] = useState(
     CODE_TEMPLATES[LANGUAGES[0].monaco]
@@ -53,27 +53,35 @@ export default function Challenges() {
   const handleSubmit = () => {
   // Replace this with your backend call later
   setOutput("Your code has been submitted for evaluation...");
-
-  const navigate = useNavigate();
 };
 
   return (
-    <div className="challenge-container">
+    <div className="Videolesson-container">
       <Split
-        className="challenge-layout"
+        className="Videolesson-layout"
         sizes={[40, 60]}
         minSize={120}
         gutterSize={6}
       >
         {/* LEFT: Question Panel */}
-        <div className="question-panel">
-          <button className="back-btn" onClick={() => window.history.back()}>
-            ← Back
-          </button>
-          <div className="question-placeholder">
-            Problem description will appear here.
+          <div className="question-panel">
+            <button
+              className="back-btn"
+              onClick={() => {
+                if (location.state?.from === "topics") {
+                  navigate(-1); // returns to topics view correctly
+                } else {
+                  navigate("/"); // fallback safety
+                }
+              }}
+            >
+              ← Back
+            </button>
+
+            <div className="question-placeholder">
+              Problem description will appear here.
+            </div>
           </div>
-        </div>
 
         {/* RIGHT: Editor Panel */}
         <div className="editor-panel">

@@ -17,6 +17,8 @@ import {
   MdKeyboardArrowDown,
   MdKeyboardArrowUp, 
   MdFolder,
+  MdQuiz,
+  MdCode
 } from "react-icons/md";
 
 const user = {
@@ -611,16 +613,39 @@ const modules = [
                         </span>
                     </div>
 
-                    {/* Dropdown Videos */}
-                    {expandedTopics.has(index) && (
-                      <div className="video-list">
-                        {topic.videos.map((video, i) => (
-                          <div key={i} className="video-item">
-                            <MdPlayCircleFilled className="video-icon" /> {video}
+                  {/* Dropdown Content */}
+                        {expandedTopics.has(index) && (
+                          <div className="video-list">
+
+                            {/* Quiz Before Videos */}
+                            <div className="quiz-item">
+                              <MdQuiz className="quiz-icon" />
+                              <span>{topic.title} Quiz</span>
+                            </div>
+
+                           {/* Videos */}
+                              {topic.videos.map((video, i) => (
+                                <Link
+                                  key={i}
+                                  to="/Videolesson"
+                                  className="video-link"
+                                >
+                                  <div className="video-item">
+                                    <MdPlayCircleFilled className="video-icon" />
+                                    <span>{video}</span>
+                                  </div>
+                                </Link>
+                              ))}
+
+                           <Link to="/challenges" className="challenge-link">
+                              <div className="challenge-item">
+                                <MdCode className="challenge-icon" />
+                                <span>{topic.title} Coding Challenge</span>
+                              </div>
+                            </Link>
+
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        )}
 
                   </div>
                 ))}

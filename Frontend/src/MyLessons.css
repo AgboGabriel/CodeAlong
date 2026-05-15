@@ -654,9 +654,6 @@ box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 .active-status {
   color: #2563eb;
 }
-
-
-
 .active-module {
   border: 2px solid #dbeafe;
 }
@@ -666,7 +663,6 @@ box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   gap: 14px;
   flex-wrap: wrap;
 }
-
 .primary-btn {
   border: none;
   background: #2563eb;
@@ -675,6 +671,10 @@ box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   border-radius: 10px;
   font-weight: 700;
   cursor: pointer;
+  font-family: "Space Grotesk", sans-serif;
+}
+.back-btn{
+   font-family: "Space Grotesk", sans-serif;
 }
 
 /* Locked Module */
@@ -903,20 +903,24 @@ box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   flex-direction: column;
   gap: 8px;
 }
+.video-link{
+  text-decoration: none;
+}
 .video-item {
   background: #f7f9fc;
   padding: 10px;
   border-radius: 8px;
+  text-decoration: none;
+  color: #2563eb;
 }
 .video-item:hover {
   cursor: pointer;
   background: #f1f1f1;
-
+  text-decoration: none;
 }
 .video-icon {
   vertical-align: middle;
-  height: 30px;
-  width: 30px;
+  font-size: 20px;
   color: #2563eb;
   margin-right: 15px;
 }
@@ -926,5 +930,44 @@ box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   align-items: center;
   color: #2563eb; /* match your theme */
 }
+.quiz-item,
+.challenge-item{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-top: 8px;
+  cursor: pointer;
+  transition: 0.3s ease;
+   color: black;
+}
+.quiz-item {
+  background: #eef6ff;
+  font-weight: bold;
+}
 
+.challenge-item {
+  background: #f5f3ff;
+  font-weight: bold;
+ 
+}
+.video-item:hover,
+.quiz-item:hover,
+.challenge-item:hover {
+  transform: translateX(4px);
+}
+
+.quiz-icon {
+  color: #42e411;
+  font-size: 30px;
+}
+
+.challenge-icon {
+  color: #7c3aed;
+  font-size: 30px;
+}
+.challenge-link:hover {
+  text-decoration: none;
+}
 

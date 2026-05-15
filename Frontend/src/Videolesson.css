@@ -1,6 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap");
 
-.challenge-layout {
+.Videolesson-layout {
   display: flex;
   height: 100vh;
   background: linear-gradient(135deg, #101822, #1b254b);
@@ -9,7 +9,7 @@
   overflow: hidden;
 }
 
-.challenge-layout > div {
+.Videolesson-layout > div {
   overflow: hidden;
 }
 

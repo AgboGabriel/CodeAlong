@@ -9,6 +9,7 @@ import Challenges from "./challenges";
 import Assessments from "./Assessments";
 import MyLessons  from "./MyLessons";
 import LearningPath  from "./LearningPath";
+import Videolesson  from "./Videolesson";
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
         <Route path="/Assessments" element={<Assessments />} />
         <Route path="/MyLessons" element={<MyLessons />} />
         <Route path="/LearningPath" element={<LearningPath />} />
+        <Route path="/Videolesson" element={<Videolesson />} />
       </Routes>
     </Router>
   );
