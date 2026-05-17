@@ -156,8 +156,44 @@ CREATE TABLE topic_mastery (
 
   UNIQUE(user_id, topic_id)
 );
+-- Learner weaknesses or misconception table
+CREATE TABLE learner_weaknesses (
+    id SERIAL PRIMARY KEY,
 
+    user_id INTEGER NOT NULL
+        REFERENCES users(id) ON DELETE CASCADE,
 
+    topic_id INTEGER NOT NULL
+        REFERENCES curriculum_topics(id) ON DELETE CASCADE,
+
+    weakness_type VARCHAR(100) NOT NULL,
+
+    severity NUMERIC DEFAULT 1.0,
+
+    occurrence_count INTEGER DEFAULT 1,
+
+    latest_submission_id INTEGER,
+
+    first_detected TIMESTAMP DEFAULT NOW(),
+    last_detected TIMESTAMP DEFAULT NOW()
+);
+
+-- BKT parameters table
+CREATE TABLE bkt_parameters (
+    id SERIAL PRIMARY KEY,
+
+    topic_id INTEGER UNIQUE NOT NULL
+        REFERENCES curriculum_topics(id)
+        ON DELETE CASCADE,
+
+    p_init  NUMERIC(5,4) DEFAULT 0.20 CHECK(p_init BETWEEN 0.0 AND 1.0),
+    p_learn NUMERIC(5,4) DEFAULT 0.15 CHECK(p_learn BETWEEN 0.0 AND 1.0),
+    p_guess NUMERIC(5,4) DEFAULT 0.20 CHECK(p_guess BETWEEN 0.0 AND 0.3),
+    p_slip  NUMERIC(5,4) DEFAULT 0.10 CHECK(p_slip BETWEEN 0.0 AND 0.3),
+
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
 -- drop this table
 CREATE TABLE module_topic_videos (
   id SERIAL PRIMARY KEY,

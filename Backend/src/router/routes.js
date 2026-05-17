@@ -9,6 +9,8 @@ import userModel from '../models/userModel.js';
 import questionnaireController from '../controllers/questionnaire.controller.js';
 import curriculumController from '../controllers/curriculumController.js';
 import youtubeController from '../controllers/youtubeController.js';
+import bktController from "../controllers/bkt.controller.js";
+
 
 const router = express.Router();
 const groqServiceInstance = new groqService();
@@ -34,6 +36,18 @@ router.get('/', (req, res) => {
         }
     });
 });
+
+router.post(
+  "/api/topic/:topicId/attempt",
+  ensureAuthenticated,
+  (req, res) => bktController.submitTopicAttempt(req, res)
+);
+
+router.get(
+  "/api/topic/:topicId/mastery",
+  ensureAuthenticated,
+  (req, res) => bktController.getTopicMastery(req, res)
+);
 
 router.get('/health', (req, res) => {
     res.status(200).json({ status: 'OK', timestamp: new Date() });
