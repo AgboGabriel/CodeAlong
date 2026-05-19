@@ -373,7 +373,7 @@ const modules = [
 
                             <span>•</span>
 
-                            <span>⏱ {path.hours} Hours</span>
+                            <span className="duration">⏱ {path.hours} Hours</span>
 
                             <span>•</span>
 

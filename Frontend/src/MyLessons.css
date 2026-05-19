@@ -469,6 +469,9 @@ box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   margin-bottom: 22px;
   font-weight: bold;
 }
+.duration{
+  color:#6b7280 ;
+}
 
 .curriculum-btn {
   width: 100%;
