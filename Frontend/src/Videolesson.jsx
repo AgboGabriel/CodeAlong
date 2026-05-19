@@ -131,8 +131,8 @@ export default function Videolesson() {
   <div className="Videolesson-container">
     <Split
       className="Videolesson-layout"
-      sizes={[25, 50, 25]}
-      minSize={[250, 400, 280]}
+      sizes={[35, 40, 25]}
+      minSize={[280, 400, 250]}
       gutterSize={6}
       expandToMin={false}
     >
