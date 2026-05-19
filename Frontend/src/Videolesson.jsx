@@ -146,98 +146,105 @@ export default function Videolesson() {
         </div>
 
         {/* RIGHT PANEL */}
-        <div className="workspace-panel">
-          {/* EDITOR */}
-          <div className="editor-panel">
-            <div className="editor-header">
-              <select
-                value={selectedLang.id}
-                onChange={(e) =>
-                  handleLanguageChange(e.target.value)
-                }
-              >
-                {LANGUAGES.map((lang) => (
-                  <option key={lang.id} value={lang.id}>
-                    {lang.name}
-                  </option>
-                ))}
-              </select>
+               <Split 
+            className="workspace-panel"
 
-              <div className="editor-actions">
-                <button className="run-btn" onClick={handleRun}>Run</button>
-                <button className="submit-btn" onClick={handleSubmit}>Submit</button>
-              </div>
-            </div>
-
-            <div className="editor-wrapper">
-              <Editor
-                height="100%"
-                theme="vs-dark"
-                language={selectedLang.monaco}
-                value={code}
-                onChange={(value) => setCode(value || "")}
-                options={{
-                  minimap: { enabled: false },
-                  fontSize: 18,
-                  lineHeight: 24,
-                  scrollBeyondLastLine: false,
-                  automaticLayout: true,
-                }}
-              />
-            </div>
-
-            <div className="output-panel">
-              {output || "Run your code to see output here."}
-            </div>
-          </div>
-
-          {/* CHAT */}
-          <div className="chat-panel">
-            <div className="chat-header">
-              <h3>AI Assistant</h3>
-            </div>
-
-            <div
-              className="chat-messages"
-              ref={chatContainerRef}
-            >
-              {messages.map((msg, index) => (
-                <div
-                  key={index}
-                  className={
-                    msg.role === "ai"
-                      ? "ai-message"
-                      : "user-message"
-                  }
+              sizes={[70, 30]}
+                minSize={200}
+                gutterSize={6}
+                direction="horizontal"
                 >
-                  {msg.content}
+              {/* EDITOR */}
+              <div className="editor-panel">
+                <div className="editor-header">
+                  <select
+                    value={selectedLang.id}
+                    onChange={(e) =>
+                      handleLanguageChange(e.target.value)
+                    }
+                  >
+                    {LANGUAGES.map((lang) => (
+                      <option key={lang.id} value={lang.id}>
+                        {lang.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  <div className="editor-actions">
+                    <button className="run-btn" onClick={handleRun}>Run</button>
+                    <button className="submit-btn" onClick={handleSubmit}>Submit</button>
+                  </div>
                 </div>
-              ))}
 
-              {/* anchor for scroll */}
-              <div ref={messagesEndRef} />
-            </div>
+                <div className="editor-wrapper">
+                  <Editor
+                    height="100%"
+                    theme="vs-dark"
+                    language={selectedLang.monaco}
+                    value={code}
+                    onChange={(value) => setCode(value || "")}
+                    options={{
+                      minimap: { enabled: false },
+                      fontSize: 18,
+                      lineHeight: 24,
+                      scrollBeyondLastLine: false,
+                      automaticLayout: true,
+                    }}
+                  />
+                </div>
 
-            <div className="chat-input-area">
-              <input
-                type="text"
-                placeholder="Ask anything..."
-                value={chatInput}
-                onChange={(e) =>
-                  setChatInput(e.target.value)
-                }
-                onKeyDown={(e) =>
-                  e.key === "Enter" &&
-                  handleSendMessage()
-                }
-              />
+                <div className="output-panel">
+                  {output || "Run your code to see output here."}
+                </div>
+              </div>
 
-              <button className="chat-send-btn" onClick={handleSendMessage}>
-                Send
-              </button>
-            </div>
-          </div>
-        </div>
+              {/* CHAT */}
+              <div className="chat-panel">
+                <div className="chat-header">
+                  <h3>AI Assistant</h3>
+                </div>
+
+                <div
+                  className="chat-messages"
+                  ref={chatContainerRef}
+                >
+                  {messages.map((msg, index) => (
+                    <div
+                      key={index}
+                      className={
+                        msg.role === "ai"
+                          ? "ai-message"
+                          : "user-message"
+                      }
+                    >
+                      {msg.content}
+                    </div>
+                  ))}
+
+                  {/* anchor for scroll */}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                <div className="chat-input-area">
+                  <input
+                    type="text"
+                    placeholder="Ask anything..."
+                    value={chatInput}
+                    onChange={(e) =>
+                      setChatInput(e.target.value)
+                    }
+                    onKeyDown={(e) =>
+                      e.key === "Enter" &&
+                      handleSendMessage()
+                    }
+                  />
+
+                  <button className="chat-send-btn" onClick={handleSendMessage}>
+                    Send
+                  </button>
+                </div>
+              </div>
+           </Split>
       </Split>
     </div>
   );

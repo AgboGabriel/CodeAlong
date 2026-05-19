@@ -158,13 +158,12 @@
 
 /* CHAT PANEL */
 .chat-panel {
-  width: 450px;
-  min-width: 450px;
-  max-width: 450px;
-
+  flex: 0 0 auto;
+  min-width: 200px;   /* optional safety */
+  max-width: none;
+  width: auto;
   display: flex;
   flex-direction: column;
-
   background: #101822;
 }
 
@@ -279,4 +278,20 @@
 
 .chat-send-btn:hover {
   background: #1d4ed8;
+}
+.gutter {
+  position: relative;
+  cursor: col-resize;
+  background: rgba(43,124,238,0.15);
+}
+/* visible handle */
+.gutter::before {
+  content: "⋮⋮";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size:16px;
+  color: rgba(43,124,238,0.9);
+  pointer-events: none;
 }
