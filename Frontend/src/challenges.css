@@ -1,5 +1,9 @@
 @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap");
-
+.monaco-editor,
+.monaco-editor .margin,
+.monaco-editor-background {
+  background-color: #0f162a !important;
+}
 .challenge-layout {
   display: flex;
   height: 100vh;
@@ -144,6 +148,22 @@
 .editor-actions {
   display: flex;
   gap: 10px;
+}
+.gutter {
+  position: relative;
+  cursor: col-resize;
+  background: rgba(43,124,238,0.15);
+}
+/* visible handle */
+.gutter::before {
+  content: "⋮⋮";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size:16px;
+  color: rgba(43,124,238,0.9);
+  pointer-events: none;
 }
 
 

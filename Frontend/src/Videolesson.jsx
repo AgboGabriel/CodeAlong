@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Editor from "@monaco-editor/react";
 import Split from "react-split";
 import { useNavigate, useLocation } from "react-router-dom";
-
+import * as monaco from "monaco-editor";
 import "./Videolesson.css";
 
-// Language configuration
+// Languages
 const LANGUAGES = [
   { id: 63, name: "JavaScript", monaco: "javascript" },
   { id: 71, name: "Python", monaco: "python" },
@@ -18,7 +18,7 @@ const LANGUAGES = [
   { id: 73, name: "Rust", monaco: "rust" },
 ];
 
-// Starter templates
+// Templates
 const CODE_TEMPLATES = {
   javascript: "// Write your code here\n",
   python: "# Write Python here\n",
@@ -33,34 +33,46 @@ const CODE_TEMPLATES = {
 
 export default function Videolesson() {
   const YOUTUBE_URL = "https://www.youtube.com/embed/dQw4w9WgXcQ";
+
   const navigate = useNavigate();
   const location = useLocation();
 
-  // refs (chat system)
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
 
   const [selectedLang, setSelectedLang] = useState(LANGUAGES[0]);
-
-  const [code, setCode] = useState(
-    CODE_TEMPLATES[LANGUAGES[0].monaco]
-  );
-
+  const [code, setCode] = useState(CODE_TEMPLATES.javascript);
   const [output, setOutput] = useState("");
   const [chatInput, setChatInput] = useState("");
 
   const [messages, setMessages] = useState([
     {
       role: "ai",
-      content:
-        "Hi 👋 Ask questions about the lesson or your code.",
+      content: "Hi 👋 Ask questions about the lesson or your code.",
     },
   ]);
 
-  // language switch
+  // ✅ FIXED: Stable theme setup (NO rerenders, NO duplication issues)
+  const handleEditorBeforeMount = useCallback((monacoInstance) => {
+    monacoInstance.editor.defineTheme("custom-dark", {
+      base: "vs-dark",
+      inherit: true,
+      rules: [],
+      colors: {
+        "editor.background": "#0f172a",
+
+        // IntelliSense fix
+        "editorSuggestWidget.background": "#0f172a",
+        "editorSuggestWidget.foreground": "#e2e8f0",
+        "editorSuggestWidget.selectedBackground": "#2563eb",
+        "editorSuggestWidget.border": "#334155",
+        "editorSuggestWidget.highlightForeground": "#60a5fa",
+      },
+    });
+  }, []);
+
   const handleLanguageChange = (id) => {
     const lang = LANGUAGES.find((l) => l.id === Number(id));
-
     if (!lang) return;
 
     setSelectedLang(lang);
@@ -68,7 +80,6 @@ export default function Videolesson() {
     setOutput("");
   };
 
-  // code actions
   const handleRun = () => {
     setOutput("Execution engine not connected yet.");
   };
@@ -77,15 +88,12 @@ export default function Videolesson() {
     setOutput("Your code has been submitted for evaluation...");
   };
 
-  // chat send
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;
 
-    const userMessage = chatInput.trim();
-
     setMessages((prev) => [
       ...prev,
-      { role: "user", content: userMessage },
+      { role: "user", content: chatInput },
     ]);
 
     setChatInput("");
@@ -102,150 +110,154 @@ export default function Videolesson() {
     }, 700);
   };
 
-  // ✅ SMART AUTO SCROLL (no fighting user scroll)
+  // Smart scroll
   useEffect(() => {
     const container = chatContainerRef.current;
     const end = messagesEndRef.current;
 
     if (!container || !end) return;
 
-    const distanceFromBottom =
+    const distance =
       container.scrollHeight -
       container.scrollTop -
       container.clientHeight;
 
-    const shouldAutoScroll = distanceFromBottom < 120;
-
-    if (shouldAutoScroll) {
+    if (distance < 120) {
       end.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
 
-  return (
-    <div className="Videolesson-container">
-      <Split
-        className="Videolesson-layout"
-        sizes={[30, 70]}
-        minSize={120}
-        gutterSize={6}
-      >
-        {/* LEFT PANEL */}
-        <div className="video-panel">
+ return (
+  <div className="Videolesson-container">
+    <Split
+      className="Videolesson-layout"
+      sizes={[25, 50, 25]}
+      minSize={[250, 400, 280]}
+      gutterSize={6}
+      expandToMin={false}
+    >
 
-          <div className="video-frame">
-            <iframe
-              width="100%"
-              height="100%"
-              src={YOUTUBE_URL}
-              title="Lesson Video"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
+      {/* VIDEO PANEL */}
+      <div className="video-panel">
+        <div className="video-frame">
+          <iframe
+            width="100%"
+            height="100%"
+            src={YOUTUBE_URL}
+            title="Lesson Video"
+            frameBorder="0"
+            allowFullScreen
+          />
+        </div>
+      </div>
+
+      {/* EDITOR PANEL */}
+      <div className="editor-panel">
+
+        <div className="editor-header">
+          <select
+            value={selectedLang.id}
+            onChange={(e) =>
+              handleLanguageChange(e.target.value)
+            }
+          >
+            {LANGUAGES.map((lang) => (
+              <option key={lang.id} value={lang.id}>
+                {lang.name}
+              </option>
+            ))}
+          </select>
+
+          <div className="editor-actions">
+            <button
+              className="run-btn"
+              onClick={handleRun}
+            >
+              Run
+            </button>
+
+            <button
+              className="submit-btn"
+              onClick={handleSubmit}
+            >
+              Submit
+            </button>
           </div>
         </div>
 
-        {/* RIGHT PANEL */}
-               <Split 
-            className="workspace-panel"
+        <div className="editor-wrapper">
+          <Editor
+            height="100%"
+            theme="custom-dark"
+            beforeMount={handleEditorBeforeMount}
+            language={selectedLang.monaco}
+            value={code}
+            onChange={(v) => setCode(v || "")}
+            options={{
+              minimap: { enabled: false },
+              fontSize: 18,
+              lineHeight: 24,
+              scrollBeyondLastLine: false,
+              automaticLayout: true,
+            }}
+          />
+        </div>
 
-              sizes={[70, 30]}
-                minSize={200}
-                gutterSize={6}
-                direction="horizontal"
-                >
-              {/* EDITOR */}
-              <div className="editor-panel">
-                <div className="editor-header">
-                  <select
-                    value={selectedLang.id}
-                    onChange={(e) =>
-                      handleLanguageChange(e.target.value)
-                    }
-                  >
-                    {LANGUAGES.map((lang) => (
-                      <option key={lang.id} value={lang.id}>
-                        {lang.name}
-                      </option>
-                    ))}
-                  </select>
+        <div className="output-panel">
+          {output || "Run your code to see output here."}
+        </div>
+      </div>
 
-                  <div className="editor-actions">
-                    <button className="run-btn" onClick={handleRun}>Run</button>
-                    <button className="submit-btn" onClick={handleSubmit}>Submit</button>
-                  </div>
-                </div>
+      {/* CHAT PANEL */}
+      <div className="chat-panel">
 
-                <div className="editor-wrapper">
-                  <Editor
-                    height="100%"
-                    theme="vs-dark"
-                    language={selectedLang.monaco}
-                    value={code}
-                    onChange={(value) => setCode(value || "")}
-                    options={{
-                      minimap: { enabled: false },
-                      fontSize: 18,
-                      lineHeight: 24,
-                      scrollBeyondLastLine: false,
-                      automaticLayout: true,
-                    }}
-                  />
-                </div>
+        <div className="chat-header">
+          <h3>AI Assistant</h3>
+        </div>
 
-                <div className="output-panel">
-                  {output || "Run your code to see output here."}
-                </div>
-              </div>
+        <div
+          className="chat-messages"
+          ref={chatContainerRef}
+        >
+          {messages.map((msg, i) => (
+            <div
+              key={i}
+              className={
+                msg.role === "ai"
+                  ? "ai-message"
+                  : "user-message"
+              }
+            >
+              {msg.content}
+            </div>
+          ))}
 
-              {/* CHAT */}
-              <div className="chat-panel">
-                <div className="chat-header">
-                  <h3>AI Assistant</h3>
-                </div>
+          <div ref={messagesEndRef} />
+        </div>
 
-                <div
-                  className="chat-messages"
-                  ref={chatContainerRef}
-                >
-                  {messages.map((msg, index) => (
-                    <div
-                      key={index}
-                      className={
-                        msg.role === "ai"
-                          ? "ai-message"
-                          : "user-message"
-                      }
-                    >
-                      {msg.content}
-                    </div>
-                  ))}
+        <div className="chat-input-area">
+          <input
+            value={chatInput}
+            placeholder="Ask anything..."
+            onChange={(e) =>
+              setChatInput(e.target.value)
+            }
+            onKeyDown={(e) =>
+              e.key === "Enter" &&
+              handleSendMessage()
+            }
+          />
 
-                  {/* anchor for scroll */}
-                  <div ref={messagesEndRef} />
-                </div>
+          <button
+            className="chat-send-btn"
+            onClick={handleSendMessage}
+          >
+            Send
+          </button>
+        </div>
+      </div>
 
-                <div className="chat-input-area">
-                  <input
-                    type="text"
-                    placeholder="Ask anything..."
-                    value={chatInput}
-                    onChange={(e) =>
-                      setChatInput(e.target.value)
-                    }
-                    onKeyDown={(e) =>
-                      e.key === "Enter" &&
-                      handleSendMessage()
-                    }
-                  />
-
-                  <button className="chat-send-btn" onClick={handleSendMessage}>
-                    Send
-                  </button>
-                </div>
-              </div>
-           </Split>
-      </Split>
-    </div>
-  );
+    </Split>
+  </div>
+);
 }
