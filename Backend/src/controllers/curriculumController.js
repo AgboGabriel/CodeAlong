@@ -32,6 +32,7 @@ class CurriculumController {
       });
     }
   }
+  async 
 
   async getCurriculum(req, res) {
     try {

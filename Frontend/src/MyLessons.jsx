@@ -320,7 +320,7 @@ const modules = [
   }
 ];
 
-const visibleModules = selectedPath.modules?.length ? selectedPath.modules : modules;
+const visibleModules = Array.isArray(selectedPath?.modules) && selectedPath.modules.length ? selectedPath.modules : modules;
 
 const openModuleTopics = (module, index) => {
   if (!Array.isArray(module.topics) || module.topics.length === 0) {
