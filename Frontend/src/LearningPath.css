@@ -568,6 +568,7 @@ box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   outline: none;
   font-size: 16px;
   font-family: "Space Grotesk", sans-serif;
+  padding-left: 30px;
 }
 
 /* Buttons */
@@ -675,77 +676,6 @@ box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
-}
-.mic-btn {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  color: #555;
-  transition: 0.2s;
-  position: relative;
-}
-
-/* when active */
-.mic-btn.recording {
-  color: #e53935;
-}
-
-/* pulsing ring animation */
-.mic-btn.recording::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 35px;
-  height: 35px;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  border: 2px solid #e53935;
-  animation: pulse 1.2s infinite;
-  opacity: 0.6;
-}
-
-@keyframes pulse {
-  0% {
-    transform: translate(-50%, -50%) scale(0.8);
-    opacity: 0.7;
-  }
-  70% {
-    transform: translate(-50%, -50%) scale(1.6);
-    opacity: 0;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-.attachment-preview-global {
-  margin-top: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.attachment-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #f4f6f8;
-  padding: 6px 10px;
-  border-radius: 8px;
-  font-size: 13px;
-}
-
-.remove-file-btn {
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  font-size: 14px;
-  color: #999;
-  transition: 0.2s;
-}
-
-.remove-file-btn:hover {
-  color: #e53935;
 }
 .difficulty {
   display: inline-flex;

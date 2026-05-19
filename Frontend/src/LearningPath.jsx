@@ -1,10 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+
 import logo from "./assets/Code along_logo-03.png";
-import { FaPaperPlane } from "react-icons/fa";
-import { FaMicrophone } from "react-icons/fa";
-import { FaRobot } from "react-icons/fa";
-import "./LearningPath.css";
+
+import { FaPaperPlane, FaRobot } from "react-icons/fa";
 
 import {
   MdDashboard,
@@ -13,9 +12,9 @@ import {
   MdFolderOpen,
   MdSettings,
   MdNotifications,
-  MdSearch,
-  MdAttachFile
 } from "react-icons/md";
+
+import "./LearningPath.css";
 
 const user = {
   name: "Alex Rivera",
@@ -30,12 +29,13 @@ const NAV_ITEMS = [
   { icon: MdFolderOpen, label: "Assessments", path: "/Assessments" },
 ];
 
-
-
 function UserProfile({ small, onClick }) {
   return (
     <>
-      <div className={`avatar ${small ? "avatar-sm" : ""}`} onClick={onClick}>
+      <div
+        className={`avatar ${small ? "avatar-sm" : ""}`}
+        onClick={onClick}
+      >
         <img src={user.avatar} alt={user.name} />
       </div>
 
@@ -57,6 +57,7 @@ function Sidebar() {
         <div className="logo-icon">
           <img className="logo-img" src={logo} alt="Logo" />
         </div>
+
         <span className="logo-text">CodeAlong</span>
       </div>
 
@@ -84,32 +85,35 @@ function Sidebar() {
 
 function Header() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+
   const dropdownRef = useRef(null);
+
   const navigate = useNavigate();
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target)
+      ) {
         setDropdownOpen(false);
       }
     }
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   const handleLogout = () => {
-    navigate("/"); // Redirect to landing page
-    
+    navigate("/");
   };
-    
 
   return (
     <header className="header">
-      <div>
-        
-        
-      </div>
+      <div></div>
 
       <div className="header-right">
         <button className="notif-btn" aria-label="Notifications">
@@ -127,7 +131,10 @@ function Header() {
             <div className="user-name">{user.name}</div>
           </div>
 
-          <UserProfile small onClick={() => setDropdownOpen(!dropdownOpen)} />
+          <UserProfile
+            small
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+          />
 
           <button className="icon-btn" aria-label="Settings">
             <MdSettings size={30} />
@@ -135,7 +142,10 @@ function Header() {
 
           {dropdownOpen && (
             <div className="user-dropdown">
-              <button className="dropdown-item" onClick={handleLogout}>
+              <button
+                className="dropdown-item"
+                onClick={handleLogout}
+              >
                 Logout
               </button>
             </div>
@@ -144,23 +154,16 @@ function Header() {
       </div>
     </header>
   );
-  
 }
-function LpBody() {
 
+function LpBody() {
   const [input, setInput] = useState("");
+
   const [loading, setLoading] = useState(false);
 
   const chatContainerRef = useRef(null);
-const bottomRef = useRef(null);
 
-  const fileInputRef = useRef(null);
-  const [attachments, setAttachments] = useState([]);
-  const removeAttachment = (index) => {
-  setAttachments((prev) => prev.filter((_, i) => i !== index));
-
- 
-};
+  const bottomRef = useRef(null);
 
   const initialMessage = {
     role: "ai",
@@ -170,278 +173,267 @@ const bottomRef = useRef(null);
   };
 
   const [messages, setMessages] = useState([initialMessage]);
-  
-  const navigate = useNavigate();
-  const [activeModuleIndex, setActiveModuleIndex] = useState(null);
+
+  const [activeModuleIndex, setActiveModuleIndex] =
+    useState(null);
 
   const handleModuleClick = (module, index) => {
-  if (module.placeholder) return;
+    if (module.placeholder) return;
 
-  setActiveModuleIndex((prev) => (prev === index ? null : index));
-};
+    setActiveModuleIndex((prev) =>
+      prev === index ? null : index
+    );
+  };
 
-
-  // Clear chat
   const handleClearChat = () => {
     setMessages([initialMessage]);
+
     setInput("");
+
     setLoading(false);
-    setAttachments([]);
+
+    setActiveModuleIndex(null);
   };
 
-  // Open file picker
-  const openFilePicker = () => {
-    fileInputRef.current?.click();
-  };
-
-  // Handle file selection
-const handleFileChange = (e) => {
-  const files = Array.from(e.target.files);
-
-  if (!files.length) return;
-
-  setAttachments((prev) => [...prev, ...files]);
-};
-
-  // Mock AI generator
   const generateCurriculum = (topic) => {
-  return {
-    level: "Beginner",
+    return {
+      level: "Beginner",
 
-    description: `Your personalized learning path for "${topic}" is ready.`,
+      description: `Your personalized learning path for "${topic}" is ready.`,
 
-    modules: [
-      {
-        title: "Frontend Fundamentals",
-        week: "Week 1-2",
-        desc: "JS ES6+, CSS Grid/Flexbox, DOM manipulation.",
-        icon: "terminal",
-        color: "blue",
-        topics: [
-          "HTML Basics",
-          "CSS Flexbox & Grid",
-          "JavaScript Fundamentals",
-          "DOM Manipulation",
-        ],
-      },
+      modules: [
+        {
+          title: "Frontend Fundamentals",
+          week: "Week 1-2",
+          desc: "JS ES6+, CSS Grid/Flexbox, DOM manipulation.",
+          icon: "terminal",
+          color: "blue",
 
-      {
-        title: "React Components",
-        week: "Week 3-6",
-        desc: "Hooks, Context API, state management.",
-        icon: "layers",
-        topics: [
-          "JSX & Components",
-          "useState & useEffect",
-          "Props & State",
-          "Context API",
-        ],
-      },
+          topics: [
+            "HTML Basics",
+            "CSS Flexbox & Grid",
+            "JavaScript Fundamentals",
+            "DOM Manipulation",
+          ],
+        },
 
-      {
-        title: "API Integration",
-        week: "Week 7-9",
-        desc: "REST APIs, async data handling.",
-        icon: "api",
-        topics: [
-          "Fetch API",
-          "Axios",
-          "Async/Await",
-          "Error Handling",
-        ],
-      },
+        {
+          title: "React Components",
+          week: "Week 3-6",
+          desc: "Hooks, Context API, state management.",
+          icon: "layers",
 
-      {
-        title: "Backend Structure",
-        week: "Planned",
-        desc: "Node.js, databases, authentication systems.",
-        icon: "pending",
-        placeholder: true,
-      },
-    ],
+          topics: [
+            "JSX & Components",
+            "useState & useEffect",
+            "Props & State",
+            "Context API",
+          ],
+        },
+
+        {
+          title: "API Integration",
+          week: "Week 7-9",
+          desc: "REST APIs, async data handling.",
+          icon: "api",
+
+          topics: [
+            "Fetch API",
+            "Axios",
+            "Async/Await",
+            "Error Handling",
+          ],
+        },
+
+        {
+          title: "Backend Structure",
+          week: "Planned",
+          desc: "Node.js, databases, authentication systems.",
+          icon: "pending",
+          placeholder: true,
+        },
+      ],
+    };
   };
-};
 
-   const [isRecording, setIsRecording] = useState(false);
-
-   useEffect(() => {
-  bottomRef.current?.scrollIntoView({
-    behavior: "smooth",
-  });
-}, [messages, loading]);
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages, loading]);
 
   const handleSend = () => {
     if (!input.trim() || loading) return;
 
     const userMessage = input.trim();
 
-
-    // include attachment info (optional future AI use)
     setMessages((prev) => [
-  ...prev,
-  {
-    role: "user",
-    type: "text",
-    content: userMessage,
-    attachments: attachments.length ? attachments.map((f) => f.name) : [],
-  },
-]);
+      ...prev,
+      {
+        role: "user",
+        type: "text",
+        content: userMessage,
+      },
+    ]);
 
     setInput("");
+
     setLoading(true);
-    setAttachments([]);
 
-setTimeout(() => {
-  const curriculum = generateCurriculum(userMessage);
+    setTimeout(() => {
+      const curriculum =
+        generateCurriculum(userMessage);
 
-  setMessages((prev) => [
-    ...prev,
-    {
-      role: "ai",
-      type: "curriculum",
-      data: curriculum,
-    },
-  ]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          type: "curriculum",
+          data: curriculum,
+        },
+      ]);
 
-  setLoading(false);
-}, 1500);
-  }
-
-
+      setLoading(false);
+    }, 1500);
+  };
 
   return (
     <div className="container">
-
       {/* TOP BAR */}
       <div className="chat-top-bar">
         <h2>Build Your Learning Path</h2>
 
-        <button className="clear-btn" onClick={handleClearChat}>
+        <button
+          className="clear-btn"
+          onClick={handleClearChat}
+        >
           Clear Chat
         </button>
       </div>
 
       {/* CHAT AREA */}
-      <div className="chat-container" ref={chatContainerRef}>
-
+      <div
+        className="chat-container"
+        ref={chatContainerRef}
+      >
         {messages.map((msg, index) => (
           <div key={index}>
-
             {/* USER MESSAGE */}
             {msg.role === "user" && (
               <div className="user-message-wrapper">
                 <div className="user-message">
                   <p>{msg.content}</p>
-
-                  {/* attachment display */}
-                 {msg.attachments?.length > 0 && (
-                  <div className="attachment-preview">
-                    {msg.attachments.map((file, i) => (
-                      <div key={i}>📎 {file}</div>
-                    ))}
-                 </div>
-                 )}
                 </div>
               </div>
             )}
 
             {/* AI TEXT */}
-            {msg.role === "ai" && msg.type === "text" && (
-              <div className="ai-section">
-                <div className="ai-card">
-                  <p>{msg.content}</p>
+            {msg.role === "ai" &&
+              msg.type === "text" && (
+                <div className="ai-section">
+                  <div className="ai-card">
+                    <p>{msg.content}</p>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {/* AI CURRICULUM */}
-            {msg.role === "ai" && msg.type === "curriculum" && (
-              <div className="ai-section">
-
-                <div className="ai-card">
-
-                  <div className="ai-header">
-                    <div className="ai-icon">
-                      <span className="material-symbols-outlined">
-                       <FaRobot size={24} />
-                      </span>
-                    </div>
-                       <span
-                            className={`difficulty ${msg.data.level.toLowerCase()}`}
-                          >
-                            {msg.data.level}
-                        </span>
-                  </div>
-
-                 {loading ? (
-                    <>
-                      <div className="pulse-dot"></div>
-                      <h3>Building your curriculum...</h3>
-                    </>
-                  ) : (
-                    <>
-                      <div className="success-dot"></div>
-                      <h3>Curriculum built</h3>
-                    </>
-                  )}
-
-
-                  <p className="ai-description">
-                    {msg.data.description}
-                  </p>
-
-                  <div className="modules-grid">
-
-                   {msg.data.modules.map((m, i) => (
-                    <div key={i}>
-
-                      {/* MODULE CARD */}
-                      <div
-                        className={`module ${m.color || ""} ${
-                          m.placeholder ? "placeholder" : ""
-                        }`}
-                        onClick={() => handleModuleClick(m, i)}
-                        style={{ cursor: m.placeholder ? "not-allowed" : "pointer" }}
-                      >
-                        <div className="module-top">
-                          <span className="material-symbols-outlined">{m.icon}</span>
-                          <span className="badge">{m.week}</span>
-                        </div>
-
-                        <h4>{m.title}</h4>
-                        <p>{m.desc}</p>
+            {msg.role === "ai" &&
+              msg.type === "curriculum" && (
+                <div className="ai-section">
+                  <div className="ai-card">
+                    <div className="ai-header">
+                      <div className="ai-icon">
+                        <FaRobot size={24} />
                       </div>
 
-                      {/* DROPDOWN */}
-                  {activeModuleIndex === i && (
-                    <div className="module-dropdown">
-                      {Array.isArray(m.topics) && m.topics.length > 0 ? (
-                        m.topics.map((topic, idx) => (
-                          <div key={idx} className="topic-item">
-                            • {typeof topic === "string" ? topic : topic.title}
+                      <span
+                        className={`difficulty ${msg.data.level.toLowerCase()}`}
+                      >
+                        {msg.data.level}
+                      </span>
+                    </div>
+
+                    <div className="success-dot"></div>
+
+                    <h3>Curriculum built</h3>
+
+                    <p className="ai-description">
+                      {msg.data.description}
+                    </p>
+
+                    <div className="modules-grid">
+                      {msg.data.modules.map((m, i) => (
+                        <div key={i}>
+                          <div
+                            className={`module ${
+                              m.color || ""
+                            } ${
+                              m.placeholder
+                                ? "placeholder"
+                                : ""
+                            }`}
+                            onClick={() =>
+                              handleModuleClick(m, i)
+                            }
+                            style={{
+                              cursor: m.placeholder
+                                ? "not-allowed"
+                                : "pointer",
+                            }}
+                          >
+                            <div className="module-top">
+                              <span className="material-symbols-outlined">
+                                {m.icon}
+                              </span>
+
+                              <span className="badge">
+                                {m.week}
+                              </span>
+                            </div>
+
+                            <h4>{m.title}</h4>
+
+                            <p>{m.desc}</p>
                           </div>
-                        ))
-                      ) : (
-                        <div className="topic-item">No topics available</div>
-                      )}
+
+                          {activeModuleIndex === i && (
+                            <div className="module-dropdown">
+                              {Array.isArray(m.topics) &&
+                              m.topics.length > 0 ? (
+                                m.topics.map(
+                                  (topic, idx) => (
+                                    <div
+                                      key={idx}
+                                      className="topic-item"
+                                    >
+                                      •{" "}
+                                      {typeof topic ===
+                                      "string"
+                                        ? topic
+                                        : topic.title}
+                                    </div>
+                                  )
+                                )
+                              ) : (
+                                <div className="topic-item">
+                                  No topics available
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  )}
 
+                    <div className="actions">
+                      <button className="primary-btn">
+                        Confirm & Start
+                      </button>
                     </div>
-                  ))}
-
                   </div>
-
-                  <div className="actions">
-                    <button className="primary-btn">
-                      Confirm & Start
-                    </button>
-                  </div>
-
                 </div>
-              </div>
-            )}
-
+              )}
           </div>
         ))}
 
@@ -451,86 +443,49 @@ setTimeout(() => {
             <div className="ai-card">
               <div className="status-row">
                 <div className="pulse-dot"></div>
+
                 <h3>Building your curriculum...</h3>
               </div>
+
               <p className="ai-description">
-                Structuring personalized learning path...
+                Structuring personalized learning
+                path...
               </p>
             </div>
           </div>
         )}
 
         <div ref={bottomRef}></div>
-
       </div>
 
       {/* INPUT */}
       <div className="chat-input">
-
-        {/* ATTACHMENT BUTTON */}
-        <button className="icon-btn" onClick={openFilePicker}>
-          <MdAttachFile size={24} />
-        </button>
-
         <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          multiple
-          style={{ display: "none" }}
-        />
-
-        <input
-          className="input "
+          className="input"
           type="text"
           placeholder="What do you want to learn..."
           value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          onChange={(e) =>
+            setInput(e.target.value)
+          }
+          onKeyDown={(e) =>
+            e.key === "Enter" && handleSend()
+          }
         />
+
         <div className="input-actions">
-
-        <button
-          className={`mic-btn icon-btn ${isRecording ? "recording" : ""}`}
-          onClick={() => setIsRecording((prev) => !prev)}
-          aria-label="Record voice"
-        >
-          <FaMicrophone size={24} />
-        </button>
-
-          
-          <button className="send-btn" onClick={handleSend} aria-label="Send message">
+          <button
+            className="send-btn"
+            onClick={handleSend}
+            aria-label="Send message"
+          >
             <FaPaperPlane size={18} />
           </button>
-
         </div>
-
       </div>
-
-      {/* optional file preview */}
-        {attachments.length > 0 && (
-      <div className="attachment-preview-global">
-        {attachments.map((file, index) => (
-          <div key={index} className="attachment-item">
-            <span>📎 {file.name}</span>
-
-            <button
-              className="remove-file-btn"
-              onClick={() => removeAttachment(index)}
-            >
-              ✕
-            </button>
-          </div>
-        ))}
-      </div>
-      )}
-
     </div>
   );
 }
-
-
-  
 
 export default function LearningPath() {
   return (
@@ -540,11 +495,9 @@ export default function LearningPath() {
       <main className="main">
         <Header />
 
-
         <div className="content">
           <LpBody />
         </div>
-
       </main>
     </div>
   );
