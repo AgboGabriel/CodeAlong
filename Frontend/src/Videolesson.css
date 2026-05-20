@@ -94,6 +94,9 @@
   color: white;
 }
 .run-btn:hover { background: #1a5fc9; }
+.run-btn:active {
+  transform: scale(0.98);
+}
 
 .submit-btn {
   background: #1bbe49;
@@ -107,8 +110,9 @@
   color: white;
 }
 .submit-btn:hover { background: #0e931e; }
-
-
+.submit-btn:active {
+  transform: scale(0.98);
+}
 .editor-header select {
   background: #1b254b;
   color: #cbd5e1;
@@ -283,6 +287,9 @@
 
 .chat-send-btn:hover {
   background: #1d4ed8;
+}
+.chat-send-btn:active {
+  transform: scale(0.98);
 }
 .gutter {
   position: relative;

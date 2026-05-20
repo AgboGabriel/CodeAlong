@@ -206,6 +206,10 @@ const [view, setView] = useState("modules");
 const [selectedModule, setSelectedModule] = useState(null);
 const [expandedTopics, setExpandedTopics] = useState(new Set());
 
+const [showQuizPopup, setShowQuizPopup] = useState(false);
+const [selectedTopic, setSelectedTopic] = useState(null);
+
+
 const toggleTopic = (index) => {
   setExpandedTopics((prev) => {
     const updated = new Set(prev);
@@ -303,7 +307,33 @@ const modules = [
     ]
   }
 ];
+
+// Open popup when quiz is clicked
+const handleQuizClick = (topic) => {
+  setSelectedTopic(topic);
+  setShowQuizPopup(true);
+};
+
+
+// Handle YES
+const handleHasKnowledge = () => {
+  setShowQuizPopup(false);
+
+  // Navigate to quiz page later
+  window.location.href = "/QuizPage";
+};
+
+
+// Handle NO
+const handleNoKnowledge = () => {
+  setShowQuizPopup(false);
+
+  // Send user to first video
+  window.location.href = "/Videolesson";
+};
+
   if (!selectedPath) {
+
     return (
       <div className="app-shell">
         <Sidebar />
@@ -430,7 +460,7 @@ const modules = [
                   />
                 </div>
 
-                <span>
+                <span className="overall-progress">
                   {selectedPath.progress}% Overall Progress
                 </span>
               </div>
@@ -617,11 +647,15 @@ const modules = [
                         {expandedTopics.has(index) && (
                           <div className="video-list">
 
+                            
                             {/* Quiz Before Videos */}
-                            <div className="quiz-item">
-                              <MdQuiz className="quiz-icon" />
-                              <span>{topic.title} Quiz</span>
-                            </div>
+                              <div
+                                className="quiz-item"
+                                onClick={() => handleQuizClick(topic)}
+                              >
+                                <MdQuiz className="quiz-icon" />
+                                <span>{topic.title} Quiz</span>
+                              </div>
 
                            {/* Videos */}
                               {topic.videos.map((video, i) => (
@@ -653,6 +687,38 @@ const modules = [
 
             </div>
           )}
+
+          {/* Quiz Popup */}
+              {showQuizPopup && (
+                <div className="quiz-popup-overlay">
+                  <div className="quiz-popup">
+
+                    <h2>Prior Knowledge Check</h2>
+
+                    <p>
+                      Do you already have prior knowledge about{" "}
+                      <strong>{selectedTopic?.title}</strong>?
+                    </p>
+
+                    <div className="popup-buttons">
+                      <button
+                        className="yes-btn"
+                        onClick={handleHasKnowledge}
+                      >
+                        Yes
+                      </button>
+
+                      <button
+                        className="no-btn"
+                        onClick={handleNoKnowledge}
+                      >
+                        No
+                      </button>
+                    </div>
+
+                  </div>
+                </div>
+              )}
 
         </div>
       </div>
