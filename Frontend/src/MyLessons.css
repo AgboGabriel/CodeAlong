@@ -368,11 +368,6 @@ box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   background: var(--text-400);
 }
 /* My Lessons */
-
-.lessons-header {
-  margin-bottom: 40px;
-}
-
 .lesson-badge {
   color: #2563eb;
   font-size: 18px;
@@ -425,7 +420,7 @@ box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 
 .curriculum-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 18px 35px rgba(0,0,0,0.08);
+  box-shadow: 0 18px 35px rgba(0,0,0,0.05);
 }
 
 .curriculum-content {
@@ -468,6 +463,9 @@ box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   font-size: 15px;
   margin-bottom: 22px;
   font-weight: bold;
+}
+.duration{
+  color:#6b7280 ;
 }
 
 .curriculum-btn {
@@ -512,6 +510,10 @@ box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 
 .learning-header {
   margin-bottom: 40px;
+  border:#1d4ed8 2px solid ;
+  border-radius: 18px;
+  padding: 30px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 .back-btn {
   align-self: flex-start;
@@ -535,7 +537,10 @@ box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   margin-bottom: 20px;
   color: #111827;
 }
-
+.overall-progress{
+color: #1a55d4;
+font-weight: bold;
+}
 .progress-row {
   display: flex;
   align-items: center;
@@ -552,7 +557,7 @@ box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 .progress-bar {
   width: 140px;
   height: 10px;
-  background: #e5e7eb;
+  background: #c7c9ce;
   border-radius: 999px;
   overflow: hidden;
 }
@@ -563,10 +568,11 @@ box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   background: #2563eb;
 }
 
-.progress-wrap span,
+.progress-wrap ,
 .time-left {
   font-size: 14px;
   color: #6b7280;
+  font-weight: bold;
 }
 
 /* Modules */
@@ -654,9 +660,6 @@ box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 .active-status {
   color: #2563eb;
 }
-
-
-
 .active-module {
   border: 2px solid #dbeafe;
 }
@@ -666,7 +669,6 @@ box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   gap: 14px;
   flex-wrap: wrap;
 }
-
 .primary-btn {
   border: none;
   background: #2563eb;
@@ -675,6 +677,10 @@ box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   border-radius: 10px;
   font-weight: 700;
   cursor: pointer;
+  font-family: "Space Grotesk", sans-serif;
+}
+.back-btn{
+   font-family: "Space Grotesk", sans-serif;
 }
 
 /* Locked Module */
@@ -903,20 +909,24 @@ box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   flex-direction: column;
   gap: 8px;
 }
+.video-link{
+  text-decoration: none;
+}
 .video-item {
   background: #f7f9fc;
   padding: 10px;
   border-radius: 8px;
+  text-decoration: none;
+  color: #2563eb;
 }
 .video-item:hover {
   cursor: pointer;
   background: #f1f1f1;
-
+  text-decoration: none;
 }
 .video-icon {
   vertical-align: middle;
-  height: 30px;
-  width: 30px;
+  font-size: 20px;
   color: #2563eb;
   margin-right: 15px;
 }
@@ -926,5 +936,111 @@ box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   align-items: center;
   color: #2563eb; /* match your theme */
 }
+.quiz-item,
+.challenge-item{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-top: 8px;
+  cursor: pointer;
+  transition: 0.3s ease;
+   color: black;
+}
+.quiz-item {
+  background: #eef6ff;
+  font-weight: bold;
+}
 
+.challenge-item {
+  background: #f5f3ff;
+  font-weight: bold;
+ 
+}
+.video-item:hover,
+.quiz-item:hover,
+.challenge-item:hover {
+  transform: translateX(4px);
+}
 
+.quiz-icon {
+  color: #42e411;
+  font-size: 30px;
+}
+
+.challenge-icon {
+  color: #7c3aed;
+  font-size: 30px;
+}
+.challenge-link:hover {
+  text-decoration: none;
+}
+/* Overlay */
+.quiz-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  z-index: 999;
+}
+
+/* Popup */
+.quiz-popup {
+  background: #fff;
+  width: 90%;
+  max-width: 400px;
+
+  padding: 30px;
+  border-radius: 16px;
+
+  text-align: center;
+}
+
+.quiz-popup h2 {
+  margin-bottom: 15px;
+}
+
+.quiz-popup p {
+  margin-bottom: 25px;
+  line-height: 1.5;
+}
+
+/* Buttons */
+.popup-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.yes-btn,
+.no-btn {
+  border: none;
+  padding: 12px 24px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.yes-btn {
+  background: #137fec;
+  color: white;
+}
+
+.no-btn {
+  background: #e5e7eb;
+}
+
+.yes-btn:active,
+.no-btn:active {
+ transform: scale(0.98);
+}

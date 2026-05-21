@@ -238,7 +238,7 @@ function ProgressSection() {
   return (
     <section>
       <div className="section-header">
-        <h3 className="section-title">My Progress</h3>
+        <h3 className="section-title">Statistics</h3>
         <button className="link-btn">Full Analytics</button>
       </div>
 

@@ -17,6 +17,8 @@ import {
   MdKeyboardArrowDown,
   MdKeyboardArrowUp,
   MdFolder,
+  MdQuiz,
+  MdCode,
 } from "react-icons/md";
 
 const user = {
@@ -222,6 +224,10 @@ const [view, setView] = useState("modules");
 const [selectedModule, setSelectedModule] = useState(null);
 const [expandedTopics, setExpandedTopics] = useState(new Set());
 
+const [showQuizPopup, setShowQuizPopup] = useState(false);
+const [selectedTopic, setSelectedTopic] = useState(null);
+
+
 const toggleTopic = (index) => {
   setExpandedTopics((prev) => {
     const updated = new Set(prev);
@@ -320,6 +326,20 @@ const modules = [
   }
 ];
 
+const handleQuizClick = (topic) => {
+  setSelectedTopic(topic);
+  setShowQuizPopup(true);
+};
+
+const handleHasKnowledge = () => {
+  setShowQuizPopup(false);
+  window.location.href = "/QuizPage";
+};
+
+const handleNoKnowledge = () => {
+  setShowQuizPopup(false);
+  window.location.href = "/Videolesson";
+};
 const visibleModules = Array.isArray(selectedPath?.modules) && selectedPath.modules.length ? selectedPath.modules : modules;
 
 const openModuleTopics = (module, index) => {
@@ -356,6 +376,7 @@ const getModuleState = (module, index) => {
   };
 };
   if (!selectedPath) {
+
     return (
       <div className="app-shell">
         <Sidebar />
@@ -425,7 +446,7 @@ const getModuleState = (module, index) => {
 
                             <span>•</span>
 
-                            <span>⏱ {path.hours} Hours</span>
+                            <span className="duration">⏱ {path.hours} Hours</span>
 
                             <span>•</span>
 
@@ -482,7 +503,7 @@ const getModuleState = (module, index) => {
                   />
                 </div>
 
-                <span>
+                <span className="overall-progress">
                   {selectedPath.progress}% Overall Progress
                 </span>
               </div>
@@ -572,14 +593,35 @@ const getModuleState = (module, index) => {
                         </span>
                     </div>
 
-                    {/* Dropdown Videos */}
                     {expandedTopics.has(index) && (
                       <div className="video-list">
+                        <div
+                          className="quiz-item"
+                          onClick={() => handleQuizClick(topic)}
+                        >
+                          <MdQuiz className="quiz-icon" />
+                          <span>{topic.title} Quiz</span>
+                        </div>
+
                         {(topic.videos || []).map((video, i) => (
-                          <div key={i} className="video-item">
-                            <MdPlayCircleFilled className="video-icon" /> {video}
-                          </div>
+                          <Link
+                            key={i}
+                            to="/Videolesson"
+                            className="video-link"
+                          >
+                            <div className="video-item">
+                              <MdPlayCircleFilled className="video-icon" />
+                              <span>{video}</span>
+                            </div>
+                          </Link>
                         ))}
+
+                        <Link to="/challenges" className="challenge-link">
+                          <div className="challenge-item">
+                            <MdCode className="challenge-icon" />
+                            <span>{topic.title} Coding Challenge</span>
+                          </div>
+                        </Link>
                       </div>
                     )}
 
@@ -589,6 +631,38 @@ const getModuleState = (module, index) => {
 
             </div>
           )}
+
+          {/* Quiz Popup */}
+              {showQuizPopup && (
+                <div className="quiz-popup-overlay">
+                  <div className="quiz-popup">
+
+                    <h2>Prior Knowledge Check</h2>
+
+                    <p>
+                      Do you already have prior knowledge about{" "}
+                      <strong>{selectedTopic?.title}</strong>?
+                    </p>
+
+                    <div className="popup-buttons">
+                      <button
+                        className="yes-btn"
+                        onClick={handleHasKnowledge}
+                      >
+                        Yes
+                      </button>
+
+                      <button
+                        className="no-btn"
+                        onClick={handleNoKnowledge}
+                      >
+                        No
+                      </button>
+                    </div>
+
+                  </div>
+                </div>
+              )}
 
         </div>
       </div>

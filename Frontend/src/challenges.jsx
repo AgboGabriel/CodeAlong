@@ -95,7 +95,9 @@ export default function Challenges() {
       >
         {/* LEFT: Question Panel */}
         <div className="question-panel">
-          <h3>Question</h3>
+          <button className="back-btn" onClick={() => window.history.back()}>
+            ← Back
+          </button>
           <div className="question-placeholder">
             Problem description will appear here.
           </div>
