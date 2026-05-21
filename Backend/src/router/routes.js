@@ -9,7 +9,7 @@ import userModel from '../models/userModel.js';
 import questionnaireController from '../controllers/questionnaire.controller.js';
 import curriculumController from '../controllers/curriculumController.js';
 import youtubeController from '../controllers/youtubeController.js';
-import bktController from "../controllers/bkt.controller.js";
+import bktController from "../controllers/bktController.js";
 
 
 const router = express.Router();
