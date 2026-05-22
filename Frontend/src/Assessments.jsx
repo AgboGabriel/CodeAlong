@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import logo from "./assets/Code along_logo-03.png";
 import "./Assessments.css";
@@ -11,6 +11,7 @@ import {
   MdSettings,
   MdNotifications,
   MdSearch,
+  MdLogout
 } from "react-icons/md";
 
 const user = {
@@ -46,9 +47,17 @@ function UserProfile({ small, onClick }) {
 
 function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    // clear auth if you have it
+    localStorage.removeItem("token"); // optional
+    navigate("/");
+  };
 
   return (
     <aside className="sidebar">
+
       <div className="sidebar-logo">
         <div className="logo-icon">
           <img className="logo-img" src={logo} alt="Logo" />
@@ -74,29 +83,21 @@ function Sidebar() {
           );
         })}
       </nav>
+
+      {/* ✅ LOGOUT AT BASE */}
+      <div className="sidebar-footer">
+        <button className="logout-btn" onClick={handleLogout}>
+          <MdLogout size={30} />
+          <span>Logout</span>
+        </button>
+      </div>
+
     </aside>
   );
 }
 
 function Header() {
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
-  const navigate = useNavigate();
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setDropdownOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleLogout = () => {
-    navigate("/"); // Redirect to landing page
-  };
+ 
 
   return (
     <header className="header">
@@ -117,28 +118,24 @@ function Header() {
 
         <div className="divider-v" />
 
-        <div className="header-user" ref={dropdownRef}>
-          <div
-            className="header-user-text"
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-          >
-            <div className="user-name">{user.name}</div>
-          </div>
+                <div className="header-user">
 
-          <UserProfile small onClick={() => setDropdownOpen(!dropdownOpen)} />
-
-          <button className="icon-btn" aria-label="Settings">
-            <MdSettings size={30} />
-          </button>
-
-          {dropdownOpen && (
-            <div className="user-dropdown">
-              <button className="dropdown-item" onClick={handleLogout}>
-                Logout
-              </button>
+            <div className="header-user-text">
+              <div className="user-name">
+                {user.name}
+              </div>
             </div>
-          )}
-        </div>
+
+            <UserProfile small />
+
+            <button
+              className="icon-btn"
+              aria-label="Settings"
+            >
+              <MdSettings size={30} />
+            </button>
+
+          </div>
       </div>
     </header>
   );
