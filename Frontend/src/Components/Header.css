@@ -1,0 +1,202 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+
+:root {
+  --primary: #137fec;
+  --primary-light: rgba(19, 127, 236, 0.12);
+  --surface: #ffffff;
+  --surface-2: #eceff3;
+  --border: #e2e8f2;
+  --text-900: #0f172a;
+  --text-600: #475569;
+  --sidebar-width: 256px;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+}
+
+
+.header {
+  height: 64px;
+  background: white;
+  border-bottom: 1px solid #e2e8f2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.notification-wrapper {
+  position: relative;
+}
+
+.notif-btn {
+  position: relative;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+.notif-btn:hover {
+  color: #137fec;
+  background: rgba(19, 127, 236, 0.12);
+}
+
+.notif-btn:active {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.notif-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 7px;
+  height: 7px;
+  background: #ef4444;
+  border-radius: 9999px;
+  border: 2px solid white;
+}
+
+.notification-dropdown {
+  position: absolute;
+  top: 60px;
+  right: 0;
+  width: 320px;
+  background: white;
+  border-radius: 16px;
+  padding: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+  z-index: 1000;
+  border: 1px solid #e5e7eb;
+}
+
+.notification-header {
+  font-size: 18px;
+  font-weight: 700;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #eceff3;
+  margin-bottom: 10px;
+}
+
+.notification-item {
+  padding: 12px;
+  border-radius: 12px;
+  transition: background 0.2s ease;
+  cursor: pointer;
+}
+
+.notification-item:hover {
+  background: var(--surface-2);
+}
+.notification-item h4 {
+  font-size: 16px;
+  margin-bottom: 4px;
+  color: #137fec;
+}
+
+.notification-item p {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 6px;
+}
+
+.notification-item span {
+  font-size: 12px;
+  color: black;
+}
+
+.empty-notifications {
+  padding: 20px;
+  text-align: center;
+  color: #888;
+}
+
+.divider-v {
+  width: 1px;
+  height: 28px;
+  background: #e2e8f2;
+}
+
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-user-text {
+  text-align: right;
+}
+
+.user-name {
+  font-size: 18px;
+  font-weight: bold;
+  color: #0f172a;
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.header-user-text .user-name {
+  font-size: 13px;
+}
+
+.avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 9999px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.avatar-sm {
+  width: 36px;
+  height: 36px;
+}
+
+.avatar-sm:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  transition: box-shadow 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 8px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.icon-btn:hover {
+  color: #137fec;
+  background: rgba(19, 127, 236, 0.12);
+}
+
+.icon-btn:active {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}

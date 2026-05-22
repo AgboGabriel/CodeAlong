@@ -1,36 +1,18 @@
 import { useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
-import logo from "./assets/Code along_logo-03.png";
+import { useNavigate } from "react-router-dom";
 import "./Dashboard.css";
-
+import Sidebar from "./components/Sidebar";
+import Header from "./components/Header";
+import UserProfile, { user } from "./components/UserProfile";
 
 import {
-  MdDashboard,
-  MdMenuBook,
-  MdAccountTree,
-  MdFolderOpen,
   MdLocalFireDepartment,
   MdVerifiedUser,
-  MdSettings,
-  MdNotifications,
   MdPlayCircle,
   MdCode,
-  MdLogout 
 } from "react-icons/md";
 
-const user = {
-  name: "Alex Rivera",
-  avatar:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuCHkmMqD5gKaMYLSydOBQc_Zi7wsLqmErMbtpFZ_5-AzR8-GBVVggx2vz3YzNgs5Hoy-od2NIrLSCZxHox3QfDozggMjyXwAkivdXCAnN8X0SPM_4icaBffmPVNgH8o7hrt7pZetO5A34GxGG7-Wo5ffA5JXpfZ9BYdN4-hnrlIM9xG9MtFYNRE-V08HC6Rw_Eeg7AFzzK5lLrWd9H9tOt37FmZS5CIAKG6brXAECIkUSxxGH6SXwrAFI7L8CN5DIz9nBnx5RSp6YE",
-};
-
-const NAV_ITEMS = [
-  { icon: MdDashboard, label: "Dashboard", path: "/dashboard" },
-  { icon: MdMenuBook, label: "My Lessons", path: "/MyLessons" },
-  { icon: MdAccountTree, label: "Learning Path", path: "/LearningPath" },
-  { icon: MdFolderOpen, label: "Assessments", path: "/Assessments" },
-];
+/* ---------------- STATS ---------------- */
 
 const STATS = [
   {
@@ -51,118 +33,69 @@ const STATS = [
   },
 ];
 
-
-
-
-
-function UserProfile({ small, onClick }) {
-  return (
-    <>
-      <div className={`avatar ${small ? "avatar-sm" : ""}`} onClick={onClick}>
-        <img src={user.avatar} alt={user.name} />
-      </div>
-
-      {!small && (
-        <div className="user-info">
-          <div className="user-name">{user.name}</div>
-        </div>
-      )}
-    </>
-  );
-}
-
-function Sidebar() {
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    // clear auth if you have it
-    localStorage.removeItem("token"); // optional
-    navigate("/");
-  };
+/* ---------------- COMPONENTS ---------------- */
+function RecommendedLessons() {
+  const videos = [
+    {
+      title: "HTML Crash Course for Beginners",
+      channel: "Traversy Media",
+      videoId: "UB1O30fR-EE",
+    },
+    {
+      title: "JavaScript Full Course (2025)",
+      channel: "freeCodeCamp",
+      videoId: "PkZNo7MFNFg",
+    },
+    {
+      title: "React JS Basics Explained",
+      channel: "Programming with Mosh",
+      videoId: "w7ejDZ8SWv8",
+    },
+  ];
 
   return (
-    <aside className="sidebar">
+    <div className="lesson-hero recommended-wrapper">
 
-      <div className="sidebar-logo">
-        <div className="logo-icon">
-          <img className="logo-img" src={logo} alt="Logo" />
-        </div>
-        <span className="logo-text">CodeAlong</span>
+      <div className="lesson-hero-content">
+        <span className="badge badge-primary">
+          Recommended Videos
+        </span>
+
+        <h3>Start Learning with Recommended Videos</h3>
+
+        <p>
+          Curated beginner-friendly YouTube lessons to help you build real coding skills step by step.
+        </p>
       </div>
 
-      <nav className="sidebar-nav">
-        {NAV_ITEMS.map(({ icon, label, path }) => {
-          const Icon = icon;
+      <div className="video-grid">
+        {videos.map((video) => (
+          <a
+            key={video.videoId}
+            className="video-card"
+            href={`https://www.youtube.com/watch?v=${video.videoId}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <div className="video-thumbnail">
+              <img
+                src={`https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`}
+                alt={video.title}
+              />
+            </div>
 
-          return (
-            <Link
-              key={label}
-              to={path}
-              className={`nav-item ${
-                location.pathname === path ? "active" : ""
-              }`}
-            >
-              <Icon size={30} />
-              {label}
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* ✅ LOGOUT AT BASE */}
-      <div className="sidebar-footer">
-        <button className="logout-btn" onClick={handleLogout}>
-          <MdLogout size={30} />
-          <span>Logout</span>
-        </button>
+            <div className="video-info">
+              <h4>{video.title}</h4>
+              <p>{video.channel}</p>
+            </div>
+          </a>
+        ))}
       </div>
 
-    </aside>
-  );
-}
-
-function Header() {
- 
-  return (
-    <header className="header">
-      <div className="search-wrap">
-      </div>
-
-      <div className="header-right">
-        <button className="notif-btn" aria-label="Notifications">
-          <MdNotifications size={30} />
-          <span className="notif-dot" />
-        </button>
-
-        <div className="divider-v" />
-
-        <div className="header-user">
-
-  <div className="header-user-text">
-    <div className="user-name">
-      {user.name}
     </div>
-  </div>
-
-  <UserProfile small />
-
-  <button
-    className="icon-btn"
-    aria-label="Settings"
-  >
-    <MdSettings size={30} />
-  </button>
-
-</div>
-      </div>
-    </header>
   );
 }
-
 function LessonHero() {
-  const navigate = useNavigate();
-
   return (
     <div className="lesson-hero">
       <div className="lesson-hero-content">
@@ -171,23 +104,16 @@ function LessonHero() {
         <h3>Programming Fundamentals</h3>
 
         <p>
-          Master the core concepts of variables, loops, and conditional logic
-          to build a strong foundation.
+          Master variables, loops, and conditionals to build a strong foundation.
         </p>
 
         <div className="lesson-hero-actions">
-          <button
-            className="btn btn-primary"
-            onClick={() => navigate("")}
-          >
+          <button className="btn btn-primary">
             <MdPlayCircle size={20} />
             Resume Learning
           </button>
 
-          <button
-            className="btn btn-secondary"
-            onClick={() => navigate("")}
-          >
+          <button className="btn btn-secondary">
             View Outline
           </button>
         </div>
@@ -200,9 +126,7 @@ function LessonHero() {
   );
 }
 
-function StatCard({ icon, iconClass, label, value, badgeText, badgeClass }) {
-  const Icon = icon;
-
+function StatCard({ icon: Icon, iconClass, label, value, badgeText, badgeClass }) {
   return (
     <div className="stat-card">
       <div className="stat-card-top">
@@ -243,7 +167,7 @@ function CtaBanner() {
     <div className="cta-banner">
       <div>
         <h3>Tailor Your Path</h3>
-        <p>Interact with our AI to create your own learning path.</p>
+        <p>Interact with AI to create your own learning path.</p>
       </div>
 
       <button
@@ -263,7 +187,7 @@ function AssessmentsBanner() {
     <div className="cta-banner">
       <div>
         <h3>Challenge of the day</h3>
-        <p>Get random challenges daily to test your knowledge on the programming languages you already know.</p>
+        <p>Test your skills with daily programming challenges.</p>
       </div>
 
       <button
@@ -276,89 +200,28 @@ function AssessmentsBanner() {
   );
 }
 
+/* ---------------- DASHBOARD ---------------- */
 
-function RecommendedLessons() {
-  const videos = [
-    {
-      title: "HTML Crash Course for Beginners",
-      channel: "Traversy Media",
-      videoId: "UB1O30fR-EE",
-    },
-    {
-      title: "JavaScript Full Course (2025)",
-      channel: "freeCodeCamp",
-      videoId: "PkZNo7MFNFg",
-    },
-    {
-      title: "React JS Basics Explained",
-      channel: "Programming with Mosh",
-      videoId: "w7ejDZ8SWv8",
-    },
-  ];
-
-  return (
-    <div className="lesson-hero recommended-wrapper">
-      
-      <div className="lesson-hero-content">
-        <span className="badge badge-primary">
-          Recommended Videos
-        </span>
-
-        <h3>Start Learning with Recommended videos</h3>
-
-        <p>
-          Curated beginner-friendly YouTube lessons to help you build real coding skills step by step.
-        </p>
-      </div>
-
-      {/* VIDEO GRID */}
-      <div className="video-grid">
-        {videos.map((video, index) => (
-          <a
-            key={index}
-            className="video-card"
-            href={`https://www.youtube.com/watch?v=${video.videoId}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            <div className="video-thumbnail">
-              <img
-                src={`https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`}
-                alt={video.title}
-              />
-            </div>
-
-            <div className="video-info">
-              <h4>{video.title}</h4>
-              <p>{video.channel}</p>
-            </div>
-          </a>
-        ))}
-      </div>
-
-    </div>
-  );
-}
-
-export default function Dashboard() {
-  const [hasStartedLearning, setHasStartedLearning] = useState(false);
-   const greeting = user.isNew ? "Welcome" : "Welcome back";
-
-   const getProgressMessage = (user) => {
+function getProgressMessage(user) {
   if (user?.isNew) {
     return "Start your learning journey today. Let’s build momentum.";
   }
 
-  if (!user?.progress || user.progress === 0) {
-    return "You’ve started your learning path. Let’s keep going.";
+  if (!user?.progress) {
+    return "You’ve started your learning path. Keep going.";
   }
 
   if (user.progress < 100) {
-    return `You've completed ${user.progress}% of your current path. Keep the momentum going.`;
+    return `You've completed ${user.progress}% of your path. Keep going.`;
   }
 
   return "You’ve completed your learning path. Great work!";
-};
+}
+
+export default function Dashboard() {
+  const [hasStartedLearning] = useState(false);
+
+  const greeting = user?.isNew ? "Welcome" : "Welcome back";
 
   return (
     <div className="app-shell">
@@ -369,22 +232,26 @@ export default function Dashboard() {
 
         <div className="content">
           <div className="content-inner">
-          
 
             <div className="welcome">
               <h2>
                 {greeting}, {user.name}! 👋
               </h2>
+
               <p>{getProgressMessage(user)}</p>
             </div>
 
             <div className="section-stack">
-             {hasStartedLearning ? <LessonHero /> : <RecommendedLessons />}
+              {hasStartedLearning
+                ? <LessonHero />
+                : <RecommendedLessons />
+              }
+
               <ProgressSection />
               <CtaBanner />
               <AssessmentsBanner />
-              
             </div>
+
           </div>
         </div>
       </main>

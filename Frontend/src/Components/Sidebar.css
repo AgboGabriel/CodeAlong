@@ -1,0 +1,114 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+
+:root {
+  --primary: #137fec;
+  --primary-light: rgba(19, 127, 236, 0.12);
+  --surface: #ffffff;
+  --surface-2: #eceff3;
+  --border: #e2e8f2;
+  --text-900: #0f172a;
+  --text-600: #475569;
+  --sidebar-width: 256px;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+}
+.sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+.sidebar-logo {
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.logo-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.logo-img {
+  width: 70px;
+  height: 70px;
+}
+
+.logo-text {
+  font-size: 1.25rem;
+  font-weight: bold;
+  letter-spacing: -0.025em;
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  overflow-y: auto;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  color: var(--text-600);
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  text-decoration: none;
+  width: 100%;
+  border-left: 3px solid transparent;
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.nav-item:hover {
+  background: var(--surface-2);
+  color: var(--text-900);
+  text-decoration: none;
+}
+
+.nav-item.active {
+  background: var(--primary-light);
+  color: var(--primary);
+  border-left-color: var(--primary);
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  border-top: 2px solid rgba(137, 135, 135, 0.1);
+}
+
+.logout-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 20px;
+  transition: 0.2s;
+  font-family: "Space Grotesk", sans-serif;
+  color: #137fec;
+}
+
+.logout-btn:hover {
+  background: var(--surface-2);
+}
