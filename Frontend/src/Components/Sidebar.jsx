@@ -54,7 +54,7 @@ export default function Sidebar() {
                   : ""
               }`}
             >
-              <Icon size={30} />
+              <Icon  className="nav-icon" size={30} />
               {label}
             </Link>
           );
@@ -68,7 +68,7 @@ export default function Sidebar() {
           className="logout-btn"
           onClick={handleLogout}
         >
-          <MdLogout size={30} />
+          <MdLogout className="logout-icon" size={30} />
           <span>Logout</span>
         </button>
 

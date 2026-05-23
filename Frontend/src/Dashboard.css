@@ -2,6 +2,7 @@
 
 :root {
   --primary: #137fec;
+  --primary-hover: #1a55d4;
   --primary-light: rgba(19, 127, 236, 0.12);
   --bg: #f4f6fb;
   --surface: #ffffff;
@@ -78,7 +79,7 @@ body {
   font-size: 28px;
   font-weight: 800;
   letter-spacing: -0.02em;
-  color: var(--text-900);
+  color: #137fec;
   margin-bottom: 6px;
 }
 
@@ -151,7 +152,7 @@ body {
 
 .badge-primary {
   background: rgba(19, 127, 236, 0.2);
-  color: #60a5fa;
+  color: #137fec;
   border: 1px solid rgba(19, 127, 236, 0.3);
 }
 
@@ -200,7 +201,7 @@ body {
 }
 
 .btn-primary:hover {
-  background: #0f6fd4;
+  background: #137fec;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(19, 127, 236, 0.35);
 }

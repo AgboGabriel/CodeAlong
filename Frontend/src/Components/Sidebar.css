@@ -1,7 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
 
 :root {
-  --primary: #137fec;
+    --primary: #137fec;
+  --primary-hover: #1a55d4;
   --primary-light: rgba(19, 127, 236, 0.12);
   --surface: #ffffff;
   --surface-2: #eceff3;
@@ -27,6 +28,8 @@
   display: flex;
   align-items: center;
   gap: 20px;
+  border-bottom: solid 2px rgba(137, 135, 135, 0.1);
+  
 }
 .logo-icon {
   width: 36px;
@@ -36,6 +39,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+ 
 }
 
 .logo-img {
@@ -55,10 +59,12 @@
   padding: 20px 16px;
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  gap: 50px;
   overflow-y: auto;
 }
-
+.nav-icon{
+ color: #137fec;
+}
 .nav-item {
   display: flex;
   align-items: center;
@@ -74,6 +80,8 @@
   width: 100%;
   border-left: 3px solid transparent;
   font-family: "Space Grotesk", sans-serif;
+  border-left: solid 3px #137fec;
+
 }
 
 .nav-item:hover {
@@ -108,7 +116,12 @@
   font-family: "Space Grotesk", sans-serif;
   color: #137fec;
 }
-
 .logout-btn:hover {
-  background: var(--surface-2);
+  background: #e2e8f2;
+}
+.logout-btn:active {
+  color: red;
+}
+.logout-icon{
+  color: #475569;
 }

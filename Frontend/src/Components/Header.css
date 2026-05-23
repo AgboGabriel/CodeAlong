@@ -2,6 +2,7 @@
 
 :root {
   --primary: #137fec;
+  --primary-hover: #1a55d4;
   --primary-light: rgba(19, 127, 236, 0.12);
   --surface: #ffffff;
   --surface-2: #eceff3;
@@ -54,7 +55,7 @@
 }
 
 .notif-btn:hover {
-  color: #137fec;
+  color: #1a55d4;
   background: rgba(19, 127, 236, 0.12);
 }
 
@@ -102,7 +103,7 @@
 }
 
 .notification-item:hover {
-  background: var(--surface-2);
+  background: #e2e8f2;
 }
 .notification-item h4 {
   font-size: 16px;
@@ -183,7 +184,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #94a3b8;
+  color: #475569;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -193,7 +194,7 @@
 }
 
 .icon-btn:hover {
-  color: #137fec;
+  color: #1a55d4;
   background: rgba(19, 127, 236, 0.12);
 }
 
