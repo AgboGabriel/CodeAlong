@@ -21,11 +21,11 @@ import {
   MdCode,
 } from "react-icons/md";
 
-const user = {
-  name: "Alex Rivera",
-  avatar:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuCHkmMqD5gKaMYLSydOBQc_Zi7wsLqmErMbtpFZ_5-AzR8-GBVVggx2vz3YzNgs5Hoy-od2NIrLSCZxHox3QfDozggMjyXwAkivdXCAnN8X0SPM_4icaBffmPVNgH8o7hrt7pZetO5A34GxGG7-Wo5ffA5JXpfZ9BYdN4-hnrlIM9xG9MtFYNRE-V08HC6Rw_Eeg7AFzzK5lLrWd9H9tOt37FmZS5CIAKG6brXAECIkUSxxGH6SXwrAFI7L8CN5DIz9nBnx5RSp6YE",
-};
+// const user = {
+//   name: "Alex Rivera",
+//   avatar:
+//     "https://lh3.googleusercontent.com/aida-public/AB6AXuCHkmMqD5gKaMYLSydOBQc_Zi7wsLqmErMbtpFZ_5-AzR8-GBVVggx2vz3YzNgs5Hoy-od2NIrLSCZxHox3QfDozggMjyXwAkivdXCAnN8X0SPM_4icaBffmPVNgH8o7hrt7pZetO5A34GxGG7-Wo5ffA5JXpfZ9BYdN4-hnrlIM9xG9MtFYNRE-V08HC6Rw_Eeg7AFzzK5lLrWd9H9tOt37FmZS5CIAKG6brXAECIkUSxxGH6SXwrAFI7L8CN5DIz9nBnx5RSp6YE",
+// };
 
 const NAV_ITEMS = [
   { icon: MdDashboard, label: "Dashboard", path: "/dashboard" },
@@ -34,11 +34,31 @@ const NAV_ITEMS = [
   { icon: MdFolderOpen, label: "Assessments", path: "/Assessments" },
 ];
 
-function UserProfile({ small, onClick }) {
+// function UserProfile({ small, onClick ,user}) {
+//   return (
+//     <>
+//       <div className={`avatar ${small ? "avatar-sm" : ""}`} onClick={onClick}>
+//         <img src={user.avatar} alt={user.name} />
+//       </div>
+
+//       {!small && (
+//         <div className="user-info">
+//           <div className="user-name">{user.name}</div>
+//         </div>
+//       )}
+//     </>
+//   );
+// }
+function UserProfile({ small, onClick, user }) {
   return (
     <>
-      <div className={`avatar ${small ? "avatar-sm" : ""}`} onClick={onClick}>
-        <img src={user.avatar} alt={user.name} />
+      <div
+        className={`avatar ${small ? "avatar-sm" : ""}`}
+        onClick={onClick}
+      >
+        <span className="avatar-initials">
+          {user.initials}
+        </span>
       </div>
 
       {!small && (
@@ -84,7 +104,7 @@ function Sidebar() {
   );
 }
 
-function Header() {
+function Header({user}) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
@@ -109,7 +129,7 @@ function Header() {
   };
 
   return (
-    <header className="header">
+    <header user={user} className="header">
       <div className="search-wrap">
         
       </div>
@@ -132,6 +152,7 @@ function Header() {
 
           <UserProfile
             small
+            user={user}
             onClick={() => setDropdownOpen(!dropdownOpen)}
           />
 
@@ -153,72 +174,112 @@ function Header() {
 }
 
 export default function MyLessons() {
+  const navigate = useNavigate();
+  const [user,setUser]=useState({
+  name: "",
+  initials:"",
+});
+
+
   const [selectedPath, setSelectedPath] = useState(null);
   const [filter, setFilter] = useState("All Paths");
   const [searchTerm, setSearchTerm] = useState("");
-  const [learningPaths] = useState(() => {
-    const initialPaths = [
-      {
-        id: 1,
-        title: "Frontend Development with React",
-        progress: 28,
-        hours: 14,
-        level: "Beginner",
-        status: "In Progress",
-        description:
-          "Learn frontend development and React skills through structured modules.",
-      },
 
-      {
-        id: 2,
-        title: "Fullstack JavaScript Engineering",
-        progress: 72,
-        hours: 32,
-        level: "Intermediate",
-        status: "In Progress",
-        description:
-          "Master Node.js, Express, MongoDB, APIs, and advanced React workflows.",
-      },
+const [learningPaths, setLearningPaths] = useState([]);
+const [loadingPaths, setLoadingPaths] = useState(true);
+const generateInitials = (name) => {
+  if (!name) return "";
 
-      {
-        id: 3,
-        title: "AI Powered Web Applications",
-        progress: 0,
-        hours: 48,
-        level: "Advanced",
-        status: "Not Started",
-        description:
-          "Build intelligent apps using OpenAI APIs, vector databases, and AI tooling.",
-      },
-    ];
+  const parts = name.trim().split(" ");
 
+  if (parts.length === 1) {
+    return parts[0][0].toUpperCase();
+  }
+
+  return (
+    parts[0][0] + parts[1][0]
+  ).toUpperCase();
+};
+useEffect(() => {
+  const fetchUser = async () => {
     try {
-      const stored = localStorage.getItem("myLessonsCurriculum");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed?.curriculum) {
-          const curriculum = parsed.curriculum;
-          const savedPath = {
-            id: `saved-${curriculum.id}`,
-            title: curriculum.description || "My Learning Path",
-            description:
-              curriculum.description ||
-              "A confirmed curriculum that you can continue learning.",
-            progress: 0,
-            hours: curriculum.modules?.length ? curriculum.modules.length * 4 : 10,
-            level: curriculum.level || "Beginner",
-            status: "In Progress",
-            modules: curriculum.modules || [],
-          };
-          return [savedPath, ...initialPaths];
-        }
+      const response = await fetch("/auth/me", {
+        credentials: "include",
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.user) {
+        setUser({
+          name: data.user.username,
+          initials: generateInitials(data.user.username),
+        });
       }
     } catch (error) {
-      console.error("Failed to load saved curriculum:", error);
+      console.error("Failed to fetch user:", error);
     }
+  };
 
-    return initialPaths;
-  });
+  fetchUser();
+}, []);
+
+useEffect(() => {
+  const fetchCurriculums = async () => {
+    try {
+      const response = await fetch("/api/curriculum", {
+        credentials: "include",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.error || "Failed to fetch curriculums"
+        );
+      }
+
+      const formattedPaths = data.curriculum.map((curriculum) => ({
+        id: curriculum.id,
+
+        title:
+          curriculum.title ||
+          "Custom Learning Path",
+
+        description:
+          curriculum.description ||
+          "A confirmed curriculum that you can continue learning.",
+
+        progress: curriculum.progress || 0,
+
+        hours:
+          curriculum.modules?.length
+            ? curriculum.modules.length * 4
+            : 10,
+
+        level:
+          curriculum.level || "Beginner",
+
+        status:
+          curriculum.status || "In Progress",
+
+        modules:
+          curriculum.modules || [],
+      }));
+
+      setLearningPaths(formattedPaths);
+
+    } catch (error) {
+      console.error(
+        "Failed to fetch curriculums:",
+        error
+      );
+    } finally {
+      setLoadingPaths(false);
+    }
+  };
+
+  fetchCurriculums();
+}, []);
 
 const [view, setView] = useState("modules");
 const [selectedModule, setSelectedModule] = useState(null);
@@ -270,61 +331,7 @@ const handleBack = () => {
   }
 };
 
-const modules = [
-  {
-    id: 1,
-    title: "Programming Fundamentals",
-    status: "completed",
-    description:
-      "Variables, loops, data types, and logic.",
-    topics: [
-      {
-        title: "Variables & Data Types",
-        videos: ["Intro Video", "Practice Video"]
-      },
-      {
-        title: "Loops",
-        videos: ["For Loop Explained", "While Loop Demo"]
-      },
-      {
-        title: "Functions",
-        videos: ["Function Basics", "Arrow Functions"]
-      }
-    ]
-  },
 
-  {
-    id: 2,
-    title: "HTML Basics",
-    status: "in-progress",
-    description:
-      "Master semantic HTML, structure, and forms.",
-    topics: [
-      {
-        title: "HTML Structure",
-        videos: ["HTML Intro", "Page Structure"]
-      },
-      {
-        title: "Forms",
-        videos: ["Input Types", "Form Validation"]
-      }
-    ]
-  },
-
-  {
-    id: 3,
-    title: "CSS Basics",
-    status: "locked",
-    description:
-      "Learn layouts, styling, and responsiveness.",
-    topics: [
-      {
-        title: "Selectors",
-        videos: ["Basic Selectors", "Advanced Selectors"]
-      }
-    ]
-  }
-];
 
 const handleQuizClick = (topic) => {
   setSelectedTopic(topic);
@@ -333,26 +340,52 @@ const handleQuizClick = (topic) => {
 
 const handleHasKnowledge = () => {
   setShowQuizPopup(false);
-  window.location.href = "/QuizPage";
+  navigate("/QuizPage", {
+  state: {
+    moduleId: selectedModule?.id,
+    topic: selectedTopic,
+  },
+});
 };
 
+// const handleNoKnowledge = () => {
+//   setShowQuizPopup(false);
+//   navigate("/Videolesson", {
+//   state: {
+//     moduleId: selectedModule?.id,
+//     topic: selectedTopic,
+//   },
+// });
+// };
 const handleNoKnowledge = () => {
   setShowQuizPopup(false);
-  window.location.href = "/Videolesson";
-};
-const visibleModules = Array.isArray(selectedPath?.modules) && selectedPath.modules.length ? selectedPath.modules : modules;
 
+  navigate("/Videolesson", {
+    state: {
+      moduleId: selectedModule?.id,
+      topic: selectedTopic,
+      video: selectedTopic?.videos?.[0],
+    },
+  });
+};
+
+const visibleModules = Array.isArray(selectedPath?.modules)
+  ? selectedPath.modules
+  : [];
 const openModuleTopics = (module, index) => {
   if (!Array.isArray(module.topics) || module.topics.length === 0) {
     return;
   }
 
   setSelectedModule({
-    title: module.title || `Module ${index + 1}`,
-    topics: module.topics.map((topic) =>
-      typeof topic === "string" ? { title: topic, videos: [] } : topic
-    ),
-  });
+  id: module.id,
+  title: module.title || `Module ${index + 1}`,
+  topics: module.topics.map((topic) =>
+    typeof topic === "string"
+      ? { title: topic, videos: [] }
+      : topic
+  ),
+});
   setExpandedTopics(new Set());
   setView("topics");
 };
@@ -375,6 +408,14 @@ const getModuleState = (module, index) => {
     buttonLabel: isLocked ? "Start Module" : isActive ? "Continue Learning" : "Review Lessons",
   };
 };
+if (loadingPaths) {
+  return (
+    <div className="loading-screen">
+      Loading learning paths...
+    </div>
+  );
+}
+
   if (!selectedPath) {
 
     return (
@@ -382,7 +423,7 @@ const getModuleState = (module, index) => {
         <Sidebar />
 
         <main className="main">
-          <Header />
+          <Header user={user}/>
 
           <div className="content">
             <div className="content-inner">
@@ -478,7 +519,7 @@ const getModuleState = (module, index) => {
     <Sidebar />
 
     <main className="main">
-      <Header />
+      <Header user={user}/>
 
       <div className="content">
         <div className="content-inner">
@@ -514,53 +555,70 @@ const getModuleState = (module, index) => {
             </div>
           </div>
 
-          {/* ===================== MODULE VIEW ===================== */}
+        
+
           {view === "modules" && (
-            <div className="modules">
-              {visibleModules.map((module, index) => {
-                const moduleState = getModuleState(module, index);
-                const hasTopics = Array.isArray(module.topics) && module.topics.length > 0;
+  <div className="modules">
 
-                return (
-                  <div
-                    className={`module-card ${moduleState.cardClass}`}
-                    key={module.id || index}
-                  >
-                    <div className={`module-icon ${moduleState.iconClass}`}>
-                      {moduleState.isCompleted ? "OK" : <MdPlayCircleFilled />}
-                    </div>
+    {visibleModules.length === 0 ? (
+      <div className="empty-state">
+        No modules found for this curriculum.
+      </div>
+    ) : (
+      visibleModules.map((module, index) => {
+        const moduleState = getModuleState(module, index);
 
-                    <div className="module-content">
-                      <div className="module-top">
-                        <h3>{module.title || `Module ${index + 1}`}</h3>
-                        <span className={`status ${moduleState.statusClass}`}>
-                          {moduleState.statusLabel}
-                        </span>
-                      </div>
+        const hasTopics =
+          Array.isArray(module.topics) &&
+          module.topics.length > 0;
 
-                      <p>{module.description || module.desc || "No description available."}</p>
-
-                      <div className="module-actions">
-                        <button
-                          className={moduleState.buttonClass}
-                          disabled={moduleState.isLocked || !hasTopics}
-                          onClick={() => openModuleTopics(module, index)}
-                        >
-                          {moduleState.buttonLabel}
-                        </button>
-                      </div>
-
-                      {moduleState.isLocked && (
-                        <div className="locked-tooltip">
-                          Unlock this module by completing the previous module
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+        return (
+          <div
+            className={`module-card ${moduleState.cardClass}`}
+            key={module.id || index}
+          >
+            <div className={`module-icon ${moduleState.iconClass}`}>
+              {moduleState.isCompleted ? "OK" : <MdPlayCircleFilled />}
             </div>
-          )}
+
+            <div className="module-content">
+              <div className="module-top">
+                <h3>{module.title || `Module ${index + 1}`}</h3>
+
+                <span className={`status ${moduleState.statusClass}`}>
+                  {moduleState.statusLabel}
+                </span>
+              </div>
+
+              <p>
+                {module.description ||
+                  module.desc ||
+                  "No description available."}
+              </p>
+
+              <div className="module-actions">
+                <button
+                  className={moduleState.buttonClass}
+                  disabled={moduleState.isLocked || !hasTopics}
+                  onClick={() => openModuleTopics(module, index)}
+                >
+                  {moduleState.buttonLabel}
+                </button>
+              </div>
+
+              {moduleState.isLocked && (
+                <div className="locked-tooltip">
+                  Unlock this module by completing the previous module
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })
+    )}
+
+  </div>
+  )}
 
           {/* ===================== TOPICS VIEW ===================== */}
           {view === "topics" && selectedModule && (
@@ -604,19 +662,36 @@ const getModuleState = (module, index) => {
                         </div>
 
                         {(topic.videos || []).map((video, i) => (
+                          // <Link
+                          //   key={i}
+                          //   to="/Videolesson"
+                          //   className="video-link"
+                          // >
                           <Link
-                            key={i}
-                            to="/Videolesson"
-                            className="video-link"
-                          >
+                          key={video.videoId || i}
+                          to="/Videolesson"
+                          state={{
+                            moduleId: selectedModule?.id,
+                            topic,
+                            video,
+                          }}
+                          className="video-link"
+                                  >     
                             <div className="video-item">
                               <MdPlayCircleFilled className="video-icon" />
-                              <span>{video}</span>
+                              <span>{video.title}</span>
                             </div>
                           </Link>
                         ))}
 
-                        <Link to="/challenges" className="challenge-link">
+                        <Link
+                          to="/challenges"
+                          state={{
+                            moduleId: selectedModule?.id,
+                            topic,
+                          }}
+                          className="challenge-link"
+                        >
                           <div className="challenge-item">
                             <MdCode className="challenge-icon" />
                             <span>{topic.title} Coding Challenge</span>

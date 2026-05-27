@@ -58,12 +58,14 @@
   height: 140px;
   background: #0f162a;
   border-top: 1px solid rgba(43,124,238,0.25);
-  padding: 10px;
+  padding: 14px;
   color: #22c55e;
   font-family: "Space Grotesk", sans-serif;
   overflow-y: auto;
   font-weight: bold;
-  font-size: 16px;
+  font-size: 15px;
+  line-height: 1.6;
+  white-space: pre-wrap;
 }
 
 /* AI */

@@ -1044,3 +1044,27 @@ font-weight: bold;
 .no-btn:active {
  transform: scale(0.98);
 }
+
+/* User Style */
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #4f46e5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgb(29, 7, 154);
+  font-weight: 700;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.avatar-sm {
+  width: 40px;
+  height: 40px;
+}
+
+.avatar-initials {
+  text-transform: uppercase;
+}

@@ -25,11 +25,11 @@
   width: 100%;
   height: calc(100% - 40px);
   background: #1b254b;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   border-radius: 8px;
   color: #cbd5e1;
+  overflow-y: auto;
+  padding: 24px 22px 28px;
+  line-height: 1.6;
 }
 
 /* Editor */
@@ -50,12 +50,14 @@
   height: 140px;
   background: #0f162a;
   border-top: 1px solid rgba(43,124,238,0.25);
-  padding: 10px;
+  padding: 14px;
   color: #22c55e;
   font-family: "Space Grotesk", sans-serif;
   overflow-y: auto;
   font-weight: bold;
-  font-size: 16px;
+  font-size: 15px;
+  line-height: 1.6;
+  white-space: pre-wrap;
 }
 
 /* AI */
@@ -164,4 +166,105 @@
 
 
 
+
+.challenge-brief h2 {
+  margin: 0 0 10px;
+  color: #f8fafc;
+  font-size: 28px;
+}
+
+.challenge-eyebrow {
+  margin: 0 0 8px;
+  color: #93c5fd;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.challenge-prompt {
+  margin: 0;
+  color: #dbeafe;
+}
+
+.challenge-section {
+  margin-top: 24px;
+}
+
+.challenge-section h3 {
+  margin: 0 0 12px;
+  color: #f8fafc;
+  font-size: 18px;
+}
+
+.challenge-list {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.challenge-list li {
+  margin-bottom: 8px;
+}
+
+.challenge-test-card {
+  display: block;
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  border: 1px solid rgba(147, 197, 253, 0.2);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.challenge-test-card strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #bfdbfe;
+}
+
+.challenge-test-card p {
+  margin: 6px 0;
+}
+
+.challenge-test-card span {
+  color: #93c5fd;
+  font-weight: 700;
+  margin-right: 8px;
+}
+
+.challenge-results-summary {
+  margin: 0 0 12px;
+  color: #bbf7d0;
+  font-weight: 700;
+}
+
+.challenge-feedback-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.challenge-feedback {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.challenge-feedback.warning {
+  border-color: rgba(248, 113, 113, 0.4);
+}
+
+.challenge-feedback.info {
+  border-color: rgba(96, 165, 250, 0.35);
+}
+
+.challenge-feedback strong {
+  display: block;
+  color: #f8fafc;
+  margin-bottom: 6px;
+}
+
+.challenge-feedback p {
+  margin: 0;
+}
 

@@ -292,25 +292,31 @@ function AssessmentsBanner() {
 }
 
 
-function RecommendedLessons() {
-  const videos = [
-    {
-      title: "HTML Crash Course for Beginners",
-      channel: "Traversy Media",
-      videoId: "UB1O30fR-EE",
-    },
-    {
-      title: "JavaScript Full Course (2025)",
-      channel: "freeCodeCamp",
-      videoId: "PkZNo7MFNFg",
-    },
-    {
-      title: "React JS Basics Explained",
-      channel: "Programming with Mosh",
-      videoId: "w7ejDZ8SWv8",
-    },
-  ];
+function RecommendedLessons(
+  {recommendations,
+  loading,}) 
+  {
+   if (loading) {
+    return (
+      <div className="lesson-hero">
+        <h3>Loading recommendations...</h3>
+      </div>
+    );
+  }
 
+  const videos =
+    recommendations.flatMap(
+      item => item.videos || []
+    ); 
+  
+   if (videos.length === 0) {
+    return (
+      <div className="lesson-hero">
+        <h3>No recommendations found yet.</h3>
+      </div>
+    );
+  }
+  
   return (
     <div className="lesson-hero recommended-wrapper">
       
@@ -332,20 +338,20 @@ function RecommendedLessons() {
           <a
             key={index}
             className="video-card"
-            href={`https://www.youtube.com/watch?v=${video.videoId}`}
+            href={video.url}
             target="_blank"
             rel="noreferrer"
           >
             <div className="video-thumbnail">
               <img
-                src={`https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`}
+                src={video.thumbnail}
                 alt={video.title}
               />
             </div>
 
             <div className="video-info">
               <h4>{video.title}</h4>
-              <p>{video.channel}</p>
+               <p>{video.channelTitle}</p>
             </div>
           </a>
         ))}
@@ -358,7 +364,41 @@ function RecommendedLessons() {
 export default function Dashboard() {
   const [currentUser,setCurrentUser]= useState(null);
   const [hasStartedLearning, setHasStartedLearning] = useState(false);
+  const [recommendedVideos, setRecommendedVideos] = useState([]);
+const [loadingRecommendations, setLoadingRecommendations] = useState(true);
+async function loadRecommendations() {
+  try {
+    const response = await fetch(
+      "/api/dashboard/recommendations",
+      {
+        credentials: "include",
+      }
+    );
 
+    if (!response.ok) {
+      throw new Error("Failed to fetch recommendations");
+    }
+
+    const data = await response.json();
+
+    console.log(
+      "Dashboard recommendations:",
+      data
+    );
+
+    setRecommendedVideos(
+      data.recommendations || []
+    );
+
+  } catch (error) {
+    console.error(
+      "Error loading recommendations:",
+      error
+    );
+  } finally {
+    setLoadingRecommendations(false);
+  }
+}
   useEffect(()=>{
     async function loadCurrentUser(){
       try{
@@ -378,8 +418,10 @@ export default function Dashboard() {
         }
       }
       loadCurrentUser();
+      loadRecommendations();
 
     },[]);
+ 
   const displayName = getDisplayName(currentUser);
   const greeting = currentUser ? "Welcome back" : "Welcome";
   const progressMessage = hasStartedLearning
@@ -404,7 +446,15 @@ export default function Dashboard() {
             </div>
 
             <div className="section-stack">
-             {hasStartedLearning ? <LessonHero /> : <RecommendedLessons />}
+             {/* {hasStartedLearning ? <LessonHero /> : <RecommendedLessons />} */}
+              {hasStartedLearning ? (
+                  <LessonHero />
+                ) : (
+                  <RecommendedLessons
+                    recommendations={recommendedVideos}
+                    loading={loadingRecommendations}
+                  />
+                )}
               <ProgressSection />
               <CtaBanner />
               <AssessmentsBanner />
