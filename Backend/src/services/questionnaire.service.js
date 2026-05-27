@@ -31,6 +31,15 @@ class QuestionnaireService{
             RETURNING *;
             `;
            const result= await this.db.query(query,[userId, careerPath, knownLanguages, learningLanguages, skillLevel, goal]);
+            // mark questionnaire completed
+            await this.db.query(
+                `
+                UPDATE users
+                SET questionnaire_completed = true
+                WHERE id = $1
+                `,
+                [userId]
+            );
            return result.rows[0];
         }catch(error){
             throw new Error(`Error saving questionnaire response: ${error.message}`);

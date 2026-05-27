@@ -39,7 +39,17 @@ export class ChatController {
             
             // 4. Generate response using service
             console.log('Calling groqService.generateText()');
-            const aiResponse = await this.groqService.generateText(message, options);
+            const priorMessages = conversation
+                .slice(Math.max(0, conversation.length - 8), conversation.length - 1)
+                .map((entry) => ({
+                    role: entry.role === "assistant" ? "assistant" : "user",
+                    content: entry.content,
+                }));
+
+            const aiResponse = await this.groqService.generateText(message, {
+                ...options,
+                history: priorMessages,
+            });
             console.log('Groq API response received');
             
             // 5. Add AI response to history
