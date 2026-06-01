@@ -2,19 +2,15 @@ import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import logo from "./assets/Code along_logo-03.png";
 import "./Dashboard.css";
-
+import Sidebar from "./components/Sidebar";
+import Header from "./components/Header";
+import UserProfile, { user } from "./components/UserProfile";
 
 import {
-  MdDashboard,
-  MdMenuBook,
-  MdAccountTree,
-  MdFolderOpen,
   MdLocalFireDepartment,
   MdVerifiedUser,
-  MdSettings,
-  MdNotifications,
   MdPlayCircle,
-  MdCode
+  MdCode,
 } from "react-icons/md";
 
 const fallbackUser = {
@@ -80,35 +76,15 @@ function Sidebar() {
   const location = useLocation();
 
   return (
-    <aside className="sidebar">
-      <div className="sidebar-logo">
-        <div className="logo-icon">
-          <img className="logo-img" src={logo} alt="Logo" />
-        </div>
-        <span className="logo-text">CodeAlong</span>
-      </div>
+    <div className="lesson-hero recommended-wrapper">
 
-      <nav className="sidebar-nav">
-        {NAV_ITEMS.map(({ icon, label, path }) => {
-          const Icon = icon;
 
-          return (
-            <Link
-              key={label}
-              to={path}
-              className={`nav-item ${
-                location.pathname === path ? "active" : ""
-              }`}
-            >
-              <Icon size={30} />
-              {label}
-            </Link>
-          );
-        })}
-      </nav>
-    </aside>
-  );
-}
+//       <div className="lesson-hero-content">
+//         <span className="badge badge-primary">
+//           Recommended Videos
+//         </span>
+
+//         <h3>Start Learning with Recommended Videos</h3>
 
 function Header({ currentUser }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -135,23 +111,20 @@ function Header({ currentUser }) {
     navigate("/");
   };
 
-  return (
-    <header className="header">
-      <div className="search-wrap">
+
+        <p>
+          Curated beginner-friendly YouTube lessons to help you build real coding skills step by step.
+        </p>
       </div>
 
-      <div className="header-right">
-        <button className="notif-btn" aria-label="Notifications">
-          <MdNotifications size={30} />
-          <span className="notif-dot" />
-        </button>
-
-        <div className="divider-v" />
-
-        <div className="header-user" ref={dropdownRef}>
-          <div
-            className="header-user-text"
-            onClick={() => setDropdownOpen(!dropdownOpen)}
+      <div className="video-grid">
+        {videos.map((video) => (
+          <a
+            key={video.videoId}
+            className="video-card"
+            href={`https://www.youtube.com/watch?v=${video.videoId}`}
+            target="_blank"
+            rel="noreferrer"
           >
             <div className="user-name">{displayName}</div>
           </div>
@@ -162,22 +135,18 @@ function Header({ currentUser }) {
             <MdSettings size={30} />
           </button>
 
-          {dropdownOpen && (
-            <div className="user-dropdown">
-              <button className="dropdown-item" onClick={handleLogout}>
-                Logout
-              </button>
+            <div className="video-info">
+              <h4>{video.title}</h4>
+              <p>{video.channel}</p>
             </div>
-          )}
-        </div>
+          </a>
+        ))}
       </div>
-    </header>
+
+    </div>
   );
 }
-
 function LessonHero() {
-  const navigate = useNavigate();
-
   return (
     <div className="lesson-hero">
       <div className="lesson-hero-content">
@@ -186,23 +155,16 @@ function LessonHero() {
         <h3>Programming Fundamentals</h3>
 
         <p>
-          Master the core concepts of variables, loops, and conditional logic
-          to build a strong foundation.
+          Master variables, loops, and conditionals to build a strong foundation.
         </p>
 
         <div className="lesson-hero-actions">
-          <button
-            className="btn btn-primary"
-            onClick={() => navigate("")}
-          >
+          <button className="btn btn-primary">
             <MdPlayCircle size={20} />
             Resume Learning
           </button>
 
-          <button
-            className="btn btn-secondary"
-            onClick={() => navigate("")}
-          >
+          <button className="btn btn-secondary">
             View Outline
           </button>
         </div>
@@ -215,9 +177,7 @@ function LessonHero() {
   );
 }
 
-function StatCard({ icon, iconClass, label, value, badgeText, badgeClass }) {
-  const Icon = icon;
-
+function StatCard({ icon: Icon, iconClass, label, value, badgeText, badgeClass }) {
   return (
     <div className="stat-card">
       <div className="stat-card-top">
@@ -258,7 +218,7 @@ function CtaBanner() {
     <div className="cta-banner">
       <div>
         <h3>Tailor Your Path</h3>
-        <p>Interact with our AI to create your own learning path.</p>
+        <p>Interact with AI to create your own learning path.</p>
       </div>
 
       <button
@@ -278,7 +238,7 @@ function AssessmentsBanner() {
     <div className="cta-banner">
       <div>
         <h3>Challenge of the day</h3>
-        <p>Get random challenges daily to test your knowledge on the programming languages you already know.</p>
+        <p>Test your skills with daily programming challenges.</p>
       </div>
 
       <button
@@ -291,7 +251,28 @@ function AssessmentsBanner() {
   );
 }
 
+/* ---------------- DASHBOARD ---------------- */
 
+function getProgressMessage(user) {
+  if (user?.isNew) {
+    return "Start your learning journey today. Let’s build momentum.";
+  }
+
+  if (!user?.progress) {
+    return "You’ve started your learning path. Keep going.";
+  }
+
+  if (user.progress < 100) {
+    return `You've completed ${user.progress}% of your path. Keep going.`;
+  }
+
+  return "You’ve completed your learning path. Great work!";
+}
+
+export default function Dashboard() {
+  const [hasStartedLearning] = useState(false);
+
+  const greeting = user?.isNew ? "Welcome" : "Welcome back";
 function RecommendedLessons(
   {recommendations,
   loading,}) 
@@ -436,13 +417,16 @@ async function loadRecommendations() {
 
         <div className="content">
           <div className="content-inner">
-          
 
             <div className="welcome">
               <h2>
                 {greeting}, {displayName}!
               </h2>
-              <p>{progressMessage}</p>
+
+
+
+//               <p>{progressMessage}</p>// 
+              <p>{getProgressMessage(user)}</p>
             </div>
 
             <div className="section-stack">
@@ -455,11 +439,12 @@ async function loadRecommendations() {
                     loading={loadingRecommendations}
                   />
                 )}
+
               <ProgressSection />
               <CtaBanner />
               <AssessmentsBanner />
-              
             </div>
+
           </div>
         </div>
       </main>

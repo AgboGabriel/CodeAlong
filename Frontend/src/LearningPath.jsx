@@ -1,19 +1,19 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import Sidebar from "./components/Sidebar";
+import Header from "./components/Header";
+import UserProfile, { user } from "./components/UserProfile";
 import logo from "./assets/Code along_logo-03.png";
 import { FaMicrophone, FaPaperPlane, FaRobot } from "react-icons/fa";
 import "./LearningPath.css";
 
 import {
-  MdDashboard,
-  MdMenuBook,
-  MdAccountTree,
-  MdFolderOpen,
   MdSettings,
   MdNotifications,
   MdAttachFile,
 } from "react-icons/md";
 
+import { FaPaperPlane, FaRobot } from "react-icons/fa";
 const user = {
   name: "Alex Rivera",
   avatar:
@@ -126,9 +126,6 @@ function Header() {
             onClick={() => setDropdownOpen(!dropdownOpen)}
           />
 
-          <button className="icon-btn" aria-label="Settings">
-            <MdSettings size={30} />
-          </button>
 
           {dropdownOpen && (
             <div className="user-dropdown">
