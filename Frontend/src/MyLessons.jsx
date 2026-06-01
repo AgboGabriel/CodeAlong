@@ -1,15 +1,11 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import logo from "./assets/Code along_logo-03.png";
 import "./MyLessons.css";
+import Sidebar from "./Components/Sidebar";
+import Header from "./components/Header";
+import UserProfile, { user } from "./components/UserProfile";
 
 import {
-  MdDashboard,
-  MdMenuBook,
-  MdAccountTree,
-  MdFolderOpen,
-  MdSettings,
-  MdNotifications,
   MdSearch,
   MdDelete,
   MdFilterList,

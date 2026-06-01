@@ -2,7 +2,7 @@
 
 /* ========== CSS Variables ========== */
 :root {
-  --primary: #256af4;
+  --primary: #137fec;
   --primary-hover: #1a55d4;
   --primary-10: rgba(37, 106, 244, 0.1);
   --primary-20: rgba(37, 106, 244, 0.2);
@@ -33,18 +33,6 @@
   --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
   --shadow-lg: 0 10px 40px rgba(0,0,0,0.12);
   --shadow-xl: 0 20px 60px rgba(0,0,0,0.15);
-}
-
-/* Dark mode overrides */
-.dark {
-  --surface: #1e293b;
-  --surface-dark: #0f172a;
-  --surface-muted: #1e293b;
-  --surface-muted-dark: #0f172a;
-  --border: #1e293b;
-  --text: #f1f5f9;
-  --text-muted: #94a3b8;
-  --text-subtle: #64748b;
 }
 
 /* ========== Reset / Base ========== */
@@ -401,6 +389,7 @@ a:hover {
   transform: translateY(-50%);
   font-size: 1rem;
   pointer-events: none;
+  color:#137fec;
 }
 .Lp-input-wrap input {
   width: 100%;
@@ -589,7 +578,7 @@ a:hover {
   transition: color 0.2s;
 }
 .Lp-footer-links a:hover {
-  color: var(--primary);
+  color: #1a55d4;
   text-decoration: none;
 }
 
