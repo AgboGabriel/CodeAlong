@@ -14,7 +14,9 @@ class QuestionnaireController{
                 return res.status(401).json({error:"User not authenticated"});
             }
             const questionnaireData=await this.questionnaireService.saveQuestionnaireResponse(userId, req.body);
-            return res.status(200).json({success:true, data: questionnaireData, message:"Questionnaire response saved successfully"});   
+            
+             return res.status(200).json({success:true, data: questionnaireData, message:"Questionnaire response saved successfully"});   
+
 
         }catch(error){
             console.error('[QuestionnaireController] Error saving questionnaire response:', error);

@@ -65,6 +65,30 @@
   font-weight: bold;
   font-family: 'Nunito', sans-serif;
 }
+
+.Lp-social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 280px;
+  margin: 18px auto 0;
+  padding: 12px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f172a;
+  cursor: pointer;
+  font-family: 'Nunito', sans-serif;
+  font-size: 15px;
+  font-weight: bold;
+}
+
+.Lp-social-btn:hover {
+  background: #f8fafc;
+}
+
 .back-to-landing-page-link {
   margin-top: 15px;
   font-size: 15px;

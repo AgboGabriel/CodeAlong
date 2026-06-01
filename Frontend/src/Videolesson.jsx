@@ -4,6 +4,7 @@ import Split from "react-split";
 import { useNavigate, useLocation } from "react-router-dom";
 import * as monaco from "monaco-editor";
 import "./Videolesson.css";
+import { formatLearnerFeedback } from "./learnerFeedback";
 
 // Languages
 const LANGUAGES = [
@@ -32,10 +33,32 @@ const CODE_TEMPLATES = {
 };
 
 export default function Videolesson() {
-  const YOUTUBE_URL = "https://www.youtube.com/embed/dQw4w9WgXcQ";
+  // const YOUTUBE_URL = "https://www.youtube.com/embed/dQw4w9WgXcQ";
+  // const [videos, setVideos] = useState([]);
+  // const [currentVideo, setCurrentVideo] =
+  // useState(video || null);
+  // const [loadingVideo, setLoadingVideo] = useState(true);
+  // const navigate = useNavigate();
+  // const location = useLocation();
+  // const moduleId = location.state?.moduleId;
+  // const topic = location.state?.topic;
+  // const video = location.state?.video;
 
-  const navigate = useNavigate();
-  const location = useLocation();
+  const [videos, setVideos] = useState([]);
+
+const navigate = useNavigate();
+const location = useLocation();
+
+const moduleId = location.state?.moduleId;
+const topic = location.state?.topic;
+const video = location.state?.video;
+
+const [currentVideo, setCurrentVideo] =
+  useState(video || null);
+
+const [loadingVideo, setLoadingVideo] = useState(true);
+console.log("LOCATION STATE:", location.state);
+console.log("MODULE ID:", moduleId);
 
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
@@ -44,6 +67,7 @@ export default function Videolesson() {
   const [code, setCode] = useState(CODE_TEMPLATES.javascript);
   const [output, setOutput] = useState("");
   const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
 
   const [messages, setMessages] = useState([
     {
@@ -52,7 +76,7 @@ export default function Videolesson() {
     },
   ]);
 
-  // ✅ FIXED: Stable theme setup (NO rerenders, NO duplication issues)
+  //  FIXED: Stable theme setup (NO rerenders, NO duplication issues)
   const handleEditorBeforeMount = useCallback((monacoInstance) => {
     monacoInstance.editor.defineTheme("custom-dark", {
       base: "vs-dark",
@@ -81,36 +105,206 @@ export default function Videolesson() {
   };
 
   const handleRun = () => {
-    setOutput("Execution engine not connected yet.");
+    const runCode = async () => {
+      setOutput("Executing your code...");
+
+      try {
+        const response = await fetch("/compile-poll", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            source_code: code,
+            language_id: selectedLang.id,
+            stdin: "",
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || "Execution failed");
+        }
+
+        const result = data.data;
+        setOutput(
+          result.stdout ||
+            result.stderr ||
+            result.compile_output ||
+            result.status?.description ||
+            "No output"
+        );
+      } catch (error) {
+        console.error("Run error:", error);
+        setOutput(error.message || "Unable to run code");
+      }
+    };
+
+    runCode();
   };
 
   const handleSubmit = () => {
-    setOutput("Your code has been submitted for evaluation...");
+    const submitCode = async () => {
+      setOutput("Submitting your code for review...");
+
+      try {
+        const [compileResponse, astResponse] = await Promise.all([
+          fetch("/compile-poll", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              source_code: code,
+              language_id: selectedLang.id,
+              stdin: "",
+            }),
+          }),
+          fetch("/api/ast/parse", {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              source_code: code,
+              language_id: selectedLang.id,
+            }),
+          }),
+        ]);
+
+        const compileData = await compileResponse.json();
+        const astData = await astResponse.json();
+
+        if (!astResponse.ok || !astData.success) {
+          throw new Error(astData.error || "AST analysis failed");
+        }
+
+        const diagnostics = astData.normalizedAst?.diagnostics || [];
+        const summary = astData.normalizedAst?.summary || {};
+        const compileResult = compileData?.data || {};
+        setOutput(
+          formatLearnerFeedback({
+            compileOutput: compileResult.compile_output || compileData?.error || "",
+            stderr: compileResult.stderr || "",
+            diagnostics,
+            summary,
+          })
+        );
+      } catch (error) {
+        console.error("Submit error:", error);
+        setOutput(error.message || "Unable to submit code");
+      }
+    };
+
+    submitCode();
   };
 
   const handleSendMessage = () => {
-    if (!chatInput.trim()) return;
+    const sendMessage = async () => {
+      if (!chatInput.trim()) return;
 
-    setMessages((prev) => [
-      ...prev,
-      { role: "user", content: chatInput },
-    ]);
+      const userMessage = chatInput;
 
-    setChatInput("");
+      setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
+      setChatInput("");
+      setChatLoading(true);
 
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
+      try {
+        const response = await fetch("/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message: userMessage,
+            options: {
+              systemPrompt: `You are helping with the lesson topic "${topic?.title || "Unknown topic"}" in module "${
+                currentVideo?.title || "Current lesson"
+              }". Use the lesson video context and the learner's current code when helpful.
+
+Video description:
+${currentVideo?.description || "No video description available."}
+
+Selected programming language: ${selectedLang.name}
+
+Current code:
+${code}`,
+            },
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || "Chat request failed");
+        }
+
+        setMessages((prev) => [...prev, { role: "ai", content: data.message }]);
+      } catch (error) {
+        console.error("Chat error:", error);
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "ai",
+            content: error.message || "I could not respond right now.",
+          },
+        ]);
+      } finally {
+        setChatLoading(false);
+      }
+    };
+
+    sendMessage();
+  };
+useEffect(() => {
+  const fetchVideos = async () => {
+    if (!moduleId) return;
+
+    try {
+      setLoadingVideo(true);
+
+      const response = await fetch(
+        `/api/videos/module/${moduleId}`,
         {
-          role: "ai",
-          content:
-            "I can help explain concepts, debug code, and guide you through the lesson.",
-        },
-      ]);
-    }, 700);
+          method: "GET",
+          credentials: "include",
+        }
+      );
+
+      const data = await response.json();
+
+      console.log("VIDEO RESPONSE:", data);
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.error || "Failed to load videos"
+        );
+      }
+
+      setVideos(data.videos || []);
+
+      // Set first video automatically
+      const firstVideo = data.videos?.find(
+        (v) => v.video
+      );
+
+      if (firstVideo) {
+        setCurrentVideo(firstVideo.video);
+      }
+
+    } catch (error) {
+      console.error("Failed to fetch videos:", error);
+    } finally {
+      setLoadingVideo(false);
+    }
   };
 
+  fetchVideos();
+}, [moduleId]);
   // Smart scroll
+
   useEffect(() => {
     const container = chatContainerRef.current;
     const end = messagesEndRef.current;
@@ -139,16 +333,32 @@ export default function Videolesson() {
 
       {/* VIDEO PANEL */}
       <div className="video-panel">
-        <div className="video-frame">
-          <iframe
-            width="100%"
-            height="100%"
-            src={YOUTUBE_URL}
-            title="Lesson Video"
-            frameBorder="0"
-            allowFullScreen
-          />
+            <div className="video-frame">
+
+          {loadingVideo ? (
+            <div className="video-loading">
+              Loading video...
+            </div>
+
+          ) : currentVideo ? (
+
+            <iframe
+              width="100%"
+              height="100%"
+              src={`https://www.youtube.com/embed/${currentVideo.videoId || currentVideo.video_id}`}
+              title="Lesson Video"
+              frameBorder="0"
+              allowFullScreen
+            />
+
+          ) : (
+            <div className="video-loading">
+              No video found.
+            </div>
+          )}
+
         </div>
+          
       </div>
 
       {/* EDITOR PANEL */}
@@ -251,8 +461,9 @@ export default function Videolesson() {
           <button
             className="chat-send-btn"
             onClick={handleSendMessage}
+            disabled={chatLoading}
           >
-            Send
+            {chatLoading ? "Sending..." : "Send"}
           </button>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Questionnaire.css";
 
@@ -71,6 +71,10 @@ export default function LearningJourney() {
 
   const navigate = useNavigate();
 
+  useEffect(() => {
+    console.log('[Questionnaire] component mounted');
+  }, []);
+
     const [careerPath, setCareerPath] = useState(null);
     const [knownLanguages, setKnownLanguages] = useState([]);
     const [learningLanguages, setLearningLanguages] = useState([]);
@@ -78,31 +82,60 @@ export default function LearningJourney() {
     const [goal, setGoal] = useState(null);
 
   /* Toggle function for multi-select */
-  const toggleLanguage = (lang, list, setList) => {
+  const toggleLanguage = (lang, list, setList, listName) => {
     if (list.includes(lang)) {
       setList(list.filter((l) => l !== lang));
+      console.log(`[Questionnaire] Removed ${lang} from ${listName}`);
     } else {
       setList([...list, lang]);
+      console.log(`[Questionnaire] Added ${lang} to ${listName}`);
     }
   };
 
+  const logChoice = (category, value) => {
+    console.log(`[Questionnaire] ${category} selected:`, value);
+  };
+
   /* Save questionnaire answers */
-const handleSave = () => {
+const handleSave =async () => {
   if (!careerPath || !skillLevel || !goal) {
     alert("Please complete all required fields.");
     return;
   }
 
   const userPreferences = {
-    careerPath,
-    knownLanguages,
-    learningLanguages,
-    skillLevel,
+    career_path: careerPath,
+    known_languages: knownLanguages,
+    learning_languages: learningLanguages,
+    skill_level: skillLevel,
     goal
   };
+  try{
+    console.log('[Questionnaire] Saving preferences', userPreferences);
+    const response=await fetch("/api/questionnaire",
+      {
+        method:"POST",
+        credentials: "include",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body: JSON.stringify(userPreferences)   
+        });
+        if(!response.ok){
+          const errorBody = await response.text();
+          console.error('[Questionnaire] save failed:', response.status, response.statusText, errorBody);
+          throw new Error(`Failed to save questionnaire response: ${response.status} ${response.statusText}`);
+        }
+        const result=await response.json();
+        console.log("Questionnaire saved:", result);
+         localStorage.setItem("learningPreferences", JSON.stringify(userPreferences));
+        navigate("/dashboard");
+      }catch(error){
+        console.error("Error saving questionnaire:", error);
+        alert("There was an error saving your responses. Please try again.");
+      };
 
-  localStorage.setItem("learningPreferences", JSON.stringify(userPreferences));
-  navigate("/dashboard");
+ 
 };
       const totalFields = 5;
 
@@ -156,9 +189,11 @@ const handleSave = () => {
                 <button
                   key={p.id}
                   className={`Qn-career-card ${careerPath === p.id ? "selected" : ""}`}
-                  onClick={() =>
-                  setCareerPath(careerPath === p.id ? null : p.id)
-                  }
+                  onClick={() => {
+                    const nextValue = careerPath === p.id ? null : p.id;
+                    setCareerPath(nextValue);
+                    logChoice('Career path', nextValue);
+                  }}
                 >
                   <div className="Qn-career-thumb" style={{ background: `${p.color}18` }}>
                     <span className="Qn-career-emoji">{p.icon}</span>
@@ -190,7 +225,7 @@ const handleSave = () => {
                 <button
                   key={lang}
                   className={`Qn-pill ${knownLanguages.includes(lang) ? "selected" : ""}`}
-                  onClick={() => toggleLanguage(lang, knownLanguages, setKnownLanguages)}
+                  onClick={() => toggleLanguage(lang, knownLanguages, setKnownLanguages, 'knownLanguages')}
                 >
                   {lang}
                 </button>
@@ -209,7 +244,7 @@ const handleSave = () => {
                 <button
                   key={lang}
                   className={`Qn-pill ${learningLanguages.includes(lang) ? "selected" : ""}`}
-                  onClick={() => toggleLanguage(lang, learningLanguages, setLearningLanguages)}
+                  onClick={() => toggleLanguage(lang, learningLanguages, setLearningLanguages, 'learningLanguages')}
                 >
                   {lang}
                 </button>
@@ -228,9 +263,11 @@ const handleSave = () => {
                 <button
                   key={s.id}
                   className={`Qn-skill-card ${skillLevel === s.id ? "selected" : ""}`}
-                  onClick={() =>
-                    setSkillLevel(skillLevel === s.id ? null : s.id)
-                  }
+                  onClick={() => {
+                    const nextValue = skillLevel === s.id ? null : s.id;
+                    setSkillLevel(nextValue);
+                    logChoice('Skill level', nextValue);
+                  }}
                 >
                   {skillLevel === s.id && (
                     <div className="Qn-skill-check">
@@ -260,9 +297,11 @@ const handleSave = () => {
                 <button
                   key={g.id}
                   className={`Qn-goal-card ${goal === g.id ? "selected" : ""}`}
-                  onClick={() =>
-                  setGoal(goal === g.id ? null : g.id)
-                }
+                  onClick={() => {
+                  const nextValue = goal === g.id ? null : g.id;
+                  setGoal(nextValue);
+                  logChoice('Goal', nextValue);
+                }}
                 >
                   {goal === g.id && (
                     <div className="Qn-goal-check">
