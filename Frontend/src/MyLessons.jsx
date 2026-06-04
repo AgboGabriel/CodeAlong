@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import logo from "./assets/Code along_logo-03.png";
 import "./MyLessons.css";
-import Sidebar from "./Components/Sidebar";
-import Header from "./components/Header";
-import UserProfile, { user } from "./components/UserProfile";
 
 import {
+  MdAccountTree,
+  MdDashboard,
   MdSearch,
   MdDelete,
   MdFilterList,
@@ -15,6 +15,10 @@ import {
   MdFolder,
   MdQuiz,
   MdCode,
+  MdFolderOpen,
+  MdMenuBook,
+  MdNotifications,
+  MdSettings,
 } from "react-icons/md";
 
 // const user = {

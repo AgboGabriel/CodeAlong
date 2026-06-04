@@ -213,8 +213,10 @@ export default function Challenges() {
         buildLearnerFeedback({
           compileOutput: failedCase?.compileOutput || "",
           stderr: failedCase?.stderr || "",
+          ast: astData.normalizedAst?.ast || null,
           diagnostics,
           summary: astData.normalizedAst?.summary || {},
+          languageKey: selectedLang.monaco,
         })
       );
       setOutput(

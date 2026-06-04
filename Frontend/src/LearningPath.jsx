@@ -1,19 +1,18 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import Sidebar from "./components/Sidebar";
-import Header from "./components/Header";
-import UserProfile, { user } from "./components/UserProfile";
 import logo from "./assets/Code along_logo-03.png";
-import { FaMicrophone, FaPaperPlane, FaRobot } from "react-icons/fa";
 import "./LearningPath.css";
 
 import {
-  MdSettings,
+  MdAccountTree,
+  MdDashboard,
+  MdFolderOpen,
+  MdMenuBook,
   MdNotifications,
   MdAttachFile,
 } from "react-icons/md";
 
-import { FaPaperPlane, FaRobot } from "react-icons/fa";
+import { FaMicrophone, FaPaperPlane, FaRobot } from "react-icons/fa";
 const user = {
   name: "Alex Rivera",
   avatar:
@@ -67,7 +66,7 @@ function Sidebar() {
                 location.pathname === path ? "active" : ""
               }`}
             >
-              <Icon size={30} />
+              <Icon size={30} className="nav-icon" />
               {label}
             </Link>
           );

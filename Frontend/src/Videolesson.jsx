@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Editor from "@monaco-editor/react";
 import Split from "react-split";
-import { useNavigate, useLocation } from "react-router-dom";
-import * as monaco from "monaco-editor";
+import { useLocation } from "react-router-dom";
 import "./Videolesson.css";
-import { formatLearnerFeedback } from "./learnerFeedback";
+import { buildLearnerFeedback } from "./learnerFeedback";
 
 // Languages
 const LANGUAGES = [
@@ -44,9 +43,8 @@ export default function Videolesson() {
   // const topic = location.state?.topic;
   // const video = location.state?.video;
 
-  const [videos, setVideos] = useState([]);
+  const [, setVideos] = useState([]);
 
-const navigate = useNavigate();
 const location = useLocation();
 
 const moduleId = location.state?.moduleId;
@@ -68,6 +66,10 @@ console.log("MODULE ID:", moduleId);
   const [output, setOutput] = useState("");
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
+  const [hintLoading, setHintLoading] = useState(false);
+  const [hintOpen, setHintOpen] = useState(false);
+  const [hintFeedback, setHintFeedback] = useState(null);
+  const [hintError, setHintError] = useState("");
 
   const [messages, setMessages] = useState([
     {
@@ -102,6 +104,101 @@ console.log("MODULE ID:", moduleId);
     setSelectedLang(lang);
     setCode(CODE_TEMPLATES[lang.monaco] || "");
     setOutput("");
+    setHintFeedback(null);
+    setHintError("");
+  };
+
+  const fetchCompileAnalysis = async () => {
+    const response = await fetch("/compile-poll", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        source_code: code,
+        language_id: selectedLang.id,
+        stdin: "",
+      }),
+    });
+
+    const data = await response.json();
+    const result = data?.data || {};
+
+    if (!response.ok && !data?.error) {
+      throw new Error("Execution failed");
+    }
+
+    return {
+      compileOutput: result.compile_output || data?.error || "",
+      stderr: result.stderr || "",
+      stdout: result.stdout || "",
+      statusDescription: result.status?.description || "",
+    };
+  };
+
+  const fetchAstAnalysis = async () => {
+    const response = await fetch("/api/ast/parse", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        source_code: code,
+        language_id: selectedLang.id,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || "AST analysis failed");
+    }
+
+    return {
+      ast: data.normalizedAst?.ast || null,
+      diagnostics: data.normalizedAst?.diagnostics || [],
+      summary: data.normalizedAst?.summary || {},
+    };
+  };
+
+  const loadLessonFeedback = async () => {
+    const [compileResult, astResult] = await Promise.allSettled([
+      fetchCompileAnalysis(),
+      fetchAstAnalysis(),
+    ]);
+
+    const compileAnalysis =
+      compileResult.status === "fulfilled"
+        ? compileResult.value
+        : {
+            compileOutput: "",
+            stderr: compileResult.reason?.message || "Judge0 compilation is temporarily unavailable.",
+            stdout: "",
+            statusDescription: "",
+          };
+
+    if (astResult.status !== "fulfilled") {
+      throw astResult.reason;
+    }
+
+    const astAnalysis = astResult.value;
+
+    return {
+      feedback: buildLearnerFeedback({
+        compileOutput:
+          compileAnalysis.compileOutput ||
+          compileAnalysis.stdout ||
+          compileAnalysis.statusDescription ||
+          "",
+        stderr: compileAnalysis.stderr || "",
+        ast: astAnalysis.ast,
+        diagnostics: astAnalysis.diagnostics,
+        summary: astAnalysis.summary,
+        languageKey: selectedLang.monaco,
+      }),
+      compileAnalysis,
+    };
   };
 
   const handleRun = () => {
@@ -149,48 +246,16 @@ console.log("MODULE ID:", moduleId);
       setOutput("Submitting your code for review...");
 
       try {
-        const [compileResponse, astResponse] = await Promise.all([
-          fetch("/compile-poll", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              source_code: code,
-              language_id: selectedLang.id,
-              stdin: "",
-            }),
-          }),
-          fetch("/api/ast/parse", {
-            method: "POST",
-            credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              source_code: code,
-              language_id: selectedLang.id,
-            }),
-          }),
-        ]);
+        const { feedback, compileAnalysis } = await loadLessonFeedback();
 
-        const compileData = await compileResponse.json();
-        const astData = await astResponse.json();
-
-        if (!astResponse.ok || !astData.success) {
-          throw new Error(astData.error || "AST analysis failed");
-        }
-
-        const diagnostics = astData.normalizedAst?.diagnostics || [];
-        const summary = astData.normalizedAst?.summary || {};
-        const compileResult = compileData?.data || {};
+        setHintFeedback(feedback);
+        setHintError("");
         setOutput(
-          formatLearnerFeedback({
-            compileOutput: compileResult.compile_output || compileData?.error || "",
-            stderr: compileResult.stderr || "",
-            diagnostics,
-            summary,
-          })
+          compileAnalysis.stdout ||
+            compileAnalysis.stderr ||
+            compileAnalysis.compileOutput ||
+            compileAnalysis.statusDescription ||
+            "Submission reviewed. Open Hints for guidance."
         );
       } catch (error) {
         console.error("Submit error:", error);
@@ -199,6 +264,23 @@ console.log("MODULE ID:", moduleId);
     };
 
     submitCode();
+  };
+
+  const handleHints = async () => {
+    setHintOpen(true);
+    setHintLoading(true);
+    setHintError("");
+
+    try {
+      const { feedback } = await loadLessonFeedback();
+      setHintFeedback(feedback);
+    } catch (error) {
+      console.error("Hint analysis error:", error);
+      setHintFeedback(null);
+      setHintError(error.message || "Unable to load hints");
+    } finally {
+      setHintLoading(false);
+    }
   };
 
   const handleSendMessage = () => {
@@ -321,6 +403,20 @@ useEffect(() => {
     }
   }, [messages]);
 
+  useEffect(() => {
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setHintOpen(false);
+      }
+    };
+
+    if (hintOpen) {
+      window.addEventListener("keydown", handleEscape);
+    }
+
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [hintOpen]);
+
  return (
   <div className="Videolesson-container">
     <Split
@@ -391,6 +487,13 @@ useEffect(() => {
               onClick={handleSubmit}
             >
               Submit
+            </button>
+
+            <button
+              className="hint-btn"
+              onClick={handleHints}
+            >
+              Hints
             </button>
           </div>
         </div>
@@ -469,6 +572,90 @@ useEffect(() => {
       </div>
 
     </Split>
+
+    {hintOpen && (
+      <div
+        className="hint-overlay"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="hint-modal-title"
+        onClick={() => setHintOpen(false)}
+      >
+        <div
+          className="hint-modal"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className="hint-modal-header">
+            <div>
+              <p className="hint-eyebrow">AST Hints</p>
+              <h2 id="hint-modal-title">Friendly feedback for your code</h2>
+            </div>
+
+            <button
+              type="button"
+              className="hint-close-btn"
+              onClick={() => setHintOpen(false)}
+              aria-label="Close hints"
+            >
+              Close
+            </button>
+          </div>
+
+          {hintLoading ? (
+            <div className="hint-state">Analyzing your code...</div>
+          ) : hintError ? (
+            <div className="hint-state hint-error">{hintError}</div>
+          ) : hintFeedback ? (
+            <div className="hint-content">
+              {hintFeedback.intent?.length > 0 && (
+                <section className="hint-section">
+                  <h3>What the code is trying to do</h3>
+                  <ul>
+                    {hintFeedback.intent.map((item, index) => (
+                      <li key={`intent-${index}`}>{item}</li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {hintFeedback.problems?.length > 0 && (
+                <section className="hint-section">
+                  <h3>What went wrong</h3>
+                  <ul>
+                    {hintFeedback.problems.map((item, index) => (
+                      <li key={`problem-${index}`}>{item}</li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {hintFeedback.fixes?.length > 0 && (
+                <section className="hint-section">
+                  <h3>Exact fix</h3>
+                  <ul>
+                    {hintFeedback.fixes.map((item, index) => (
+                      <li key={`fix-${index}`}>{item}</li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {!hintFeedback.intent?.length &&
+                !hintFeedback.problems?.length &&
+                !hintFeedback.fixes?.length && (
+                  <div className="hint-state">
+                    No specific issue could be inferred from the AST alone.
+                  </div>
+                )}
+            </div>
+          ) : (
+            <div className="hint-state">
+              No hints available yet. Click Hints again after making changes.
+            </div>
+          )}
+        </div>
+      </div>
+    )}
   </div>
 );
 }
