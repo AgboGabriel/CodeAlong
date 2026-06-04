@@ -41,7 +41,7 @@ class Judge0Controller {
 
         } catch (error) {
             console.error('Compilation error:', error);
-            res.status(500).json({
+            res.status(error.statusCode || 500).json({
                 success: false,
                 error: error.message || 'Internal server error'
             });
@@ -89,7 +89,7 @@ class Judge0Controller {
                 });
             }
             
-            res.status(500).json({
+            res.status(error.statusCode || 500).json({
                 success: false,
                 error: error.message || 'Internal server error'
             });
@@ -142,7 +142,7 @@ class Judge0Controller {
 
         } catch (error) {
             console.error('Polling compilation error:', error);
-            res.status(500).json({
+            res.status(error.statusCode || 500).json({
                 success: false,
                 error: error.message || 'Internal server error'
             });

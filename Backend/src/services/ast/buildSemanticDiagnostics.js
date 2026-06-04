@@ -44,13 +44,26 @@ function collectDeclaredIdentifiers(astRoot) {
 export function buildSemanticDiagnostics(astRoot, languageKey) {
   if (
     !astRoot ||
-    !["c", "cpp", "java", "csharp", "go", "rust", "javascript"].includes(languageKey)
+    !["c", "cpp", "java", "csharp", "go", "rust", "javascript", "python"].includes(languageKey)
   ) {
     return [];
   }
 
   const declared = collectDeclaredIdentifiers(astRoot);
   const ignoreNames = new Set(["std", "cout", "cin", "System", "Console", "fmt", "main"]);
+  const languageSpecificIgnores = {
+    javascript: ["console", "window", "document", "Math", "JSON", "Array", "String", "Number", "Boolean", "Date", "setTimeout", "setInterval"],
+    python: ["print", "len", "range", "str", "int", "float", "list", "dict", "set", "tuple"],
+    cpp: ["endl"],
+    java: ["System", "String"],
+    csharp: ["Console", "String"],
+    go: ["fmt"],
+    rust: ["println", "print"],
+  };
+
+  for (const name of languageSpecificIgnores[languageKey] || []) {
+    ignoreNames.add(name);
+  }
   const diagnostics = [];
   const seen = new Set();
 
