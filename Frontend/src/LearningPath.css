@@ -1,8 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
 
 :root {
-  --primary: #137fec;
-  --primary-hover: #1a55d4;
   --primary-light: rgba(19, 127, 236, 0.12);
   --primary-border: rgba(19, 127, 236, 0.25);
   --bg: #f4f6fb;

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Editor from "@monaco-editor/react";
+import * as monaco from "monaco-editor";
 import Split from "react-split";
 import "./challenges.css";
 
@@ -30,38 +31,106 @@ const CODE_TEMPLATES = {
   rust: "// Write Rust code here\n"
 };
 
+
 export default function Challenges() {
-  const [selectedLang, setSelectedLang] = useState(LANGUAGES[0]);
-  const [code, setCode] = useState(
-    CODE_TEMPLATES[LANGUAGES[0].monaco]
-  );
+  const navigate = useNavigate();
   const [output, setOutput] = useState("");
+  const [tabs, setTabs] = useState([
+    {
+      id: 1,
+      name: "Tab 1",
+      language: LANGUAGES[0],
+      code: CODE_TEMPLATES.javascript
+    }
+  ]);
 
-  // Handle language switch
+  const [activeTab, setActiveTab] = useState(1);
+
+    const currentTab = tabs.find(
+    (tab) => tab.id === activeTab
+  );
+
+  const selectedLang =
+    currentTab?.language || LANGUAGES[0];
+
   const handleLanguageChange = (id) => {
-    const lang = LANGUAGES.find((l) => l.id === Number(id));
-    setSelectedLang(lang);
-    setCode(CODE_TEMPLATES[lang.monaco] || "");
-    setOutput("");
-  };
+  const lang = LANGUAGES.find(
+    (l) => l.id === Number(id)
+  );
 
-  // Handle code execution (placeholder)
-  const handleRun = () => {
-    setOutput("Execution engine not connected yet.");
-  };
+  if (!lang) return;
+
+  setTabs((prev) =>
+    prev.map((tab) =>
+      tab.id === activeTab
+        ? {
+            ...tab,
+            language: lang,
+            code: CODE_TEMPLATES[lang.monaco]
+          }
+        : tab
+    )
+  );
+
+  setOutput("");
+};
 
   const handleSubmit = () => {
-  // Replace this with your backend call later
   setOutput("Your code has been submitted for evaluation...");
+    
+  };
+  const handleRun = () => {
+  const code = currentTab?.code || "";
 
-  const navigate = useNavigate();
+  setOutput(`Running...\n\n${code}`);
 };
+
+const handleAddTab = () => {
+  const newTab = {
+    id: Date.now(),
+    name: `Tab ${tabs.length + 1}`,
+    language: LANGUAGES[0],
+    code: CODE_TEMPLATES.javascript
+  };
+
+  setTabs((prev) => [...prev, newTab]);
+  setActiveTab(newTab.id);
+};
+const handleDeleteTab = (tabId) => {
+  setTabs((prev) => {
+    const updated = prev.filter((tab) => tab.id !== tabId);
+
+    
+    if (activeTab === tabId && updated.length > 0) {
+      setActiveTab(updated[0].id);
+    }
+
+    return updated;
+  });
+};
+  /* ================= MONACO ================= */
+  const handleEditorBeforeMount = useCallback((monacoInstance) => {
+    monacoInstance.editor.defineTheme("custom-dark", {
+      base: "vs-dark",
+      inherit: true,
+      rules: [],
+      colors: {
+        "editor.background": "#0f172a",
+        "editorSuggestWidget.background": "#0f172a",
+        "editorSuggestWidget.foreground": "#e2e8f0",
+        "editorSuggestWidget.selectedBackground": "#2563eb",
+        "editorSuggestWidget.border": "#334155",
+        "editorSuggestWidget.highlightForeground": "#60a5fa",
+      },
+    });
+  }, []);
+
 
   return (
     <div className="challenge-container">
       <Split
         className="challenge-layout"
-        sizes={[40, 60]}
+        sizes={[35,65]}
         minSize={120}
         gutterSize={6}
       >
@@ -90,36 +159,81 @@ export default function Challenges() {
             </select>
 
             <div className="editor-actions">
-          <button className="run-btn" onClick={handleRun}>
-            Run
-          </button>
+              <button className="run-btn" onClick={handleRun}>
+                Run
+              </button>
 
-          <button className="submit-btn" onClick={handleSubmit}>
-            Submit
-          </button>
-        </div>
+              <button className="submit-btn" onClick={handleSubmit}>
+                Submit
+              </button>
+            </div>
+
+                    <div className="editor-tabs">
+                      {tabs.map((tab) => (
+                        <div
+                          key={tab.id}
+                          className={`tab-btn ${activeTab === tab.id ? "active-tab" : ""}`}
+                          onClick={() => setActiveTab(tab.id)}
+                        >
+                          <span className="tab-name">{tab.name}</span>
+
+                          <button
+                            className="tab-close"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteTab(tab.id);
+                            }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+
+                      <button className="add-tab-btn" onClick={handleAddTab}>
+                        +
+                      </button>
+                    </div>
           </div>
 
-          <div className="editor-wrapper">
-            <Editor
-              height="100%"
-              theme="vs-dark"
-              language={selectedLang.monaco}
-              value={code}
-              onChange={(value) => setCode(value || "")}
-              options={{
-                minimap: { enabled: false },
-                fontSize: 16,
-                lineHeight: 24,
-                scrollBeyondLastLine: false,
-                automaticLayout: true
-              }}
-            />
-          </div>
+              <Split
+                direction="vertical"
+                className="editor-terminal-split"
+                sizes={[75, 25]}
+                minSize={[250, 100]}
+                gutterSize={6}
+              >
 
-          <div className="output-panel">
-            {output || "Run your code to see output here."}
-          </div>
+
+                <div className="editor-wrapper">
+                  <Editor
+                    height="100%"
+                    theme="custom-dark"
+                    beforeMount={handleEditorBeforeMount}
+                    language={selectedLang.monaco}
+                    value={currentTab?.code || ""}
+                    onChange={(value) => {
+                      setTabs((prev) =>
+                        prev.map((tab) =>
+                          tab.id === activeTab
+                            ? { ...tab, code: value || "" }
+                            : tab
+                        )
+                      );
+                    }}
+                    options={{
+                      minimap: { enabled: false },
+                      fontSize: 18,
+                      lineHeight: 30,
+                      scrollBeyondLastLine: false,
+                      automaticLayout: true
+                    }}
+                  />
+                </div>
+
+                <div className="output-panel">
+                  {output || "Run your code to see output here."}
+                </div>
+              </Split>
         </div>
       </Split>
     </div>
