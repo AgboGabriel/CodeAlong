@@ -24,6 +24,7 @@
   display: flex;
   flex-direction: column;
   max-width: 700px;
+  position: relative;
 }
 .video-placeholder {
   margin-top: 12px;
@@ -454,4 +455,18 @@
 .menu-btn{
   font: 18px;  
   width: 30px;
+}
+
+.video-back-btn {
+  align-self: flex-start;
+  padding: 10px 16px;
+  border: none;
+  background: #137fec;
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.video-back-btn:hover {
+ background: #1a55d4;
 }

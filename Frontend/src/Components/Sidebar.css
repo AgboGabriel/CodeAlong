@@ -28,8 +28,12 @@
   display: flex;
   align-items: center;
   gap: 20px;
+  cursor: pointer;
   border-bottom: solid 2px rgba(137, 135, 135, 0.1);
-  
+  transition: opacity 0.2s ease;
+}
+.sidebar-logo:hover {
+  background: #e2e8f2;
 }
 .logo-icon {
   width: 36px;

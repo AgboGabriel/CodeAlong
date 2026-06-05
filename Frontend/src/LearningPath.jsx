@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import Sidebar from "./components/Sidebar";
-import Header from "./components/Header";
-import UserProfile, { user } from "./components/UserProfile";
+import Sidebar from "./Components/Sidebar";
+import Header from "./Components/Header";
+import UserProfile, { user } from "./Components/UserProfile";
 import "./LearningPath.css";
 
 import {

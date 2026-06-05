@@ -39,6 +39,21 @@
   justify-content: space-between;
   margin-bottom: 15px;
 }
+.quiz-back-btn {
+  border: none;
+  background: #137fec;
+  color: white;
+  padding: 12px 22px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.quiz-back-btn:hover {
+  background-color: #1a55d4;
+}
 
 .quiz-title-row h1 {
   font-size: 28px;

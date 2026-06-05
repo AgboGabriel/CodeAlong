@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "./Dashboard.css";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
-import UserProfile, { user } from "./components/UserProfile";
+import UserProfile, { user } from "./Components/UserProfile";
 
 import {
   MdLocalFireDepartment,

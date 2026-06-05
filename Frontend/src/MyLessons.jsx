@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import "./MyLessons.css";
 import Sidebar from "./Components/Sidebar";
-import Header from "./components/Header";
-import UserProfile, { user } from "./components/UserProfile";
+import Header from "./Components/Header";
+import UserProfile, { user } from "./Components/UserProfile";
 
 import {
   MdSearch,
@@ -104,18 +104,14 @@ const filteredPaths = learningPaths.filter((path) => {
   return matchesSearch && matchesFilter;
 });
 
-
 const handleBack = () => {
   if (view === "topics") {
     setView("modules");
     setSelectedModule(null);
-    return;
-  }
-
-  if (view === "modules") {
+  } else {
     setSelectedPath(null);
     setSelectedModule(null);
-    return;
+    setView("modules");
   }
 };
 
@@ -197,6 +193,11 @@ const handleNoKnowledge = () => {
 
   // Send user to first video
   window.location.href = "/Videolesson";
+};
+
+const handleCancelQuiz = () => {
+  setShowQuizPopup(false);
+  setSelectedTopic(null);
 };
 
   if (!selectedPath) {
@@ -559,31 +560,36 @@ const handleNoKnowledge = () => {
               {showQuizPopup && (
                 <div className="quiz-popup-overlay">
                   <div className="quiz-popup">
+            <button
+              className="popup-close-btn"
+              onClick={handleCancelQuiz}
+            >
+              ×
+            </button>
 
-                    <h2>Prior Knowledge Check</h2>
+            <h2>Prior Knowledge Check</h2>
 
-                    <p>
-                      Do you already have prior knowledge about{" "}
-                      <strong>{selectedTopic?.title}</strong>?
-                    </p>
+            <p>
+              Do you already have prior knowledge about{" "}
+              <strong>{selectedTopic?.title}</strong>?
+            </p>
 
-                    <div className="popup-buttons">
-                      <button
-                        className="yes-btn"
-                        onClick={handleHasKnowledge}
-                      >
-                        Yes
-                      </button>
+            <div className="popup-buttons">
+              <button
+                className="yes-btn"
+                onClick={handleHasKnowledge}
+              >
+                Yes
+              </button>
 
-                      <button
-                        className="no-btn"
-                        onClick={handleNoKnowledge}
-                      >
-                        No
-                      </button>
-                    </div>
-
-                  </div>
+              <button
+                className="no-btn"
+                onClick={handleNoKnowledge}
+              >
+                No
+              </button>
+            </div>
+          </div>
                 </div>
               )}
 

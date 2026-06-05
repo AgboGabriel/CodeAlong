@@ -25,11 +25,16 @@ export default function Sidebar() {
     localStorage.removeItem("token");
     navigate("/");
   };
+  
 
   return (
     <aside className="sidebar">
 
-      <div className="sidebar-logo">
+      <div
+        className="sidebar-logo"
+        onClick={() => navigate("/dashboard")}
+        style={{ cursor: "pointer" }}
+      >
         <div className="logo-icon">
           <img className="logo-img" src={logo} alt="Logo" />
         </div>

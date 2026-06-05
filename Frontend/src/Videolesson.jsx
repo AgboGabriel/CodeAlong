@@ -310,16 +310,25 @@ useEffect(() => {
 
         {/* VIDEO PANEL */}
         <div className="video-panel">
-          <div className="video-frame">
-            <iframe
-              src={YOUTUBE_URL}
-              width="100%"
-              height="100%"
-              title="Lesson Video"
-              allowFullScreen
-            />
-          </div>
-        </div>
+
+  <button
+    className="video-back-btn"
+    onClick={() => navigate(-1)}
+  >
+    ← Back to Topics
+  </button>
+
+  <div className="video-frame">
+    <iframe
+      src={YOUTUBE_URL}
+      width="100%"
+      height="100%"
+      title="Lesson Video"
+      allowFullScreen
+    />
+  </div>
+
+</div>
 
         {/* EDITOR PANEL */}
         <div className="editor-panel">

@@ -197,6 +197,13 @@ export default function QuizPage() {
           <div className="quiz-progress-left">
 
             <div className="quiz-title-row">
+
+              <button
+                className="quiz-back-btn"
+                onClick={() => navigate("/MyLessons")}
+              >
+                ← Back
+              </button>
               <h1>React Fundamentals Quiz</h1>
 
               <span>
