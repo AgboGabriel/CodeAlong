@@ -15,6 +15,7 @@ import {
   MdFolder,
   MdQuiz,
   MdCode,
+  MdLock
 } from "react-icons/md";
 
 
@@ -77,12 +78,14 @@ const [showQuizPopup, setShowQuizPopup] = useState(false);
 const [selectedTopic, setSelectedTopic] = useState(null);
 
 
-const toggleTopic = (index) => {
+const toggleTopic = (index, locked) => {
+  if (locked) return;
+
   setExpandedTopics((prev) => {
     const updated = new Set(prev);
 
     if (updated.has(index)) {
-      updated.delete(index); 
+      updated.delete(index);
     } else {
       updated.add(index);
     }
@@ -120,52 +123,22 @@ const modules = [
     id: 1,
     title: "Programming Fundamentals",
     status: "completed",
-    description:
-      "Variables, loops, data types, and logic.",
+    description: "Variables, loops, data types, and logic.",
     topics: [
       {
         title: "Variables & Data Types",
-        videos: ["Intro Video", "Practice Video"]
+        videos: ["Intro Video", "Practice Video"],
+        locked: false
       },
       {
         title: "Loops",
-        videos: ["For Loop Explained", "While Loop Demo"]
+        videos: [],
+        locked: true
       },
       {
         title: "Functions",
-        videos: ["Function Basics", "Arrow Functions"]
-      }
-    ]
-  },
-
-  {
-    id: 2,
-    title: "HTML Basics",
-    status: "in-progress",
-    description:
-      "Master semantic HTML, structure, and forms.",
-    topics: [
-      {
-        title: "HTML Structure",
-        videos: ["HTML Intro", "Page Structure"]
-      },
-      {
-        title: "Forms",
-        videos: ["Input Types", "Form Validation"]
-      }
-    ]
-  },
-
-  {
-    id: 3,
-    title: "CSS Basics",
-    status: "locked",
-    description:
-      "Learn layouts, styling, and responsiveness.",
-    topics: [
-      {
-        title: "Selectors",
-        videos: ["Basic Selectors", "Advanced Selectors"]
+        videos: [],
+        locked: true
       }
     ]
   }
@@ -363,25 +336,9 @@ const handleCancelQuiz = () => {
                   <button
                     className="primary-btn"
                     onClick={() => {
-                      setSelectedModule({
-                        title: "Programming Fundamentals",
-                        topics: [
-                          {
-                            title: "Variables & Data Types",
-                            videos: ["Intro Video", "Practice Video"]
-                          },
-                          {
-                            title: "Loops",
-                            videos: ["For Loop Explained", "While Loop Demo"]
-                          },
-                          {
-                            title: "Functions",
-                            videos: ["Function Basics", "Arrow Functions"]
-                          }
-                        ]
-                      });
-
-                      setView("topics");
+                      const module = modules.find(m => m.id === 1);
+                      setSelectedModule(module);
+                      setView("topics");                   
                     }}
                   >
                     Review Lessons
@@ -494,25 +451,28 @@ const handleCancelQuiz = () => {
                   <div key={index} className="topic-card">
 
                     {/* Topic Header */}
-                    <div
-                      className="topic-header"
-                    onClick={() => toggleTopic(index)}
+                   <div
+                      className={`topic-header ${topic.locked ? "locked-topic" : ""}`}
+                     onClick={() => toggleTopic(index, topic.locked)}
                     >
                       <div className="topic-title">
                         <MdFolder className="topic-icon" />
                         <h3>{topic.title}</h3>
                       </div>
-                       <span className="chevron-icon">
-                       {expandedTopics.has(index) ? (
-                          <MdKeyboardArrowUp />
-                        ) : (
-                          <MdKeyboardArrowDown />
-                        )}
-                        </span>
+
+                      <span className="chevron-icon">
+                          {topic.locked ? (
+                            <MdLock /> 
+                          ) : expandedTopics.has(index) ? (
+                            <MdKeyboardArrowUp />
+                          ) : (
+                            <MdKeyboardArrowDown />
+                          )}
+                      </span>
                     </div>
 
                   {/* Dropdown Content */}
-                        {expandedTopics.has(index) && (
+                        {!topic.locked && expandedTopics.has(index) && (
                           <div className="video-list">
 
                             

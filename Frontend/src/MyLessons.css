@@ -636,25 +636,7 @@ width:300px;
   align-items: center;
   color: #137fec; /* match your theme */
 }
-.locked-topic {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
 
-.lock-badge {
-  margin-left: 10px;
-  font-size: 12px;
-  color: #ff9800;
-}
-.locked-topic {
-  opacity: 0.4;
-  pointer-events: none;
-}
-
-.lock-icon {
-  margin-left: auto;
-  color: #ffcc00;
-}
 .quiz-item,
 .challenge-item{
   display: flex;
