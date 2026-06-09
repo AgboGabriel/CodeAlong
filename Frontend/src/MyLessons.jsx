@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import logo from "./assets/Code along_logo-03.png";
 import "./MyLessons.css";
+import Sidebar from "./Components/Sidebar";
+import Header from "./Components/Header";
+import UserProfile, { user } from "./Components/UserProfile";
+
 
 import {
   MdAccountTree,
@@ -15,6 +19,7 @@ import {
   MdFolder,
   MdQuiz,
   MdCode,
+  MdLock,
   MdFolderOpen,
   MdMenuBook,
   MdNotifications,
@@ -289,7 +294,9 @@ const [showQuizPopup, setShowQuizPopup] = useState(false);
 const [selectedTopic, setSelectedTopic] = useState(null);
 
 
-const toggleTopic = (index) => {
+const toggleTopic = (index, locked) => {
+  if (locked) return;
+
   setExpandedTopics((prev) => {
     const updated = new Set(prev);
 
@@ -316,21 +323,42 @@ const filteredPaths = learningPaths.filter((path) => {
   return matchesSearch && matchesFilter;
 });
 
-
 const handleBack = () => {
   if (view === "topics") {
     setView("modules");
     setSelectedModule(null);
-    return;
-  }
-
-  if (view === "modules") {
+  } else {
     setSelectedPath(null);
     setSelectedModule(null);
-    return;
+    setView("modules");
   }
 };
 
+const modules = [
+  {
+    id: 1,
+    title: "Programming Fundamentals",
+    status: "completed",
+    description: "Variables, loops, data types, and logic.",
+    topics: [
+      {
+        title: "Variables & Data Types",
+        videos: ["Intro Video", "Practice Video"],
+        locked: false
+      },
+      {
+        title: "Loops",
+        videos: [],
+        locked: true
+      },
+      {
+        title: "Functions",
+        videos: [],
+        locked: true
+      }
+    ]
+  }
+];
 
 
 const handleQuizClick = (topic) => {
@@ -390,6 +418,10 @@ const openModuleTopics = (module, index) => {
   setView("topics");
 };
 
+const handleCancelQuiz = () => {
+  setShowQuizPopup(false);
+  setSelectedTopic(null);
+};
 const getModuleState = (module, index) => {
   const status = module.status?.toLowerCase() || (index === 0 ? "in-progress" : "locked");
   const isCompleted = status === "completed" || status === "complete";
@@ -634,32 +666,70 @@ if (loadingPaths) {
                   <div key={index} className="topic-card">
 
                     {/* Topic Header */}
-                    <div
-                      className="topic-header"
-                    onClick={() => toggleTopic(index)}
+                   <div
+                      className={`topic-header ${topic.locked ? "locked-topic" : ""}`}
+                     onClick={() => toggleTopic(index, topic.locked)}
                     >
                       <div className="topic-title">
                         <MdFolder className="topic-icon" />
                         <h3>{topic.title}</h3>
                       </div>
-                       <span className="chevron-icon">
-                       {expandedTopics.has(index) ? (
-                          <MdKeyboardArrowUp />
-                        ) : (
-                          <MdKeyboardArrowDown />
-                        )}
-                        </span>
+
+                      <span className="chevron-icon">
+                          {topic.locked ? (
+                            <MdLock /> 
+                          ) : expandedTopics.has(index) ? (
+                            <MdKeyboardArrowUp />
+                          ) : (
+                            <MdKeyboardArrowDown />
+                          )}
+                      </span>
                     </div>
 
-                    {expandedTopics.has(index) && (
-                      <div className="video-list">
-                        <div
-                          className="quiz-item"
-                          onClick={() => handleQuizClick(topic)}
-                        >
-                          <MdQuiz className="quiz-icon" />
-                          <span>{topic.title} Quiz</span>
-                        </div>
+{/* Dropdown Content */}
+{!topic.locked && expandedTopics.has(index) && (
+  <div className="video-list">
+    <div
+      className="quiz-item"
+      onClick={() => handleQuizClick(topic)}
+    >
+      <MdQuiz className="quiz-icon" />
+      <span>{topic.title} Quiz</span>
+    </div>
+
+    {(topic.videos || []).map((video, i) => (
+      <Link
+        key={video.videoId || i}
+        to="/Videolesson"
+        state={{
+          moduleId: selectedModule?.id,
+          topic,
+          video,
+        }}
+        className="video-link"
+      >
+        <div className="video-item">
+          <MdPlayCircleFilled className="video-icon" />
+          <span>{video.title}</span>
+        </div>
+      </Link>
+    ))}
+
+    <Link
+      to="/challenges"
+      state={{
+        moduleId: selectedModule?.id,
+        topic,
+      }}
+      className="challenge-link"
+    >
+      <div className="challenge-item">
+        <MdCode className="challenge-icon" />
+        <span>{topic.title} Coding Challenge</span>
+      </div>
+    </Link>
+  </div>
+)}
 
                         {(topic.videos || []).map((video, i) => (
                           // <Link
@@ -711,31 +781,36 @@ if (loadingPaths) {
               {showQuizPopup && (
                 <div className="quiz-popup-overlay">
                   <div className="quiz-popup">
+            <button
+              className="popup-close-btn"
+              onClick={handleCancelQuiz}
+            >
+              ×
+            </button>
 
-                    <h2>Prior Knowledge Check</h2>
+            <h2>Prior Knowledge Check</h2>
 
-                    <p>
-                      Do you already have prior knowledge about{" "}
-                      <strong>{selectedTopic?.title}</strong>?
-                    </p>
+            <p>
+              Do you already have prior knowledge about{" "}
+              <strong>{selectedTopic?.title}</strong>?
+            </p>
 
-                    <div className="popup-buttons">
-                      <button
-                        className="yes-btn"
-                        onClick={handleHasKnowledge}
-                      >
-                        Yes
-                      </button>
+            <div className="popup-buttons">
+              <button
+                className="yes-btn"
+                onClick={handleHasKnowledge}
+              >
+                Yes
+              </button>
 
-                      <button
-                        className="no-btn"
-                        onClick={handleNoKnowledge}
-                      >
-                        No
-                      </button>
-                    </div>
-
-                  </div>
+              <button
+                className="no-btn"
+                onClick={handleNoKnowledge}
+              >
+                No
+              </button>
+            </div>
+          </div>
                 </div>
               )}
 

@@ -157,7 +157,17 @@ export default function QuizPage() {
         <section className="quiz-progress-header">
           <div className="quiz-progress-left">
             <div className="quiz-title-row">
-              <h1>{quiz?.title || `${topic?.title || "Topic"} Quiz`}</h1>
+
+              <button
+                className="quiz-back-btn"
+                onClick={() => navigate("/MyLessons")}
+              >
+                ← Back
+              </button>
+ <h1>{quiz?.title || `${topic?.title || "Topic"} Quiz`}</h1>
+             
+
+
               <span>
                 Question {currentQuestion + 1} of {questions.length}
               </span>

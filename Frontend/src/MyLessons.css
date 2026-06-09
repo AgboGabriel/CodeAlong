@@ -636,6 +636,7 @@ width:300px;
   align-items: center;
   color: #137fec; /* match your theme */
 }
+
 .quiz-item,
 .challenge-item{
   display: flex;
@@ -697,11 +698,25 @@ width:300px;
   background: #fff;
   width: 90%;
   max-width: 400px;
-
+  position: relative;
   padding: 30px;
   border-radius: 16px;
-
   text-align: center;
+}
+.popup-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 20px;
+  border: none;
+  background: transparent;
+  font-size: 30px;
+  font-weight:bold;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+}
+.popup-close-btn:hover {
+  color: red;
 }
 
 .quiz-popup h2 {
@@ -727,17 +742,23 @@ width:300px;
   border-radius: 10px;
   cursor: pointer;
   font-size: 16px;
-  font-weight: 600;
-  transition: 0.3s;
+  font-weight: bold;
 }
 
 .yes-btn {
   background: #137fec;
   color: white;
 }
+.yes-btn:hover {
+  background:#1a55d4;
+  color: white;
+}
 
 .no-btn {
   background: #e5e7eb;
+}
+.no-btn:hover {
+  background: #c6c7c9;
 }
 
 .yes-btn:active,

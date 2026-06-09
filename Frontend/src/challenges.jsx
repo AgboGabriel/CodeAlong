@@ -1,5 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+
+import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState ,useCallback} from "react";
 import Editor from "@monaco-editor/react";
+import * as monaco from "monaco-editor";
 import Split from "react-split";
 import { useLocation } from "react-router-dom";
 import "./challenges.css";
@@ -29,41 +32,64 @@ const FALLBACK_TEMPLATES = {
   rust: "// Write Rust code here\n",
 };
 
+
 export default function Challenges() {
-  const location = useLocation();
-  const moduleId = location.state?.moduleId;
-  const topic = location.state?.topic;
+const location = useLocation();
+const moduleId = location.state?.moduleId;
+const topic = location.state?.topic;
 
-  const [selectedLang, setSelectedLang] = useState(LANGUAGES[0]);
-  const [challenge, setChallenge] = useState(null);
-  const [code, setCode] = useState(FALLBACK_TEMPLATES.javascript);
-  const [output, setOutput] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [submitSummary, setSubmitSummary] = useState(null);
-  const [astFeedback, setAstFeedback] = useState([]);
-  const [learnerFeedback, setLearnerFeedback] = useState(null);
+const [output, setOutput] = useState("");
 
-  const renderAstFeedback = astFeedback.map((item, index) => (
-    <div
-      key={`${item.code}-${index}`}
-      className={`challenge-feedback ${item.level || "info"}`}
-    >
-      <strong>{item.code}</strong>
-      <p>{item.message}</p>
-    </div>
-  ));
+const [tabs, setTabs] = useState([
+  {
+    id: 1,
+    name: "Tab 1",
+    language: LANGUAGES[0],
+    code: FALLBACK_TEMPLATES.javascript,
+  },
+]);
 
-  useEffect(() => {
-    const fetchChallenge = async () => {
-      if (!topic?.id) {
-        setOutput("Topic context is missing for this challenge.");
-        setLoading(false);
-        return;
-      }
+const [activeTab, setActiveTab] = useState(1);
 
-      try {
-        setLoading(true);
-        const response = await fetch("/api/assessment/challenge", {
+const currentTab = tabs.find(
+  (tab) => tab.id === activeTab
+);
+
+const selectedLang =
+  currentTab?.language || LANGUAGES[0];
+
+const code = currentTab?.code || "";
+
+const [challenge, setChallenge] = useState(null);
+const [loading, setLoading] = useState(true);
+const [submitSummary, setSubmitSummary] = useState(null);
+const [astFeedback, setAstFeedback] = useState([]);
+const [learnerFeedback, setLearnerFeedback] = useState(null);
+
+const renderAstFeedback = astFeedback.map((item, index) => (
+  <div
+    key={`${item.code}-${index}`}
+    className={`challenge-feedback ${item.level || "info"}`}
+  >
+    <strong>{item.code}</strong>
+    <p>{item.message}</p>
+  </div>
+));
+
+useEffect(() => {
+  const fetchChallenge = async () => {
+    if (!topic?.id) {
+      setOutput("Topic context is missing for this challenge.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const response = await fetch(
+        "/api/assessment/challenge",
+        {
           method: "POST",
           credentials: "include",
           headers: {
@@ -73,58 +99,100 @@ export default function Challenges() {
             topicId: topic.id,
             moduleId,
           }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok || !data.success) {
-          throw new Error(data.error || "Failed to load challenge");
         }
+      );
 
-        setChallenge(data.challenge);
-      } catch (error) {
-        console.error("Failed to fetch challenge:", error);
-        setOutput(error.message || "Unable to load challenge.");
-      } finally {
-        setLoading(false);
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.error || "Failed to load challenge"
+        );
       }
-    };
 
-    fetchChallenge();
-  }, [moduleId, topic?.id]);
-
-  const activeTemplate = useMemo(() => {
-    if (!challenge) {
-      return FALLBACK_TEMPLATES[selectedLang.monaco] || "";
+      setChallenge(data.challenge);
+    } catch (error) {
+      console.error(
+        "Failed to fetch challenge:",
+        error
+      );
+      setOutput(
+        error.message || "Unable to load challenge."
+      );
+    } finally {
+      setLoading(false);
     }
-
-    return (
-      challenge.starterCodeByLanguage?.[selectedLang.monaco] ||
-      FALLBACK_TEMPLATES[selectedLang.monaco] ||
-      ""
-    );
-  }, [challenge, selectedLang.monaco]);
-
-  useEffect(() => {
-    setCode(activeTemplate);
-  }, [activeTemplate]);
-
-  const handleLanguageChange = (id) => {
-    const lang = LANGUAGES.find((entry) => entry.id === Number(id));
-    if (!lang) return;
-
-    setSelectedLang(lang);
-    setOutput("");
-    setSubmitSummary(null);
-    setAstFeedback([]);
-    setLearnerFeedback(null);
   };
 
-  const handleRun = async () => {
-    setOutput("Executing your code...");
+  fetchChallenge();
+}, [moduleId, topic?.id]);
 
-    try {
-      const response = await fetch("/compile-poll", {
+const activeTemplate = useMemo(() => {
+  if (!challenge) {
+    return (
+      FALLBACK_TEMPLATES[selectedLang.monaco] || ""
+    );
+  }
+
+  return (
+    challenge.starterCodeByLanguage?.[
+      selectedLang.monaco
+    ] ||
+    FALLBACK_TEMPLATES[selectedLang.monaco] ||
+    ""
+  );
+}, [challenge, selectedLang.monaco]);
+
+useEffect(() => {
+  setTabs((prev) =>
+    prev.map((tab) =>
+      tab.id === activeTab
+        ? {
+            ...tab,
+            code: activeTemplate,
+          }
+        : tab
+    )
+  );
+}, [activeTemplate]);
+
+const handleLanguageChange = (id) => {
+  const lang = LANGUAGES.find(
+    (entry) => entry.id === Number(id)
+  );
+
+  if (!lang) return;
+
+  setTabs((prev) =>
+    prev.map((tab) =>
+      tab.id === activeTab
+        ? {
+            ...tab,
+            language: lang,
+            code:
+              challenge?.starterCodeByLanguage?.[
+                lang.monaco
+              ] ||
+              FALLBACK_TEMPLATES[lang.monaco] ||
+              "",
+          }
+        : tab
+    )
+  );
+
+  setOutput("");
+  setSubmitSummary(null);
+  setAstFeedback([]);
+  setLearnerFeedback(null);
+};
+
+const handleRun = async () => {
+  setOutput("Executing your code...");
+
+  try {
+    const response = await fetch(
+      "/compile-poll",
+      {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -132,105 +200,196 @@ export default function Challenges() {
         body: JSON.stringify({
           source_code: code,
           language_id: selectedLang.id,
-          stdin: challenge?.publicTests?.[0]?.input || "",
+          stdin:
+            challenge?.publicTests?.[0]?.input ||
+            "",
         }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setOutput(data.error || "Execution failed");
-        return;
       }
+    );
 
-      const result = data.data;
-      const finalOutput =
-        result.stdout ||
-        result.stderr ||
-        result.compile_output ||
-        result.status?.description ||
-        "No output";
+    const data = await response.json();
 
-      setOutput(finalOutput);
-    } catch (error) {
-      console.error("Execution error:", error);
-      setOutput("Unable to connect to the server");
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!challenge) {
+    if (!response.ok) {
+      setOutput(data.error || "Execution failed");
       return;
     }
 
-    setOutput("Evaluating your solution...");
-    setSubmitSummary(null);
-    setAstFeedback([]);
-    setLearnerFeedback(null);
+    const result = data.data;
 
-    try {
-      const [evaluationResponse, astResponse] = await Promise.all([
-        fetch("/api/assessment/challenge/evaluate", {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            source_code: code,
-            language_id: selectedLang.id,
-            test_cases: [...challenge.publicTests, ...challenge.hiddenTests],
-          }),
-        }),
+    setOutput(
+      result.stdout ||
+        result.stderr ||
+        result.compile_output ||
+        result.status?.description ||
+        "No output"
+    );
+  } catch (error) {
+    console.error("Execution error:", error);
+    setOutput("Unable to connect to the server");
+  }
+};
+
+const handleSubmit = async () => {
+  if (!challenge) return;
+
+  setOutput("Evaluating your solution...");
+  setSubmitSummary(null);
+  setAstFeedback([]);
+  setLearnerFeedback(null);
+
+  try {
+    const [evaluationResponse, astResponse] =
+      await Promise.all([
+        fetch(
+          "/api/assessment/challenge/evaluate",
+          {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body: JSON.stringify({
+              source_code: code,
+              language_id: selectedLang.id,
+              test_cases: [
+                ...challenge.publicTests,
+                ...challenge.hiddenTests,
+              ],
+            }),
+          }
+        ),
         fetch("/api/ast/parse", {
           method: "POST",
           credentials: "include",
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
           body: JSON.stringify({
             source_code: code,
             language_id: selectedLang.id,
             analysis_options: {
-              expectations: challenge.structuralExpectations || {},
+              expectations:
+                challenge.structuralExpectations ||
+                {},
             },
           }),
         }),
       ]);
 
-      const evaluationData = await evaluationResponse.json();
-      const astData = await astResponse.json();
+    const evaluationData =
+      await evaluationResponse.json();
 
-      if (!evaluationResponse.ok || !evaluationData.success) {
-        throw new Error(evaluationData.error || "Challenge evaluation failed");
-      }
+    const astData =
+      await astResponse.json();
 
-      setSubmitSummary(evaluationData.evaluation);
-      const diagnostics = astData.normalizedAst?.diagnostics || [];
-      setAstFeedback(diagnostics);
-      const failedCase = evaluationData.evaluation.results.find((result) => !result.passed);
-      setLearnerFeedback(
-        buildLearnerFeedback({
-          compileOutput: failedCase?.compileOutput || "",
-          stderr: failedCase?.stderr || "",
-          ast: astData.normalizedAst?.ast || null,
-          diagnostics,
-          summary: astData.normalizedAst?.summary || {},
-          languageKey: selectedLang.monaco,
-        })
+    if (
+      !evaluationResponse.ok ||
+      !evaluationData.success
+    ) {
+      throw new Error(
+        evaluationData.error ||
+          "Challenge evaluation failed"
       );
-      setOutput(
-        `Passed ${evaluationData.evaluation.passed} of ${evaluationData.evaluation.total} test cases.`
-      );
-    } catch (error) {
-      console.error("Challenge submission error:", error);
-      setOutput(error.message || "Unable to evaluate challenge");
     }
+
+    setSubmitSummary(
+      evaluationData.evaluation
+    );
+
+    const diagnostics =
+      astData.normalizedAst?.diagnostics ||
+      [];
+
+    setAstFeedback(diagnostics);
+
+    const failedCase =
+      evaluationData.evaluation.results.find(
+        (result) => !result.passed
+      );
+
+    setLearnerFeedback(
+      buildLearnerFeedback({
+        compileOutput:
+          failedCase?.compileOutput || "",
+        stderr: failedCase?.stderr || "",
+        ast:
+          astData.normalizedAst?.ast || null,
+        diagnostics,
+        summary:
+          astData.normalizedAst?.summary ||
+          {},
+        languageKey:
+          selectedLang.monaco,
+      })
+    );
+
+    setOutput(
+      `Passed ${evaluationData.evaluation.passed} of ${evaluationData.evaluation.total} test cases.`
+    );
+  } catch (error) {
+    console.error(
+      "Challenge submission error:",
+      error
+    );
+
+    setOutput(
+      error.message ||
+        "Unable to evaluate challenge"
+    );
+  }
+};
+const handleAddTab = () => {
+  const newTab = {
+    id: Date.now(),
+    name: `Tab ${tabs.length + 1}`,
+    language: LANGUAGES[0],
+    code: CODE_TEMPLATES.javascript
   };
+
+  setTabs((prev) => [...prev, newTab]);
+  setActiveTab(newTab.id);
+};
+const handleDeleteTab = (tabId) => {
+  setTabs((prev) => {
+    const updated = prev.filter((tab) => tab.id !== tabId);
+
+    
+    if (activeTab === tabId && updated.length > 0) {
+      setActiveTab(updated[0].id);
+    }
+
+    return updated;
+  });
+};
+  /* ================= MONACO ================= */
+  const handleEditorBeforeMount = useCallback((monacoInstance) => {
+    monacoInstance.editor.defineTheme("custom-dark", {
+      base: "vs-dark",
+      inherit: true,
+      rules: [],
+      colors: {
+        "editor.background": "#0f172a",
+        "editorSuggestWidget.background": "#0f172a",
+        "editorSuggestWidget.foreground": "#e2e8f0",
+        "editorSuggestWidget.selectedBackground": "#2563eb",
+        "editorSuggestWidget.border": "#334155",
+        "editorSuggestWidget.highlightForeground": "#60a5fa",
+      },
+    });
+  }, []);
+
 
   return (
     <div className="challenge-container">
-      <Split className="challenge-layout" sizes={[40, 60]} minSize={120} gutterSize={6}>
+      <Split
+        className="challenge-layout"
+        sizes={[35,65]}
+        minSize={120}
+        gutterSize={6}
+      >
+        {/* LEFT: Question Panel */}
         <div className="question-panel">
           <button className="back-btn" onClick={() => window.history.back()}>
             Back
@@ -346,26 +505,78 @@ export default function Challenges() {
                 Submit
               </button>
             </div>
-          </div>
+<div className="editor-tabs">
+  {tabs.map((tab) => (
+    <div
+      key={tab.id}
+      className={`tab-btn ${
+        activeTab === tab.id ? "active-tab" : ""
+      }`}
+      onClick={() => setActiveTab(tab.id)}
+    >
+      <span className="tab-name">{tab.name}</span>
 
-          <div className="editor-wrapper">
-            <Editor
-              height="100%"
-              theme="vs-dark"
-              language={selectedLang.monaco}
-              value={code}
-              onChange={(value) => setCode(value || "")}
-              options={{
-                minimap: { enabled: false },
-                fontSize: 16,
-                lineHeight: 24,
-                scrollBeyondLastLine: false,
-                automaticLayout: true,
-              }}
-            />
-          </div>
+      <button
+        className="tab-close"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleDeleteTab(tab.id);
+        }}
+      >
+        ×
+      </button>
+    </div>
+  ))}
 
-          <div className="output-panel">{output || "Run your code to see output here."}</div>
+  <button
+    className="add-tab-btn"
+    onClick={handleAddTab}
+  >
+    +
+  </button>
+</div>
+</div>
+
+<Split
+  direction="vertical"
+  className="editor-terminal-split"
+  sizes={[75, 25]}
+  minSize={[250, 100]}
+  gutterSize={6}
+>
+  <div className="editor-wrapper">
+    <Editor
+      height="100%"
+      theme="custom-dark"
+      beforeMount={handleEditorBeforeMount}
+      language={selectedLang.monaco}
+      value={currentTab?.code || ""}
+      onChange={(value) => {
+        setTabs((prev) =>
+          prev.map((tab) =>
+            tab.id === activeTab
+              ? {
+                  ...tab,
+                  code: value || "",
+                }
+              : tab
+          )
+        );
+      }}
+      options={{
+        minimap: { enabled: false },
+        fontSize: 18,
+        lineHeight: 30,
+        scrollBeyondLastLine: false,
+        automaticLayout: true,
+      }}
+    />
+  </div>
+
+  <div className="output-panel">
+    {output || "Run your code to see output here."}
+  </div>
+</Split>
         </div>
       </Split>
     </div>
