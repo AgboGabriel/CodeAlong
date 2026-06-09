@@ -9,11 +9,11 @@ class CurriculumModel {
 
       const curriculumResult = await client.query(
         `
-          INSERT INTO user_curriculums (user_id, description, status, current_module_index, current_topic_index)
-          VALUES ($1, $2, 'active', 0, 0)
+          INSERT INTO user_curriculums (user_id,title, description, status, current_module_index, current_topic_index)
+          VALUES ($1, $2, $3, 'active', 0, 0)
           RETURNING *
         `,
-        [userId, curriculum.description || "Your personalized learning path is ready."]
+        [userId, curriculum.title || "Custom Learning Path", curriculum.description || "Your personalized learning path is ready."]
       );
 
       const savedCurriculum = curriculumResult.rows[0];
@@ -130,6 +130,49 @@ class CurriculumModel {
       modules,
     };
   }
+  async getCurriculumByUserId(userId){
+      const MyCurriculum= await database.query(
+        `SELECT *
+        FROM user_curriculums
+        WHERE user_id=$1
+      ORDER BY created_at DESC`,
+      [userId]
+      );
+      const curriculums=[];
+      for(const curriculum of MyCurriculum.rows){
+        const modulesResult=await database.query(
+         ` SELECT *
+        FROM curriculum_modules
+        WHERE curriculum_id = $1
+        ORDER BY module_index ASC
+      `,
+      [curriculum.id]
+        );
+        const modules=[]
+        for(const module of modulesResult.rows){
+          const topicsResult= await database.query(
+            `
+              SELECT *
+          FROM curriculum_topics
+          WHERE module_id = $1
+          ORDER BY topic_index ASC
+            `,
+            [module.id]
+          );
+          modules.push({
+            ...module,
+            topics:topicsResult.rows,
+          })
+        }
+        curriculums.push({
+          ...curriculum,
+          modules,
+        })
+      }
+    return curriculums;
+    
+  }
+
 
   async getModuleWithTopics(moduleId, userId) {
     const moduleResult = await database.query(
@@ -137,7 +180,8 @@ class CurriculumModel {
         SELECT
           cm.*,
           uc.user_id,
-          uc.id AS curriculum_id
+          uc.id AS curriculum_id,
+          uc.title AS curriculum_title
         FROM curriculum_modules cm
         JOIN user_curriculums uc ON uc.id = cm.curriculum_id
         WHERE cm.id = $1 AND uc.user_id = $2
@@ -162,6 +206,52 @@ class CurriculumModel {
     return {
       ...module,
       topics: topicsResult.rows,
+    };
+  }
+
+  async getTopicContext(topicId, userId) {
+    const result = await database.query(
+      `
+        SELECT
+          ct.*,
+          cm.id AS module_id,
+          cm.title AS module_title,
+          cm.description AS module_description,
+          uc.id AS curriculum_id,
+          uc.title AS curriculum_title
+        FROM curriculum_topics ct
+        JOIN curriculum_modules cm ON cm.id = ct.module_id
+        JOIN user_curriculums uc ON uc.id = cm.curriculum_id
+        WHERE ct.id = $1 AND uc.user_id = $2
+        LIMIT 1
+      `,
+      [topicId, userId]
+    );
+
+    const row = result.rows[0] || null;
+
+    if (!row) {
+      return null;
+    }
+
+    return {
+      topic: {
+        id: row.id,
+        module_id: row.module_id,
+        topic_index: row.topic_index,
+        title: row.title,
+        status: row.status,
+      },
+      module: {
+        id: row.module_id,
+        curriculum_id: row.curriculum_id,
+        title: row.module_title,
+        description: row.module_description,
+      },
+      curriculum: {
+        id: row.curriculum_id,
+        title: row.curriculum_title,
+      },
     };
   }
 }

@@ -1,111 +1,21 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+
 import "./QuizPage.css";
 
 export default function QuizPage() {
   const navigate = useNavigate();
-  
+  const location = useLocation();
 
-  // 10 QUESTIONS
-  const questions = [
-    {
-      question:
-        "Which is the correct way to update state based on previous state?",
-      options: [
-        "setCount(count + 1)",
-        "setCount(prevCount => prevCount + 1)",
-        "count = count + 1",
-        "this.setState({ count: count + 1 })",
-      ],
-    },
-    {
-      question: "Which hook is used for side effects?",
-      options: [
-        "useState",
-        "useEffect",
-        "useRef",
-        "useMemo",
-      ],
-    },
-    {
-      question: "Which hook stores state?",
-      options: [
-        "useEffect",
-        "useReducer",
-        "useState",
-        "useRef",
-      ],
-    },
-    {
-      question: "Which prop uniquely identifies list items?",
-      options: ["id", "key", "unique", "index"],
-    },
-    {
-      question: "Which hook accesses DOM elements?",
-      options: [
-        "useState",
-        "useRef",
-        "useEffect",
-        "useMemo",
-      ],
-    },
-    {
-      question: "What is JSX?",
-      options: [
-        "Java Syntax XML",
-        "JavaScript XML",
-        "JSON XML",
-        "Java Extended Syntax",
-      ],
-    },
-    {
-      question: "Which hook runs after render?",
-      options: [
-        "useState",
-        "useEffect",
-        "useReducer",
-        "useRef",
-      ],
-    },
-    {
-      question: "Which hook optimizes performance?",
-      options: [
-        "useMemo",
-        "useState",
-        "useEffect",
-        "useReducer",
-      ],
-    },
-    {
-      question:
-        "Which function changes component state?",
-      options: [
-        "setState",
-        "changeState",
-        "updateState",
-        "modifyState",
-      ],
-    },
-    {
-      question:
-        "React components must return what?",
-      options: [
-        "HTML",
-        "JSX",
-        "CSS",
-        "JSON",
-      ],
-    },
-  ];
+  const moduleId = location.state?.moduleId;
+  const topic = location.state?.topic;
 
-  const [currentQuestion, setCurrentQuestion] =
-    useState(0);
-
+  const [quiz, setQuiz] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
-
-  const [flaggedQuestions, setFlaggedQuestions] =
-    useState([]);
-
+  const [flaggedQuestions, setFlaggedQuestions] = useState([]);
   const [seconds, setSeconds] = useState(0);
 
   useEffect(() => {
@@ -116,86 +26,136 @@ export default function QuizPage() {
     return () => clearInterval(timer);
   }, []);
 
-  const mins = String(
-    Math.floor(seconds / 60)
-  ).padStart(2, "0");
+  useEffect(() => {
+    const fetchDynamicQuiz = async () => {
+      if (!topic?.id) {
+        setLoadError("Topic context is missing for this quiz.");
+        setLoading(false);
+        return;
+      }
 
-  const secs = String(seconds % 60).padStart(
-    2,
-    "0"
-  );
+      try {
+        setLoading(true);
+        setLoadError("");
 
+        const response = await fetch("/api/assessment/prior-quiz", {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            topicId: topic.id,
+            moduleId,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || "Failed to generate quiz");
+        }
+
+        setQuiz(data.quiz);
+      } catch (error) {
+        console.error("Failed to fetch dynamic quiz:", error);
+        setLoadError(error.message || "Unable to load quiz");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDynamicQuiz();
+  }, [moduleId, topic?.id]);
+
+  const questions = quiz?.questions || [];
   const question = questions[currentQuestion];
 
-  // SELECT OPTION
-  const handleOptionSelect = (option) => {
-  setAnswers((prev) => {
-    // if clicking the same option → unselect it
-    if (prev[currentQuestion] === option) {
-      const updated = { ...prev };
-      delete updated[currentQuestion];
-      return updated;
-    }
+  const mins = String(Math.floor(seconds / 60)).padStart(2, "0");
+  const secs = String(seconds % 60).padStart(2, "0");
 
-    // otherwise select new option
-    return {
-      ...prev,
-      [currentQuestion]: option,
-    };
-  });
-};
+  const handleOptionSelect = (optionIndex) => {
+    setAnswers((prev) => {
+      if (prev[currentQuestion] === optionIndex) {
+        const updated = { ...prev };
+        delete updated[currentQuestion];
+        return updated;
+      }
 
-  // NEXT
+      return {
+        ...prev,
+        [currentQuestion]: optionIndex,
+      };
+    });
+  };
+
   const handleNext = () => {
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion((prev) => prev + 1);
     }
   };
 
-  // PREVIOUS
   const handlePrevious = () => {
     if (currentQuestion > 0) {
       setCurrentQuestion((prev) => prev - 1);
     }
   };
 
-  // FLAG QUESTION
   const handleFlag = () => {
     setFlaggedQuestions((prev) => {
       if (prev.includes(currentQuestion)) {
-        return prev.filter(
-          (q) => q !== currentQuestion
-        );
+        return prev.filter((q) => q !== currentQuestion);
       }
 
       return [...prev, currentQuestion];
     });
   };
 
-  // SUBMIT
   const handleSubmit = () => {
-    if (
-      currentQuestion ===
-      questions.length - 1
-    ) {
-      navigate("/videolesson");
-    }
+    navigate("/Videolesson", {
+      state: {
+        moduleId,
+        topic,
+        video: quiz?.context?.video || null,
+      },
+    });
   };
 
-  const progress =
-    ((currentQuestion + 1) /
-      questions.length) *
-    100;
+  const progress = questions.length
+    ? ((currentQuestion + 1) / questions.length) * 100
+    : 0;
+
+  if (loading) {
+    return (
+      <main className="quiz-main">
+        <div className="quiz-wrapper">
+          <div className="question-card">Generating a prior-knowledge quiz...</div>
+        </div>
+      </main>
+    );
+  }
+
+  if (loadError || !question) {
+    return (
+      <main className="quiz-main">
+        <div className="quiz-wrapper">
+          <div className="question-card">
+            <h2>Quiz unavailable</h2>
+            <p>{loadError || "No quiz questions were generated for this topic."}</p>
+            <button className="next-btn" onClick={handleSubmit}>
+              Continue to lesson
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="quiz-main">
       <div className="quiz-wrapper">
-
-        {/* HEADER */}
         <section className="quiz-progress-header">
-
           <div className="quiz-progress-left">
-
             <div className="quiz-title-row">
 
               <button
@@ -204,225 +164,128 @@ export default function QuizPage() {
               >
                 ← Back
               </button>
-              <h1>React Fundamentals Quiz</h1>
+ <h1>{quiz?.title || `${topic?.title || "Topic"} Quiz`}</h1>
+             
+
 
               <span>
-                Question {currentQuestion + 1} of{" "}
-                {questions.length}
+                Question {currentQuestion + 1} of {questions.length}
               </span>
             </div>
 
             <div className="progress-bar">
-              <div
-                className="progress-fill"
-                style={{
-                  width: `${progress}%`,
-                }}
-              />
+              <div className="progress-fill" style={{ width: `${progress}%` }} />
             </div>
-
           </div>
 
           <div className="timer-box">
-            <div className="timer-icon">
-              ⏱
-            </div>
-
+            <div className="timer-icon">Time</div>
             <div>
-              <p className="timer-label">
-                Time Spent
-              </p>
-
+              <p className="timer-label">Time Spent</p>
               <h3>
                 {mins}:{secs}
               </h3>
             </div>
           </div>
-
         </section>
 
         <div className="quiz-grid">
-
-          {/* LEFT */}
           <div className="question-section">
-
             <div className="question-card">
-
               <div className="question-top">
-
-                <div className="question-number">
-                  {currentQuestion + 1}
+                <div className="question-number">{currentQuestion + 1}</div>
+                <div>
+                  <h2>{question.question}</h2>
+                  {question.objective && <p>{question.objective}</p>}
                 </div>
-
-                <h2>
-                  {question.question}
-                </h2>
-
               </div>
 
-              {/* OPTIONS */}
               <div className="options-list">
-                {question.options.map(
-                  (option, index) => (
-                    <div
-                      key={index}
-                      className={`option-card ${
-                        answers[
-                          currentQuestion
-                        ] === option
-                          ? "selected-option"
-                          : ""
-                      }`}
-                      onClick={() =>
-                        handleOptionSelect(
-                          option
-                        )
-                      }
-                    >
-                      <div className="radio-circle">
-                        {answers[
-                          currentQuestion
-                        ] === option && (
-                          <div className="radio-fill" />
-                        )}
-                      </div>
-
-                      <span>
-                        {option}
-                      </span>
-                    </div>
-                  )
-                )}
-              </div>
-
-            </div>
-
-            {/* FOOTER */}
-            <div className="quiz-footer">
-
-              {/* PREVIOUS BUTTON (hide on question 1) */}
-              {currentQuestion > 0 && (
-                <button
-                  className="prev-btn"
-                  onClick={handlePrevious}
-                >
-                  ← Previous
-                </button>
-              )}
-
-              {/* NEXT BUTTON (hide on question 10) */}
-              {currentQuestion < questions.length - 1 && (
-                <button
-                  className="next-btn"
-                  onClick={handleNext}
-                >
-                  Next Question →
-                </button>
-              )}
-
-              {/* SUBMIT BUTTON (only on Q10 + answered) */}
-              {currentQuestion === questions.length - 1 &&
-                answers[currentQuestion] && (
-                  <button
-                    className="quiz-submit-btn"
-                    onClick={handleSubmit}
+                {question.options.map((option, index) => (
+                  <div
+                    key={index}
+                    className={`option-card ${
+                      answers[currentQuestion] === index ? "selected-option" : ""
+                    }`}
+                    onClick={() => handleOptionSelect(index)}
                   >
-                    Submit Assessment
-                  </button>
-                )}
-
+                    <div className="radio-circle">
+                      {answers[currentQuestion] === index && <div className="radio-fill" />}
+                    </div>
+                    <span>{option}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
+            <div className="quiz-footer">
+              {currentQuestion > 0 && (
+                <button className="prev-btn" onClick={handlePrevious}>
+                  Previous
+                </button>
+              )}
+
+              {currentQuestion < questions.length - 1 && (
+                <button className="next-btn" onClick={handleNext}>
+                  Next Question
+                </button>
+              )}
+
+              {currentQuestion === questions.length - 1 && answers[currentQuestion] !== undefined && (
+                <button className="quiz-submit-btn" onClick={handleSubmit}>
+                  Submit Assessment
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* RIGHT */}
           <div className="sidebar-panel">
-
             <div className="question-map-card">
-
               <h3>Question Map</h3>
 
               <div className="question-map-grid">
+                {questions.map((_, index) => {
+                  const answered = answers[index] !== undefined;
+                  const flagged = flaggedQuestions.includes(index);
 
-                {questions.map(
-                  (_, index) => {
-                    const answered =
-                      answers[index];
-
-                    const flagged =
-                      flaggedQuestions.includes(
-                        index
-                      );
-
-                    return (
-                      <div
-                        key={index}
-                        className={
-                          index ===
-                          currentQuestion
-                            ? "map-active"
-                            : flagged
-                            ? "map-flag"
-                            : answered
-                            ? "map-complete"
-                            : "map-default"
-                        }
-                        onClick={() =>
-                          setCurrentQuestion(
-                            index
-                          )
-                        }
-                      >
-                        {flagged
-                          ? "⚑"
-                          : index + 1}
-                      </div>
-                    );
-                  }
-                )}
-
+                  return (
+                    <div
+                      key={index}
+                      className={
+                        index === currentQuestion
+                          ? "map-active"
+                          : flagged
+                          ? "map-flag"
+                          : answered
+                          ? "map-complete"
+                          : "map-default"
+                      }
+                      onClick={() => setCurrentQuestion(index)}
+                    >
+                      {flagged ? "F" : index + 1}
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="sidebar-buttons">
-
-                <button
-                  className="flag-btn"
-                  onClick={handleFlag}
-                >
-                  ⚑{" "}
-                  {flaggedQuestions.includes(
-                    currentQuestion
-                  )
+                <button className="flag-btn" onClick={handleFlag}>
+                  {flaggedQuestions.includes(currentQuestion)
                     ? "Unflag Question"
                     : "Flag Question for Review"}
                 </button>
-
-
               </div>
-
             </div>
 
-            {/* NOTE */}
             <div className="Note-card">
-
               <h4>Note</h4>
-
               <p>
-                This quiz is intended
-                to measure users prior
-                knowledge only. It is
-                not a graded quiz.
-                Therefore scores will
-                not be shown after
-                submission.
+                This quiz is dynamically generated from the topic and lesson context to
+                measure prior knowledge only. It is not graded.
               </p>
-
             </div>
-
           </div>
-
         </div>
-
       </div>
     </main>
   );

@@ -1,9 +1,92 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
+import { getAstLanguages } from "./astLanguageRegistry.js";
 dotenv.config();
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
+const EMBEDDED_IDE_LANGUAGE_TERMS = buildEmbeddedIdeLanguageTerms();
+const SETUP_MODULE_PATTERN =
+    /\b(setup|installation|install|environment setup|development environment|tooling setup|getting started with .* setup|configure|configuration)\b/i;
+
+function buildEmbeddedIdeLanguageTerms() {
+    const languages = getAstLanguages();
+    const terms = new Set();
+
+    for (const language of languages) {
+        terms.add(language.key.toLowerCase());
+        terms.add(language.monacoLanguage.toLowerCase());
+
+        const normalizedName = language.name
+            .replace(/\(.*?\)/g, "")
+            .trim()
+            .toLowerCase();
+
+        terms.add(normalizedName);
+
+        if (normalizedName.includes("c++")) {
+            terms.add("c++");
+            terms.add("cpp");
+        }
+
+        if (normalizedName === "c#") {
+            terms.add("c#");
+            terms.add("csharp");
+            terms.add("c sharp");
+        }
+
+        if (normalizedName.includes("javascript")) {
+            terms.add("javascript");
+            terms.add("node.js");
+            terms.add("nodejs");
+        }
+
+        if (normalizedName.includes("python")) {
+            terms.add("python");
+        }
+
+        if (normalizedName.includes("java")) {
+            terms.add("java");
+        }
+
+        if (normalizedName === "c") {
+            terms.add("c language");
+        }
+    }
+
+    return [...terms];
+}
+
+function requestTargetsEmbeddedIdeLanguage(topic) {
+    const normalizedTopic = String(topic || "").toLowerCase();
+    return EMBEDDED_IDE_LANGUAGE_TERMS.some((term) => normalizedTopic.includes(term));
+}
+
+function isSetupModule(module) {
+    const title = `${module?.title || ""}`;
+    const description = `${module?.desc || module?.description || ""}`;
+    return SETUP_MODULE_PATTERN.test(`${title} ${description}`);
+}
+
+function removeLeadingSetupModuleIfNeeded(curriculum, topic) {
+    if (!requestTargetsEmbeddedIdeLanguage(topic)) {
+        return curriculum;
+    }
+
+    const modules = Array.isArray(curriculum.modules) ? [...curriculum.modules] : [];
+
+    if (modules.length > 1 && isSetupModule(modules[0])) {
+        modules.shift();
+    }
+
+    return {
+        ...curriculum,
+        modules: modules.map((module, index) => ({
+            ...module,
+            week: `Week ${index + 1}`,
+        })),
+    };
+}
 
 
 export class groqService {
@@ -41,10 +124,19 @@ async generateChatCompletion(messages, options = {}) {
 
 async generateText(message, options = {}) {
     try {
-        return await this.generateChatCompletion(
-            [{ role: "user", content: message }],
-            options
-        );
+        const messages = [];
+
+        if (options.systemPrompt) {
+            messages.push({ role: "system", content: options.systemPrompt });
+        }
+
+        if (Array.isArray(options.history) && options.history.length > 0) {
+            messages.push(...options.history);
+        }
+
+        messages.push({ role: "user", content: message });
+
+        return await this.generateChatCompletion(messages, options);
     } catch(error) {
         console.error('Error generating text with Groq API:', error.response ? error.response.data : error.message);
         throw error;
@@ -53,6 +145,7 @@ async generateText(message, options = {}) {
 
 async generateCurriculum(topic, options = {}) {
     try {
+        const skipSetupModule = requestTargetsEmbeddedIdeLanguage(topic);
         const prompt = `
 Create a structured learning curriculum for this learner request:
 "${topic}"
@@ -61,6 +154,7 @@ Return only valid JSON. Do not wrap it in markdown. Do not add explanation outsi
 
 The JSON must match this shape:
 {
+   "title": "A short curriculum title",
   "description": "A short summary of the curriculum.",
   "modules": [
     {
@@ -75,12 +169,15 @@ The JSON must match this shape:
 }
 
 Rules:
+- Create a short professional curriculum title.
+- Keep the title under 6 words.
 - Create 4 to 6 modules.
 - Keep titles short and practical.
 - Use week labels like "Week 1", "Week 2", or "Week 3-4".
 - Each module must have 3 to 6 topics.
 - Use one of these colors: blue, purple, green, orange.
 - Use simple icon names: terminal, layers, api, database, code, project.
+${skipSetupModule ? "- Do not include an installation, setup, environment configuration, or tooling module because this learner will use an embedded IDE for this language." : ""}
 `;
 
         const messages = [
@@ -109,14 +206,14 @@ Rules:
             content = await this.generateChatCompletion(messages, retryOptions);
         }
 
-        return this.parseCurriculumJson(content);
+        return this.parseCurriculumJson(content, topic);
     } catch(error) {
         console.error('Error generating curriculum with Groq API:', error.response ? error.response.data : error.message);
         throw error;
     }
 }
 
-parseCurriculumJson(content) {
+parseCurriculumJson(content, topic = "") {
     let parsed;
 
     try {
@@ -129,10 +226,10 @@ parseCurriculumJson(content) {
         parsed = JSON.parse(jsonMatch[0]);
     }
 
-    return this.normalizeCurriculum(parsed);
+    return this.normalizeCurriculum(parsed, topic);
 }
 
-normalizeCurriculum(curriculum) {
+normalizeCurriculum(curriculum, topic = "") {
     if (!curriculum || typeof curriculum !== "object") {
         throw new Error("Curriculum response must be an object");
     }
@@ -141,7 +238,10 @@ normalizeCurriculum(curriculum) {
         throw new Error("Curriculum response must include modules");
     }
 
-    return {
+    const normalizedCurriculum = {
+        title:
+        curriculum.title ||
+        "Custom Learning Path",
         description: curriculum.description || "Your personalized learning path is ready.",
         modules: curriculum.modules.slice(0, 6).map((module, index) => ({
             title: module.title || `Module ${index + 1}`,
@@ -152,6 +252,8 @@ normalizeCurriculum(curriculum) {
             topics: Array.isArray(module.topics) ? module.topics.slice(0, 6) : [],
         })),
     };
+
+    return removeLeadingSetupModuleIfNeeded(normalizedCurriculum, topic);
 }
    
 }

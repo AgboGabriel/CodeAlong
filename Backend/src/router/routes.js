@@ -1,6 +1,7 @@
 import express from 'express';
 import passport from 'passport';
 import Judge0Controller from "../controllers/judge0_compiler.controller.js";
+import astController from "../controllers/astController.js";
 import audioController from '../controllers/audio.controller.js';
 import authController from '../controllers/authController.js';
 import { ChatController } from '../controllers/chat.controller.js';
@@ -9,7 +10,8 @@ import userModel from '../models/userModel.js';
 import questionnaireController from '../controllers/questionnaire.controller.js';
 import curriculumController from '../controllers/curriculumController.js';
 import youtubeController from '../controllers/youtubeController.js';
-import bktController from "../controllers/bkt.controller.js";
+import bktController from "../controllers/bktController.js";
+import assessmentContentController from "../controllers/assessmentContentController.js";
 
 
 const router = express.Router();
@@ -61,10 +63,18 @@ router.get(
         failureRedirect: '/auth/google/failure',
         session: true,
     }),
-    (req, res) => {
-        const backendUrl = process.env.FRONTEND_URL || `http://localhost:${process.env.PORT || 3000}`;
-        res.redirect(`${backendUrl}/dashboard`);
+   (req, res) => {
+    const backendUrl =
+      process.env.FRONTEND_URL ||
+      `http://localhost:${process.env.PORT || 3000}`;
+
+    // check if questionnaire exists
+    if (!req.user.questionnaire_completed) {
+      return res.redirect(`${backendUrl}/Questionnaire`);
     }
+
+    return res.redirect(`${backendUrl}/dashboard`);
+}
 );
 router.get('/auth/google/failure', (req, res) => {
     res.status(401).json({ error: 'Google authentication failed' });
@@ -85,17 +95,34 @@ router.post("/api/questionnaire", ensureAuthenticated, (req,res)=>{
 router.get("/api/questionnaire", ensureAuthenticated, (req,res)=>{
     questionnaireController.getQuestionnaireByUserId(req,res);
 });
-
+router.get(
+  "/api/dashboard/recommendations",
+  ensureAuthenticated,
+  (req, res) => {
+    youtubeController
+      .getDashboardRecommendations(req, res);
+  }
+);
 //curriculum routes
 router.post("/api/curriculum/confirm", ensureAuthenticated, (req,res)=>{
     curriculumController.confirmCurriculum(req,res);
 });
+
+router.get(
+  "/api/curriculum",
+  ensureAuthenticated,
+  (req, res) => {
+    curriculumController.getUserCurriculums(req, res);
+  }
+);
+
 router.get("/api/curriculum/:curriculumId", ensureAuthenticated, (req,res)=>{
     curriculumController.getCurriculum(req,res);
 });
 
+
 //youtube video routes
-router.post("/api/videos/module/:moduleId", ensureAuthenticated, (req,res)=>{
+router.get("/api/videos/module/:moduleId", ensureAuthenticated, (req,res)=>{
     youtubeController.getVideosForModule(req,res);
 });
 
@@ -203,5 +230,44 @@ router.post('/compile-poll', Judge0Controller.compileWithPolling);
 
 // GET /api/judge0/languages
 router.get('/languages', Judge0Controller.getLanguages);
+
+router.post(
+  "/api/assessment/prior-quiz",
+  ensureAuthenticated,
+  (req, res) => assessmentContentController.generatePriorKnowledgeQuiz(req, res)
+);
+
+router.post(
+  "/api/assessment/challenge",
+  ensureAuthenticated,
+  (req, res) => assessmentContentController.generateTopicChallenge(req, res)
+);
+
+router.post(
+  "/api/assessment/challenge/evaluate",
+  ensureAuthenticated,
+  (req, res) => assessmentContentController.evaluateChallengeSubmission(req, res)
+);
+
+// AST routes kept separate from Judge0 execution for review
+router.get("/api/ast/languages", (req, res) => {
+    astController.getSupportedLanguages(req, res);
+});
+
+router.get("/api/ast/blueprint", (req, res) => {
+    astController.getBlueprint(req, res);
+});
+
+router.post("/api/ast/parse", (req, res) => {
+    astController.parseSource(req, res);
+});
+
+router.get("/api/ast/history", ensureAuthenticated, (req, res) => {
+    astController.getHistory(req, res);
+});
+
+router.get("/api/ast/history/:topicId", ensureAuthenticated, (req, res) => {
+    astController.getHistory(req, res);
+});
 
 export default router;

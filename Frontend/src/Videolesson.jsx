@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Editor from "@monaco-editor/react";
 import Split from "react-split";
-import { useNavigate, useLocation } from "react-router-dom";
-import * as monaco from "monaco-editor";
+import { useLocation } from "react-router-dom";
 import "./Videolesson.css";
 import logo from "./assets/Code along_logo-04.png";
+import { buildLearnerFeedback } from "./learnerFeedback";
 
 /* ================= LANGUAGES ================= */
 const LANGUAGES = [
@@ -33,10 +33,19 @@ const CODE_TEMPLATES = {
 };
 
 export default function Videolesson() {
-  /* ================= CONSTANTS ================= */
-  const YOUTUBE_URL = "https://www.youtube.com/embed/dQw4w9WgXcQ";
-  const navigate = useNavigate();
-  const location = useLocation();
+const navigate = useNavigate();
+const location = useLocation();
+
+const moduleId = location.state?.moduleId;
+const topic = location.state?.topic;
+const video = location.state?.video;
+
+const [videos, setVideos] = useState([]);
+const [currentVideo, setCurrentVideo] =
+  useState(video || null);
+
+const [loadingVideo, setLoadingVideo] =
+  useState(true);
 
   /* ================= REFS ================= */
   const messagesEndRef = useRef(null);
@@ -46,6 +55,12 @@ export default function Videolesson() {
 
   /* ================= STATE ================= */
   const [output, setOutput] = useState("");
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const [hintLoading, setHintLoading] = useState(false);
+  const [hintOpen, setHintOpen] = useState(false);
+  const [hintFeedback, setHintFeedback] = useState(null);
+  const [hintError, setHintError] = useState("");
 
   const [tabs, setTabs] = useState([
     {
@@ -218,38 +233,168 @@ export default function Videolesson() {
     );
 
     setOutput("");
+    setHintFeedback(null);
+    setHintError("");
   };
 
-  const handleRun = () => {
-    const code = currentTab?.code || "";
-    setOutput(`Running...\n\n${code}`);
-  };
+  const fetchCompileAnalysis = async () => {
+    const response = await fetch("/compile-poll", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        source_code: code,
+        language_id: selectedLang.id,
+        stdin: "",
+      }),
+    });
 
-  const handleAddTab = () => {
-    const newTab = {
-      id: Date.now(),
-      name: `Tab ${tabs.length + 1}`,
-      language: LANGUAGES[0],
-      code: CODE_TEMPLATES.javascript,
+    const data = await response.json();
+    const result = data?.data || {};
+
+    if (!response.ok && !data?.error) {
+      throw new Error("Execution failed");
+    }
+
+    return {
+      compileOutput: result.compile_output || data?.error || "",
+      stderr: result.stderr || "",
+      stdout: result.stdout || "",
+      statusDescription: result.status?.description || "",
     };
-
-    setTabs((prev) => [...prev, newTab]);
-    setActiveTab(newTab.id);
   };
 
-  const handleDeleteTab = (tabId) => {
-    setTabs((prev) => {
-      const updated = prev.filter((tab) => tab.id !== tabId);
+  const fetchAstAnalysis = async () => {
+    const response = await fetch("/api/ast/parse", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        source_code: code,
+        language_id: selectedLang.id,
+      }),
+    });
 
-      if (activeTab === tabId && updated.length > 0) {
-        setActiveTab(updated[0].id);
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || "AST analysis failed");
+    }
+
+    return {
+      ast: data.normalizedAst?.ast || null,
+      diagnostics: data.normalizedAst?.diagnostics || [],
+      summary: data.normalizedAst?.summary || {},
+    };
+  };
+
+  const loadLessonFeedback = async () => {
+    const [compileResult, astResult] = await Promise.allSettled([
+      fetchCompileAnalysis(),
+      fetchAstAnalysis(),
+    ]);
+
+    const compileAnalysis =
+      compileResult.status === "fulfilled"
+        ? compileResult.value
+        : {
+            compileOutput: "",
+            stderr: compileResult.reason?.message || "Judge0 compilation is temporarily unavailable.",
+            stdout: "",
+            statusDescription: "",
+          };
+
+    if (astResult.status !== "fulfilled") {
+      throw astResult.reason;
+    }
+
+    const astAnalysis = astResult.value;
+
+    return {
+      feedback: buildLearnerFeedback({
+        compileOutput:
+          compileAnalysis.compileOutput ||
+          compileAnalysis.stdout ||
+          compileAnalysis.statusDescription ||
+          "",
+        stderr: compileAnalysis.stderr || "",
+        ast: astAnalysis.ast,
+        diagnostics: astAnalysis.diagnostics,
+        summary: astAnalysis.summary,
+        languageKey: selectedLang.monaco,
+      }),
+      compileAnalysis,
+    };
+  };
+
+ const handleRun = () => {
+  const code = currentTab?.code || "";
+
+  const runCode = async () => {
+    setOutput("Executing your code...");
+
+    try {
+      const response = await fetch("/compile-poll", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          source_code: code,
+          language_id: selectedLang.id,
+          stdin: "",
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Execution failed");
       }
 
-      return updated;
-    });
+      const result = data.data;
+
+      setOutput(
+        result.stdout ||
+          result.stderr ||
+          result.compile_output ||
+          result.status?.description ||
+          "No output"
+      );
+    } catch (error) {
+      console.error(error);
+      setOutput(error.message || "Unable to run code");
+    }
   };
 
-  /* ================= EFFECTS ================= */
+  runCode();
+};
+  const handleAddTab = () => {
+  const newTab = {
+    id: Date.now(),
+    name: `Tab ${tabs.length + 1}`,
+    language: LANGUAGES[0],
+    code: CODE_TEMPLATES.javascript,
+  };
+
+  setTabs((prev) => [...prev, newTab]);
+  setActiveTab(newTab.id);
+};
+
+const handleDeleteTab = (tabId) => {
+  setTabs((prev) => {
+    const updated = prev.filter((tab) => tab.id !== tabId);
+
+    if (activeTab === tabId && updated.length > 0) {
+      setActiveTab(updated[0].id);
+    }
+
+    return updated;
+  });
+};
 
   useEffect(() => {
     setConversations((prev) =>
@@ -267,67 +412,98 @@ export default function Videolesson() {
   }, [messages]);
 
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (!showHistory) return;
-
-      if (
-        historyRef.current &&
-        !historyRef.current.contains(e.target)
-      ) {
-        setShowHistory(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () =>
-      document.removeEventListener("mousedown", handleClickOutside);
-  }, [showHistory]);
-
 useEffect(() => {
   const handleClickOutside = (e) => {
-    // if no menu open, do nothing
-    if (!openMenuId) return;
+    if (
+      showHistory &&
+      historyRef.current &&
+      !historyRef.current.contains(e.target)
+    ) {
+      setShowHistory(false);
+    }
 
-    // check if click is inside ANY dropdown or any button
-    const isInsideMenu = e.target.closest(".menu-dropdown");
-    const isMenuButton = e.target.closest(".menu-btn");
+    if (openMenuId) {
+      const isInsideMenu = e.target.closest(".menu-dropdown");
+      const isMenuButton = e.target.closest(".menu-btn");
 
-    if (!isInsideMenu && !isMenuButton) {
-      setOpenMenuId(null);
+      if (!isInsideMenu && !isMenuButton) {
+        setOpenMenuId(null);
+      }
     }
   };
 
   document.addEventListener("mousedown", handleClickOutside);
+
   return () =>
-    document.removeEventListener("mousedown", handleClickOutside);
-}, [openMenuId]);
+    document.removeEventListener(
+      "mousedown",
+      handleClickOutside
+    );
+}, [showHistory, openMenuId]);
 
-  /* ================= RENDER ================= */
-  return (
-    <div className="Videolesson-container">
+useEffect(() => {
+  const handleEscape = (event) => {
+    if (event.key === "Escape") {
+      setHintOpen(false);
+    }
+  };
 
-      <Split className="Videolesson-layout" sizes={[30, 40, 30]} minSize={[280, 400, 250]} gutterSize={6}>
+  if (hintOpen) {
+    window.addEventListener("keydown", handleEscape);
+  }
 
-        {/* VIDEO PANEL */}
-        <div className="video-panel">
+  return () =>
+    window.removeEventListener(
+      "keydown",
+      handleEscape
+    );
+}, [hintOpen]);
 
-  <button
-    className="video-back-btn"
-    onClick={() => navigate(-1)}
-  >
-    ← Back to Topics
-  </button>
+/* ================= RENDER ================= */
+return (
+  <div className="Videolesson-container">
+    <Split
+      className="Videolesson-layout"
+      sizes={[35, 40, 25]}
+      minSize={[280, 400, 250]}
+      gutterSize={6}
+      expandToMin={false}
+    >
+      {/* VIDEO PANEL */}
+      <div className="video-panel">
 
-  <div className="video-frame">
-    <iframe
-      src={YOUTUBE_URL}
-      width="100%"
-      height="100%"
-      title="Lesson Video"
-      allowFullScreen
-    />
-  </div>
+        <button
+          className="video-back-btn"
+          onClick={() => navigate(-1)}
+        >
+          ← Back to Topics
+        </button>
 
+        <div className="video-frame">
+          {loadingVideo ? (
+            <div className="video-loading">
+              Loading video...
+            </div>
+          ) : currentVideo ? (
+            <iframe
+              width="100%"
+              height="100%"
+              src={`https://www.youtube.com/embed/${
+                currentVideo.videoId ||
+                currentVideo.video_id
+              }`}
+              title="Lesson Video"
+              frameBorder="0"
+              allowFullScreen
+            />
+          ) : (
+            <div className="video-loading">
+              No video found.
+            </div>
+          )}
+        </div>
+
+      </div>
 </div>
 
         {/* EDITOR PANEL */}
@@ -488,9 +664,126 @@ useEffect(() => {
             </button>
           </div>
 
-        </div>
+                 <div className="chat-input-area">
+            <input
+              value={chatInput}
+              placeholder="Ask anything..."
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) =>
+                e.key === "Enter" && handleSendMessage()
+              }
+            />
+
+            <button
+              className="chat-send-btn"
+              onClick={handleSendMessage}
+              disabled={chatLoading}
+            >
+              {chatLoading ? "Sending..." : "Send"}
+            </button>
+          </div>
+
+        </div> {/* chat-panel */}
 
       </Split>
+
+      {hintOpen && (
+        <div
+          className="hint-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="hint-modal-title"
+          onClick={() => setHintOpen(false)}
+        >
+          <div
+            className="hint-modal"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="hint-modal-header">
+              <div>
+                <p className="hint-eyebrow">AST Hints</p>
+                <h2 id="hint-modal-title">
+                  Friendly feedback for your code
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                className="hint-close-btn"
+                onClick={() => setHintOpen(false)}
+                aria-label="Close hints"
+              >
+                Close
+              </button>
+            </div>
+
+            {hintLoading ? (
+              <div className="hint-state">
+                Analyzing your code...
+              </div>
+            ) : hintError ? (
+              <div className="hint-state hint-error">
+                {hintError}
+              </div>
+            ) : hintFeedback ? (
+              <div className="hint-content">
+
+                {hintFeedback.intent?.length > 0 && (
+                  <section className="hint-section">
+                    <h3>What the code is trying to do</h3>
+                    <ul>
+                      {hintFeedback.intent.map((item, index) => (
+                        <li key={`intent-${index}`}>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                )}
+
+                {hintFeedback.problems?.length > 0 && (
+                  <section className="hint-section">
+                    <h3>What went wrong</h3>
+                    <ul>
+                      {hintFeedback.problems.map((item, index) => (
+                        <li key={`problem-${index}`}>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                )}
+
+                {hintFeedback.fixes?.length > 0 && (
+                  <section className="hint-section">
+                    <h3>Exact fix</h3>
+                    <ul>
+                      {hintFeedback.fixes.map((item, index) => (
+                        <li key={`fix-${index}`}>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                )}
+
+                {!hintFeedback.intent?.length &&
+                  !hintFeedback.problems?.length &&
+                  !hintFeedback.fixes?.length && (
+                    <div className="hint-state">
+                      No specific issue could be inferred from the AST alone.
+                    </div>
+                  )}
+
+              </div>
+            ) : (
+              <div className="hint-state">
+                No hints available yet. Click Hints again after making changes.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

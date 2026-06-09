@@ -32,7 +32,22 @@ class CurriculumController {
       });
     }
   }
-  async 
+  async getUserCurriculums(req,res){
+    try{
+      const userId=req.user?.id;
+      if(!userId){
+        return res.status(401).json({error:"User not authenticated"})
+      }
+      const curriculum= await curriculumModel.getCurriculumByUserId(userId);
+      return res.status(200).json({
+        success:true,
+        curriculum,
+      })
+    }catch(error){
+      console.error("Error Fetching curriculums: ", error);
+      return res.status(500).json({error:error.message || "Failed to fetch curriculums"})
+    };
+  };
 
   async getCurriculum(req, res) {
     try {
