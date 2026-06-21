@@ -14,7 +14,7 @@ class UserModel {
 
   async findByGoogleId(googleId) {
     try {
-      const query = 'SELECT * FROM users WHERE google_id = $1';
+      const query = 'SELECT * FROM users WHERE provider_id = $1';
       const result = await database.query(query, [googleId]);
       return result.rows[0] || null;
     } catch (error) {
@@ -40,17 +40,17 @@ class UserModel {
       email,
       password_hash = null,
       auth_provider = 'email',
-      google_id = null,
+      provider_id = null,
     } = userData;
 
     try {
       const query = `
-        INSERT INTO users (username, email, password_hash, auth_provider, google_id, created_at, updated_at)
+        INSERT INTO users (username, email, password_hash, auth_provider, provider_id, created_at, updated_at)
         VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-        RETURNING id, username, email, auth_provider, google_id, created_at
+        RETURNING id, username, email, auth_provider, provider_id, created_at
       `;
 
-      const values = [username, email, password_hash, auth_provider, google_id];
+      const values = [username, email, password_hash, auth_provider, provider_id];
       const result = await database.query(query, values);
       return result.rows[0];
     } catch (error) {
@@ -65,7 +65,7 @@ class UserModel {
         UPDATE users
         SET last_login = NOW(), updated_at = NOW()
         WHERE id = $1
-        RETURNING id, username, email, auth_provider, google_id, last_login, updated_at
+        RETURNING id, username, email, auth_provider, provider_id, last_login, updated_at
       `;
 
       const result = await database.query(query, [id]);
@@ -78,7 +78,7 @@ class UserModel {
 
   async update(id, updates) {
     try {
-      const allowedFields = ['username', 'email', 'password_hash', 'auth_provider', 'google_id'];
+      const allowedFields = ['username', 'email', 'password_hash', 'auth_provider', 'provider_id'];
       const entries = Object.entries(updates).filter(([key]) => allowedFields.includes(key));
 
       if (entries.length === 0) {
@@ -94,7 +94,7 @@ class UserModel {
         UPDATE users
         SET ${setValues.join(', ')}, updated_at = NOW()
         WHERE id = $${values.length}
-        RETURNING id, username, email, auth_provider, google_id, created_at, updated_at, last_login
+        RETURNING id, username, email, auth_provider, provider_id, created_at, updated_at, last_login
       `;
 
       const result = await database.query(query, values);

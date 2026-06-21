@@ -1,11 +1,8 @@
 import { useState,useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import "./Dashboard.css";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
-import UserProfile, { user } from "./Components/UserProfile";
-
-
+import UserProfile, { getUserDisplayName } from "./Components/UserProfile";
 
 import {
   MdCode,
@@ -13,10 +10,6 @@ import {
   MdPlayCircle,
   MdVerifiedUser,
 } from "react-icons/md";
-import Sidebar from "./components/Sidebar";
-import Header from "./components/Header";
-import { user as fallbackUser } from "./components/UserProfile";
-import "./Dashboard.css";
 
 const STATS = [
   {
@@ -36,16 +29,6 @@ const STATS = [
     badgeClass: "muted",
   },
 ];
-
-function getDisplayName(currentUser) {
-  return (
-    currentUser?.username ||
-    currentUser?.full_name ||
-    currentUser?.name ||
-    currentUser?.email ||
-    fallbackUser.name
-  );
-}
 
 function getProgressMessage(currentUser) {
   if (currentUser?.isNew) {
@@ -261,7 +244,7 @@ export default function Dashboard() {
     loadRecommendations();
   }, []);
 
-  const displayName = getDisplayName(currentUser);
+  const displayName = getUserDisplayName(currentUser);
   const greeting = currentUser ? "Welcome back" : "Welcome";
 
   return (
@@ -269,7 +252,7 @@ export default function Dashboard() {
       <Sidebar />
 
       <main className="main">
-        <Header currentUser={currentUser} />
+        <Header user={currentUser} />
 
         <div className="content">
           <div className="content-inner">
@@ -277,7 +260,7 @@ export default function Dashboard() {
               <h2>
                 {greeting}, {displayName}!
               </h2>
-              <p>{getProgressMessage(currentUser || fallbackUser)}</p>
+              <p>{getProgressMessage(currentUser)}</p>
             </div>
 
             <div className="section-stack">

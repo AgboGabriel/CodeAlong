@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { MdNotifications, MdSettings } from "react-icons/md";
-import UserProfile, { user } from "./UserProfile";
+import UserProfile, { user as defaultUser, getUserDisplayName } from "./UserProfile";
 import "./Header.css";
 
 const NOTIFICATIONS = [
@@ -18,8 +18,10 @@ const NOTIFICATIONS = [
   },
 ];
 
-export default function Header() {
+export default function Header({ user }) {
   const [showNotifications, setShowNotifications] = useState(false);
+  const displayUser = user || defaultUser;
+  const displayName = getUserDisplayName(displayUser);
 
   return (
     <header className="header">
@@ -57,10 +59,10 @@ export default function Header() {
         {/* User Section */}
         <div className="header-user">
           <div className="header-user-text">
-            <div className="user-name">{user.name}</div>
+            <div className="user-name">{displayName}</div>
           </div>
 
-          <UserProfile small />
+          <UserProfile small user={displayUser} />
 
           <button className="icon-btn">
             <MdSettings size={30} />

@@ -53,10 +53,16 @@ class AssessmentContentController {
 
   async evaluateChallengeSubmission(req, res) {
     try {
-      const { source_code, language_id, test_cases } = req.body;
+      const userId = req.user?.id;
+      const { challengeId, topicId, moduleId, curriculumId, source_code, language_id, test_cases } = req.body;
 
       const evaluation =
         await assessmentContentService.evaluateChallengeSubmission({
+          userId,
+          challengeId,
+          topicId,
+          moduleId,
+          curriculumId,
           sourceCode: source_code,
           languageId: language_id,
           testCases: test_cases,

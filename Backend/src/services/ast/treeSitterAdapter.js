@@ -1,6 +1,8 @@
 import normalizeTreeSitterNode from "./normalizeTreeSitterAst.js";
 import buildAstInsights from "./buildAstInsights.js";
 import buildSemanticDiagnostics from "./buildSemanticDiagnostics.js";
+import SemanticAnalysisEngine from "./semanticAnalysis.js";
+import TopicMisconceptionRules from "./topicMisconceptionRules.js";
 
 function isModuleNotFoundError(error) {
   return (
@@ -123,6 +125,20 @@ export async function parseWithTreeSitter({
     const insights = buildAstInsights(normalizedRoot, analysisOptions);
     const semanticDiagnostics = buildSemanticDiagnostics(normalizedRoot, language.key);
 
+    // Run comprehensive semantic analysis
+    const semanticAnalyzer = new SemanticAnalysisEngine(normalizedRoot, language.key);
+    const comprehensiveAnalysis = semanticAnalyzer.analyze();
+
+    // Apply topic-specific misconception rules
+    const topicMisconceptionAnalyzer = new TopicMisconceptionRules(
+      analysisOptions?.topicTitle || "",
+      language.key
+    );
+    const topicMisconceptions = topicMisconceptionAnalyzer.evaluateMisconceptions(
+      [...insights.misconceptionSignals, ...semanticDiagnostics, ...comprehensiveAnalysis.diagnostics],
+      analysisOptions?.topicTitle || ""
+    );
+
     return {
       schemaVersion: "normalized-ast-v1",
       status: "parsed",
@@ -146,18 +162,25 @@ export async function parseWithTreeSitter({
       analysis: {
         expectationProfile: insights.expectationProfile,
         expectationState: insights.expectationState,
+        variables: comprehensiveAnalysis.analysis?.variables || {},
+        controlFlow: comprehensiveAnalysis.analysis?.controlFlow || {},
+        detectedPatterns: comprehensiveAnalysis.analysis?.detectedPatterns || {},
       },
       diagnostics: [
         ...buildSuccessDiagnostics(language),
         ...insights.misconceptionSignals,
         ...semanticDiagnostics,
+        ...comprehensiveAnalysis.diagnostics,
       ],
+      topicMisconceptions: topicMisconceptions.length > 0 ? topicMisconceptions : undefined,
       reviewNotes: [
-        "This AST was produced from a real parser and normalized into a shared backend shape.",
+        "This AST was produced from a real parser with comprehensive semantic analysis.",
+        "Includes variable tracking, control-flow analysis, and topic-specific misconception detection.",
       ],
       nextIntegrationSteps: [
-        "Add topic-specific structural rules on top of this normalized tree.",
-        "Merge AST findings with Judge0 runtime feedback once the review is complete.",
+        "Review identified misconceptions with the learner.",
+        "Use topic-specific feedback to guide learning.",
+        "Track patterns to identify consistent learning gaps.",
       ],
     };
   } catch (error) {

@@ -19,6 +19,7 @@ class Database {
             database: process.env.DB_NAME || 'codeAlong_Database_local',
             user: process.env.DB_USER || 'postgres',
             password: process.env.DB_PASS || '11056149',
+                ssl: process.env.DB_HOST ? { rejectUnauthorized: false } : false, 
         });
         
         Database.#instance = this;

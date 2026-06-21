@@ -50,6 +50,17 @@ router.get(
   ensureAuthenticated,
   (req, res) => bktController.getTopicMastery(req, res)
 );
+// Add to routes.js
+
+router.post("/api/ast/workspace/parse", (req, res) => {
+  astController.parseWorkspace(req, res);
+});
+
+router.get(
+  "/api/topic/:topicId/can-progress",
+  ensureAuthenticated,
+  (req, res) => bktController.canProgressToNextTopic(req, res)
+);
 
 router.get('/health', (req, res) => {
     res.status(200).json({ status: 'OK', timestamp: new Date() });

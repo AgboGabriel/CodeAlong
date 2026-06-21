@@ -16,6 +16,7 @@ export default function QuizPage() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
   const [flaggedQuestions, setFlaggedQuestions] = useState([]);
+  const [submitError, setSubmitError] = useState("");
   const [seconds, setSeconds] = useState(0);
 
   useEffect(() => {
@@ -111,7 +112,56 @@ export default function QuizPage() {
     });
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (!questions.length) return;
+
+    const answeredAll = questions.every((_, index) => answers[index] !== undefined);
+    if (!answeredAll) {
+      setSubmitError("Please answer all questions before submitting.");
+      return;
+    }
+
+    setSubmitError("");
+
+    const quizResponses = questions.map((question, index) => ({
+      ...question,
+      selectedIndex: answers[index],
+    }));
+
+    const correctCount = questions.reduce(
+      (sum, question, index) =>
+        sum + (answers[index] === question.correctIndex ? 1 : 0),
+      0
+    );
+
+    try {
+      const response = await fetch(`/api/topic/${topic.id}/attempt`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          curriculumId: topic.curriculumId || null,
+          moduleId,
+          quiz_type: "pretest",
+          questions: quizResponses,
+          correctCount,
+          totalCount: questions.length,
+          passed: correctCount / questions.length >= 0.7,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Failed to save quiz results.");
+      }
+    } catch (error) {
+      console.error("Quiz submission failed:", error);
+      setSubmitError(error.message || "Unable to submit quiz results.");
+      return;
+    }
+
     navigate("/Videolesson", {
       state: {
         moduleId,
@@ -231,10 +281,13 @@ export default function QuizPage() {
                 </button>
               )}
 
-              {currentQuestion === questions.length - 1 && answers[currentQuestion] !== undefined && (
+              {currentQuestion === questions.length - 1 && Object.keys(answers).length === questions.length && (
                 <button className="quiz-submit-btn" onClick={handleSubmit}>
                   Submit Assessment
                 </button>
+              )}
+              {submitError && (
+                <div className="quiz-error-message">{submitError}</div>
               )}
             </div>
           </div>

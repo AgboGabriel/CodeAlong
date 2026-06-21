@@ -1,9 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Sidebar from "./Components/Sidebar";
 import Header from "./Components/Header";
-import UserProfile, { user } from "./Components/UserProfile";
-import logo from "./assets/Code along_logo-03.png";
 import "./LearningPath.css";
 
 import {
@@ -16,11 +14,6 @@ import {
 } from "react-icons/md";
 
 import { FaMicrophone, FaPaperPlane, FaRobot } from "react-icons/fa";
-const user = {
-  name: "Alex Rivera",
-  avatar:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuCHkmMqD5gKaMYLSydOBQc_Zi7wsLqmErMbtpFZ_5-AzR8-GBVVggx2vz3YzNgs5Hoy-od2NIrLSCZxHox3QfDozggMjyXwAkivdXCAnN8X0SPM_4icaBffmPVNgH8o7hrt7pZetO5A34GxGG7-Wo5ffA5JXpfZ9BYdN4-hnrlIM9xG9MtFYNRE-V08HC6Rw_Eeg7AFzzK5lLrWd9H9tOt37FmZS5CIAKG6brXAECIkUSxxGH6SXwrAFI7L8CN5DIz9nBnx5RSp6YE",
-};
 
 const NAV_ITEMS = [
   { icon: MdDashboard, label: "Dashboard", path: "/dashboard" },
@@ -28,119 +21,6 @@ const NAV_ITEMS = [
   { icon: MdAccountTree, label: "Learning Path", path: "/LearningPath" },
   { icon: MdFolderOpen, label: "Assessments", path: "/Assessments" },
 ];
-
-function UserProfile({ small, onClick }) {
-  return (
-    <>
-      <div className={`avatar ${small ? "avatar-sm" : ""}`} onClick={onClick}>
-        <img src={user.avatar} alt={user.name} />
-      </div>
-
-      {!small && (
-        <div className="user-info">
-          <div className="user-name">{user.name}</div>
-        </div>
-      )}
-    </>
-  );
-}
-
-function Sidebar() {
-  const location = useLocation();
-
-  return (
-    <aside className="sidebar">
-      <div className="sidebar-logo">
-        <div className="logo-icon">
-          <img className="logo-img" src={logo} alt="Logo" />
-        </div>
-        <span className="logo-text">CodeAlong</span>
-      </div>
-
-      <nav className="sidebar-nav">
-        {NAV_ITEMS.map(({ icon, label, path }) => {
-          const Icon = icon;
-
-          return (
-            <Link
-              key={label}
-              to={path}
-              className={`nav-item ${
-                location.pathname === path ? "active" : ""
-              }`}
-            >
-              <Icon size={30} className="nav-icon" />
-              {label}
-            </Link>
-          );
-        })}
-      </nav>
-    </aside>
-  );
-}
-
-function Header() {
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target)
-      ) {
-        setDropdownOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () =>
-      document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleLogout = () => {
-    navigate("/");
-  };
-
-  return (
-    <header className="header">
-      <div></div>
-
-      <div className="header-right">
-        <button className="notif-btn" aria-label="Notifications">
-          <MdNotifications size={30} />
-          <span className="notif-dot" />
-        </button>
-
-        <div className="divider-v" />
-
-        <div className="header-user" ref={dropdownRef}>
-          <div
-            className="header-user-text"
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-          >
-            <div className="user-name">{user.name}</div>
-          </div>
-
-          <UserProfile
-            small
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-          />
-
-
-          {dropdownOpen && (
-            <div className="user-dropdown">
-              <button className="dropdown-item" onClick={handleLogout}>
-                Logout
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </header>
-  );
-}
 
 function LpBody() {
   const [input, setInput] = useState("");
@@ -520,12 +400,34 @@ function LpBody() {
 }
 
 export default function LearningPath() {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch("/auth/me", {
+          credentials: "include",
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.user) {
+          setUser(data.user);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user:", error);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
   return (
     <div className="app-shell">
       <Sidebar />
 
       <main className="main">
-        <Header />
+        <Header user={user} />
 
         <div className="content">
           <LpBody />

@@ -1,9 +1,11 @@
 import youtubeVideoModel from "../models/youtubeVideoModel.js";
 import curriculumModel from "../models/curriculumModel.js";
+import bktModel from "../models/bktModel.js";
 import Judge0Service from "./Judge0.service.js";
 import { groqService } from "./Chat.service.js";
 import questionnaireService from "./questionnaire.service.js";
 import youtubeService from "./youtubeService.js";
+import challengeModel from "../models/challengeModel.js";
 import {
   inferLanguageFromText,
   textMentionsDifferentSupportedLanguage,
@@ -384,6 +386,21 @@ Rules:
     const videoDescription = context.video?.description || "No video description is available yet.";
     const languageName = context.expectedLanguage?.name || context.expectedLanguage?.key || "the curriculum language";
 
+    // ── Cache lookup: reuse an existing challenge for this topic/user ──
+    const existing = await challengeModel.findLatestByTopicId(context.topic.id, userId);
+    if (existing?.challenge_data) {
+      return {
+        id: existing.id,
+        ...existing.challenge_data,
+        context: {
+          topic: context.topic,
+          module: context.module,
+          video: context.video,
+        },
+        supportedLanguages: getSupportedLanguages(),
+      };
+    }
+
     const prompt = `
 Generate one programming challenge that tests the learner's understanding of a single topic.
 
@@ -444,32 +461,64 @@ Rules:
 - The main challenge, examples, starter code, and tests must be for ${languageName}.
 - Do not generate a challenge for another programming language.
 - Use stdin/stdout style tests so the problem works across all supported languages.
-- Include 2 public tests and 3 hidden tests.
+- Include 2 public tests and 3 hidden tests. Every test MUST have a non-empty expectedOutput.
 - Keep the problem small enough for a single lesson challenge.
 - Starter code should be minimal and language-specific.
 - Structural expectations should reflect the topic when possible.
 - source must be "ai_generated_topic_aligned".
 `;
 
-    const content = await CHAT_SERVICE.generateChatCompletion(
-      [
-        {
-          role: "system",
-          content:
-            "You create strict JSON coding challenges for programming topics. Make the challenge tightly aligned to the topic and usable with Judge0 test execution.",
-        },
-        { role: "user", content: prompt },
-      ],
-      {
-        model: "llama-3.1-8b-instant",
-        temperature: 0.4,
-        response_format: { type: "json_object" },
-      }
-    );
+    // ── LLM call with up to 3 retries ──
+    let normalized = null;
+    let lastError = null;
 
-    const parsed = extractJson(content);
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        const retryNote =
+          attempt === 0
+            ? ""
+            : `\n\nPrevious attempt failed: ${lastError?.message}. You MUST include at least one publicTest and one hiddenTest, each with a non-empty expectedOutput.`;
+
+        const llmContent = await CHAT_SERVICE.generateChatCompletion(
+          [
+            {
+              role: "system",
+              content:
+                "You create strict JSON coding challenges for programming topics. Make the challenge tightly aligned to the topic and usable with Judge0 test execution.",
+            },
+            { role: "user", content: prompt + retryNote },
+          ],
+          {
+            model: "llama-3.1-8b-instant",
+            temperature: 0.4 + attempt * 0.1,
+            response_format: { type: "json_object" },
+          }
+        );
+
+        const parsed = extractJson(llmContent);
+        normalized = normalizeChallenge(parsed);
+        break; // success — exit retry loop
+      } catch (err) {
+        lastError = err;
+        console.warn(`generateTopicChallenge attempt ${attempt + 1} failed: ${err.message}`);
+      }
+    }
+
+    if (!normalized) {
+      throw lastError || new Error("Failed to generate a valid challenge after 3 attempts");
+    }
+
+    const savedChallenge = await challengeModel.createTopicChallenge({
+      userId,
+      curriculumId: context.module.curriculum_id,
+      moduleId: context.module.id,
+      topicId: context.topic.id,
+      challenge: normalized,
+    });
+
     return {
-      ...normalizeChallenge(parsed),
+      id: savedChallenge.id,
+      ...normalized,
       context: {
         topic: context.topic,
         module: context.module,
@@ -480,10 +529,23 @@ Rules:
   }
 
   async evaluateChallengeSubmission({
+    userId,
+    challengeId,
+    topicId,
+    moduleId,
+    curriculumId,
     sourceCode,
     languageId,
     testCases = [],
   }) {
+    if (!userId) {
+      throw new Error("User authentication is required");
+    }
+
+    if (!topicId) {
+      throw new Error("topicId is required");
+    }
+
     if (!sourceCode?.trim()) {
       throw new Error("source_code is required");
     }
@@ -527,11 +589,80 @@ Rules:
       });
     }
 
-    return {
+    const evaluation = {
       total: results.length,
       passed: results.filter((result) => result.passed).length,
       failed: results.filter((result) => !result.passed).length,
       results,
+    };
+
+    let savedSubmission = null;
+    if (challengeId) {
+      savedSubmission = await challengeModel.createChallengeSubmission({
+        challengeId,
+        userId,
+        sourceCode,
+        languageId,
+        evaluation,
+      });
+    }
+
+    const params = await bktModel.getBktParameters(topicId);
+    const effectiveParams = params || (await bktModel.createBktParameters(topicId));
+
+    let mastery = await bktModel.getTopicMastery(userId, topicId);
+    if (!mastery) {
+      mastery = await bktModel.createTopicMastery(userId, topicId, effectiveParams.p_init, null);
+    }
+
+    const normalizedCorrect = evaluation.passed;
+    const normalizedTotal = evaluation.total;
+    const scoreForAttempt = BKTService.computeScore(normalizedCorrect, normalizedTotal);
+    const correctnessThreshold = 0.7;
+    const isCorrect = scoreForAttempt >= correctnessThreshold;
+
+    const updatedProbability = BKTService.updateMasteryProbability(
+      Number(mastery.mastery_probability),
+      isCorrect,
+      Number(effectiveParams.p_guess),
+      Number(effectiveParams.p_slip),
+      Number(effectiveParams.p_learn)
+    );
+
+    const updatedMastery = await bktModel.updateTopicMastery({
+      userId,
+      topicId,
+      masteryProbability: updatedProbability,
+      attempts: mastery.attempts + 1,
+      correctAnswers: mastery.correct_answers + normalizedCorrect,
+      incorrectAnswers: mastery.incorrect_answers + normalizedTotal - normalizedCorrect,
+      lastQuizId: mastery.last_quiz_id || null,
+    });
+
+    if (evaluation.failed > 0) {
+      await challengeModel.recordLearnerWeakness({
+        userId,
+        topicId,
+        weaknessType: "challenge_failure",
+        severity: 1.0,
+        latestSubmissionId: savedSubmission?.id || null,
+      });
+    }
+
+    if (isCorrect || BKTService.isMastered(updatedProbability)) {
+      await curriculumModel.updateTopicStatus(topicId, "completed");
+    }
+
+    const progressionThreshold = 0.80;
+    const canProgress = Number(updatedProbability) >= progressionThreshold;
+
+    return {
+      evaluation,
+      submission: savedSubmission,
+      mastery: updatedMastery,
+      mastered: BKTService.isMastered(updatedProbability),
+      canProgress,
+      progressionThreshold,
     };
   }
 

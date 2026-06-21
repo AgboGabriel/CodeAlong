@@ -65,6 +65,52 @@ class AstController {
     }
   }
 
+  // ─── NEW: workspace endpoint ───────────────────────────────────────────────
+  async parseWorkspace(req, res) {
+    try {
+      const userId = req.user?.id || null;
+      const {
+        tabs,
+        topic_id,
+        topic_title,
+        persist = false,
+        analysis_options = {},
+      } = req.body;
+
+      if (!Array.isArray(tabs) || tabs.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: "tabs array is required and must not be empty",
+        });
+      }
+
+      // Remap snake_case fields from the frontend to camelCase for the service
+      const normalisedTabs = tabs.map((tab) => ({
+        tabId: tab.tab_id ?? tab.tabId,
+        name: tab.name,
+        sourceCode: tab.source_code ?? tab.sourceCode ?? "",
+        languageId: tab.language_id ?? tab.languageId,
+      }));
+
+      const result = await astService.parseWorkspace({
+        tabs: normalisedTabs,
+        topicId: topic_id || null,
+        topicTitle: topic_title || "",
+        persist,
+        analysisOptions: analysis_options,
+      });
+
+      return res.status(200).json(result);
+    } catch (error) {
+      console.error("Error parsing workspace AST:", error);
+      return res.status(400).json({
+        success: false,
+        error: error.message || "Failed to parse workspace",
+      });
+    }
+  }
+  // ──────────────────────────────────────────────────────────────────────────
+
   async getHistory(req, res) {
     try {
       const userId = req.user?.id;

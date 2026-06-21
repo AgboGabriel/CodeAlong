@@ -1,5 +1,5 @@
 import database from "../config/database.js";
-
+import youtubeVideoModel from "./youtubeVideoModel.js";
 class CurriculumModel {
   async createCurriculum(userId, curriculum) {
     const client = await database.getClient();
@@ -253,6 +253,21 @@ class CurriculumModel {
         title: row.curriculum_title,
       },
     };
+  }
+
+  async updateTopicStatus(topicId, status) {
+    const result = await database.query(
+      `
+        UPDATE curriculum_topics
+        SET status = $1,
+            updated_at = NOW()
+        WHERE id = $2
+        RETURNING *
+      `,
+      [status, topicId]
+    );
+
+    return result.rows[0] || null;
   }
 }
 

@@ -181,6 +181,62 @@ CREATE TABLE learner_weaknesses (
     last_detected TIMESTAMP DEFAULT NOW()
 );
 
+CREATE TABLE topic_challenges (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  curriculum_id INTEGER NOT NULL REFERENCES user_curriculums(id) ON DELETE CASCADE,
+  module_id INTEGER NOT NULL REFERENCES curriculum_modules(id) ON DELETE CASCADE,
+  topic_id INTEGER NOT NULL REFERENCES curriculum_topics(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  prompt TEXT NOT NULL,
+  instructions JSONB DEFAULT '[]'::JSONB,
+  expected_concepts TEXT[] DEFAULT ARRAY[]::TEXT[],
+  difficulty VARCHAR(20) DEFAULT 'medium',
+  starter_code_by_language JSONB DEFAULT '{}'::JSONB,
+  public_tests JSONB DEFAULT '[]'::JSONB,
+  hidden_tests JSONB DEFAULT '[]'::JSONB,
+  structural_expectations JSONB DEFAULT '{}'::JSONB,
+  source VARCHAR(100) DEFAULT 'ai_generated_topic_aligned',
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- changes made to topic challenges table
+-- Speed up the findLatestByTopicId lookup
+CREATE INDEX IF NOT EXISTS idx_topic_challenges_user_topic
+ON topic_challenges(user_id, topic_id, created_at DESC);
+
+-- Prevent duplicate challenges being generated for the same user+topic.
+-- Use ON CONFLICT DO NOTHING in createTopicChallenge, or just enforce it here.
+-- If you already have duplicate rows, clean them first (see below), then add the constraint.
+
+-- Optional: deduplicate existing rows before adding the constraint
+-- (keeps the most recent row per user+topic, deletes the rest)
+DELETE FROM topic_challenges
+WHERE id NOT IN (
+  SELECT DISTINCT ON (user_id, topic_id) id
+  FROM topic_challenges
+  ORDER BY user_id, topic_id, created_at DESC
+);
+
+-- Add unique constraint so only one challenge per user per topic can exist
+ALTER TABLE topic_challenges
+ADD CONSTRAINT uq_topic_challenges_user_topic UNIQUE (user_id, topic_id);
+
+
+
+CREATE TABLE topic_challenge_submissions (
+  id SERIAL PRIMARY KEY,
+  challenge_id INTEGER NOT NULL REFERENCES topic_challenges(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  source_code TEXT NOT NULL,
+  language_id INTEGER NOT NULL,
+  evaluation JSONB DEFAULT '{}'::JSONB,
+  passed BOOLEAN,
+  score NUMERIC,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
 -- BKT parameters table
 CREATE TABLE bkt_parameters (
     id SERIAL PRIMARY KEY,

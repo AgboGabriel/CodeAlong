@@ -1,10 +1,9 @@
-import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import logo from "./assets/Code along_logo-03.png";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "./MyLessons.css";
 import Sidebar from "./Components/Sidebar";
 import Header from "./Components/Header";
-import UserProfile, { user } from "./Components/UserProfile";
+import UserProfile from "./Components/UserProfile";
 
 
 import {
@@ -38,145 +37,6 @@ const NAV_ITEMS = [
   { icon: MdAccountTree, label: "Learning Path", path: "/LearningPath" },
   { icon: MdFolderOpen, label: "Assessments", path: "/Assessments" },
 ];
-
-// function UserProfile({ small, onClick ,user}) {
-//   return (
-//     <>
-//       <div className={`avatar ${small ? "avatar-sm" : ""}`} onClick={onClick}>
-//         <img src={user.avatar} alt={user.name} />
-//       </div>
-
-//       {!small && (
-//         <div className="user-info">
-//           <div className="user-name">{user.name}</div>
-//         </div>
-//       )}
-//     </>
-//   );
-// }
-function UserProfile({ small, onClick, user }) {
-  return (
-    <>
-      <div
-        className={`avatar ${small ? "avatar-sm" : ""}`}
-        onClick={onClick}
-      >
-        <span className="avatar-initials">
-          {user.initials}
-        </span>
-      </div>
-
-      {!small && (
-        <div className="user-info">
-          <div className="user-name">{user.name}</div>
-        </div>
-      )}
-    </>
-  );
-}
-
-function Sidebar() {
-  const location = useLocation();
-
-  return (
-    <aside className="sidebar">
-      <div className="sidebar-logo">
-        <div className="logo-icon">
-          <img className="logo-img" src={logo} alt="Logo" />
-        </div>
-        <span className="logo-text">CodeAlong</span>
-      </div>
-
-      <nav className="sidebar-nav">
-        {NAV_ITEMS.map(({ icon, label, path }) => {
-          const Icon = icon;
-
-          return (
-            <Link
-              key={label}
-              to={path}
-              className={`nav-item ${
-                location.pathname === path ? "active" : ""
-              }`}
-            >
-              <Icon size={30} />
-              {label}
-            </Link>
-          );
-        })}
-      </nav>
-    </aside>
-  );
-}
-
-function Header({user}) {
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target)
-      ) {
-        setDropdownOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () =>
-      document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleLogout = () => {
-    navigate("/");
-  };
-
-  return (
-    <header user={user} className="header">
-      <div className="search-wrap">
-        
-      </div>
-
-      <div className="header-right">
-        <button className="notif-btn" aria-label="Notifications">
-          <MdNotifications size={30} />
-          <span className="notif-dot" />
-        </button>
-
-        <div className="divider-v" />
-
-        <div className="header-user" ref={dropdownRef}>
-          <div
-            className="header-user-text"
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-          >
-            <div className="user-name">{user.name}</div>
-          </div>
-
-          <UserProfile
-            small
-            user={user}
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-          />
-
-          <button className="icon-btn" aria-label="Settings">
-            <MdSettings size={30} />
-          </button>
-
-          {dropdownOpen && (
-            <div className="user-dropdown">
-              <button className="dropdown-item" onClick={handleLogout}>
-                Logout
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </header>
-  );
-}
 
 export default function MyLessons() {
   const navigate = useNavigate();
@@ -333,33 +193,6 @@ const handleBack = () => {
     setView("modules");
   }
 };
-
-const modules = [
-  {
-    id: 1,
-    title: "Programming Fundamentals",
-    status: "completed",
-    description: "Variables, loops, data types, and logic.",
-    topics: [
-      {
-        title: "Variables & Data Types",
-        videos: ["Intro Video", "Practice Video"],
-        locked: false
-      },
-      {
-        title: "Loops",
-        videos: [],
-        locked: true
-      },
-      {
-        title: "Functions",
-        videos: [],
-        locked: true
-      }
-    ]
-  }
-];
-
 
 const handleQuizClick = (topic) => {
   setSelectedTopic(topic);
@@ -659,13 +492,15 @@ if (loadingPaths) {
               <div className="curriculum-header">
                 <h1>{selectedModule.title}</h1>
                 <p>Select a topic to expand lessons</p>
+        
               </div>
 
               <div className="topics-list">
                 {selectedModule.topics.map((topic, index) => (
                   <div key={index} className="topic-card">
-
+                    
                     {/* Topic Header */}
+                    
                    <div
                       className={`topic-header ${topic.locked ? "locked-topic" : ""}`}
                      onClick={() => toggleTopic(index, topic.locked)}
@@ -730,45 +565,6 @@ if (loadingPaths) {
     </Link>
   </div>
 )}
-
-                        {(topic.videos || []).map((video, i) => (
-                          // <Link
-                          //   key={i}
-                          //   to="/Videolesson"
-                          //   className="video-link"
-                          // >
-                          <Link
-                          key={video.videoId || i}
-                          to="/Videolesson"
-                          state={{
-                            moduleId: selectedModule?.id,
-                            topic,
-                            video,
-                          }}
-                          className="video-link"
-                                  >     
-                            <div className="video-item">
-                              <MdPlayCircleFilled className="video-icon" />
-                              <span>{video.title}</span>
-                            </div>
-                          </Link>
-                        ))}
-
-                        <Link
-                          to="/challenges"
-                          state={{
-                            moduleId: selectedModule?.id,
-                            topic,
-                          }}
-                          className="challenge-link"
-                        >
-                          <div className="challenge-item">
-                            <MdCode className="challenge-icon" />
-                            <span>{topic.title} Coding Challenge</span>
-                          </div>
-                        </Link>
-                      </div>
-                    )}
 
                   </div>
                 ))}
