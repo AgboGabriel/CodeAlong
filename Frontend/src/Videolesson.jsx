@@ -313,7 +313,7 @@ useEffect(() => {
 
   <button
     className="video-back-btn"
-    onClick={() => navigate(-1)}
+   onClick={() => navigate(-1)}
   >
     ← Back to Topics
   </button>

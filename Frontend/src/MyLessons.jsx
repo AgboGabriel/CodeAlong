@@ -1,26 +1,21 @@
 import { useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import "./MyLessons.css";
 import Sidebar from "./Components/Sidebar";
 import Header from "./Components/Header";
 import UserProfile, { user } from "./Components/UserProfile";
+import Topics from "./Topics";
 
 import {
   MdSearch,
   MdDelete,
   MdFilterList,
-  MdPlayCircleFilled,
-  MdKeyboardArrowDown,
-  MdKeyboardArrowUp, 
-  MdFolder,
-  MdQuiz,
-  MdCode,
-  MdLock
 } from "react-icons/md";
 
 
 
 export default function MyLessons() {
+  const navigate = useNavigate();
   const [selectedPath, setSelectedPath] = useState(null);
 
   const [filter, setFilter] = useState("All Paths");
@@ -72,27 +67,10 @@ const [searchTerm, setSearchTerm] = useState("");
 
 const [view, setView] = useState("modules");
 const [selectedModule, setSelectedModule] = useState(null);
-const [expandedTopics, setExpandedTopics] = useState(new Set());
-
-const [showQuizPopup, setShowQuizPopup] = useState(false);
-const [selectedTopic, setSelectedTopic] = useState(null);
 
 
-const toggleTopic = (index, locked) => {
-  if (locked) return;
 
-  setExpandedTopics((prev) => {
-    const updated = new Set(prev);
 
-    if (updated.has(index)) {
-      updated.delete(index);
-    } else {
-      updated.add(index);
-    }
-
-    return updated;
-  });
-};
 
 const filteredPaths = learningPaths.filter((path) => {
   const matchesSearch = path.title
@@ -144,34 +122,7 @@ const modules = [
   }
 ];
 
-// Open popup when quiz is clicked
-const handleQuizClick = (topic) => {
-  setSelectedTopic(topic);
-  setShowQuizPopup(true);
-};
 
-
-// Handle YES
-const handleHasKnowledge = () => {
-  setShowQuizPopup(false);
-
-  // Navigate to quiz page later
-  window.location.href = "/QuizPage";
-};
-
-
-// Handle NO
-const handleNoKnowledge = () => {
-  setShowQuizPopup(false);
-
-  // Send user to first video
-  window.location.href = "/Videolesson";
-};
-
-const handleCancelQuiz = () => {
-  setShowQuizPopup(false);
-  setSelectedTopic(null);
-};
 
   if (!selectedPath) {
 
@@ -337,8 +288,9 @@ const handleCancelQuiz = () => {
                     className="primary-btn"
                     onClick={() => {
                       const module = modules.find(m => m.id === 1);
-                      setSelectedModule(module);
-                      setView("topics");                   
+                      navigate("/Topics", {
+                      state: { selectedModule: module }
+                    });                 
                     }}
                   >
                     Review Lessons
@@ -437,121 +389,12 @@ const handleCancelQuiz = () => {
             </div>
           )}
 
-          {/* ===================== TOPICS VIEW ===================== */}
+          
           {view === "topics" && selectedModule && (
-            <div className="curriculum-page">
-
-              <div className="curriculum-header">
-                <h1>{selectedModule.title}</h1>
-                <p>Select a topic to expand lessons</p>
-              </div>
-
-              <div className="topics-list">
-                {selectedModule.topics.map((topic, index) => (
-                  <div key={index} className="topic-card">
-
-                    {/* Topic Header */}
-                   <div
-                      className={`topic-header ${topic.locked ? "locked-topic" : ""}`}
-                     onClick={() => toggleTopic(index, topic.locked)}
-                    >
-                      <div className="topic-title">
-                        <MdFolder className="topic-icon" />
-                        <h3>{topic.title}</h3>
-                      </div>
-
-                      <span className="chevron-icon">
-                          {topic.locked ? (
-                            <MdLock /> 
-                          ) : expandedTopics.has(index) ? (
-                            <MdKeyboardArrowUp />
-                          ) : (
-                            <MdKeyboardArrowDown />
-                          )}
-                      </span>
-                    </div>
-
-                  {/* Dropdown Content */}
-                        {!topic.locked && expandedTopics.has(index) && (
-                          <div className="video-list">
-
-                            
-                            {/* Quiz Before Videos */}
-                              <div
-                                className="quiz-item"
-                                onClick={() => handleQuizClick(topic)}
-                              >
-                                <MdQuiz className="quiz-icon" />
-                                <span>{topic.title} Quiz</span>
-                              </div>
-
-                           {/* Videos */}
-                              {topic.videos.map((video, i) => (
-                                <Link
-                                  key={i}
-                                  to="/Videolesson"
-                                  className="video-link"
-                                >
-                                  <div className="video-item">
-                                    <MdPlayCircleFilled className="video-icon" />
-                                    <span>{video}</span>
-                                  </div>
-                                </Link>
-                              ))}
-
-                           <Link to="/challenges" className="challenge-link">
-                              <div className="challenge-item">
-                                <MdCode className="challenge-icon" />
-                                <span>{topic.title} Coding Challenge</span>
-                              </div>
-                            </Link>
-
-                          </div>
-                        )}
-
-                  </div>
-                ))}
-              </div>
-
-            </div>
+            <Topics selectedModule={selectedModule} />
           )}
 
-          {/* Quiz Popup */}
-              {showQuizPopup && (
-                <div className="quiz-popup-overlay">
-                  <div className="quiz-popup">
-            <button
-              className="popup-close-btn"
-              onClick={handleCancelQuiz}
-            >
-              ×
-            </button>
-
-            <h2>Prior Knowledge Check</h2>
-
-            <p>
-              Do you already have prior knowledge about{" "}
-              <strong>{selectedTopic?.title}</strong>?
-            </p>
-
-            <div className="popup-buttons">
-              <button
-                className="yes-btn"
-                onClick={handleHasKnowledge}
-              >
-                Yes
-              </button>
-
-              <button
-                className="no-btn"
-                onClick={handleNoKnowledge}
-              >
-                No
-              </button>
-            </div>
-          </div>
-                </div>
-              )}
+          
 
         </div>
       </div>

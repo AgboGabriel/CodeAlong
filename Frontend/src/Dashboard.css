@@ -415,7 +415,8 @@ body {
 
 .video-info p {
   font-size: 12px;
-  color: #64748b;
+  color: #545960;
+  font-weight: bold;
 }
 
 /* SCROLLBAR */

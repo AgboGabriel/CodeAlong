@@ -136,7 +136,7 @@ const handleDeleteTab = (tabId) => {
       >
         {/* LEFT: Question Panel */}
         <div className="question-panel">
-          <button className="back-btn" onClick={() => window.history.back()}>
+          <button className="back-btn" onClick={() => navigate(-1)}>
             ← Back
           </button>
           <div className="question-placeholder">

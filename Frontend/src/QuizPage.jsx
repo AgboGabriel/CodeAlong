@@ -200,7 +200,7 @@ export default function QuizPage() {
 
               <button
                 className="quiz-back-btn"
-                onClick={() => navigate("/MyLessons")}
+                onClick={() => navigate(-1)}
               >
                 ← Back
               </button>
