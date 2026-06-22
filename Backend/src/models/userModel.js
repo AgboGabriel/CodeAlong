@@ -45,9 +45,9 @@ class UserModel {
 
     try {
       const query = `
-        INSERT INTO users (username, email, password_hash, auth_provider, provider_id, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-        RETURNING id, username, email, auth_provider, provider_id, created_at
+        INSERT INTO users (username, email, password_hash, auth_provider, provider_id, questionnaire_completed, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+        RETURNING id, username, email, auth_provider, provider_id, questionnaire_completed, created_at
       `;
 
       const values = [username, email, password_hash, auth_provider, provider_id];
@@ -65,7 +65,7 @@ class UserModel {
         UPDATE users
         SET last_login = NOW(), updated_at = NOW()
         WHERE id = $1
-        RETURNING id, username, email, auth_provider, provider_id, last_login, updated_at
+        RETURNING id, username, email, auth_provider, provider_id, questionnaire_completed, last_login, updated_at
       `;
 
       const result = await database.query(query, [id]);
@@ -94,7 +94,7 @@ class UserModel {
         UPDATE users
         SET ${setValues.join(', ')}, updated_at = NOW()
         WHERE id = $${values.length}
-        RETURNING id, username, email, auth_provider, provider_id, created_at, updated_at, last_login
+        RETURNING id, username, email, auth_provider, provider_id, questionnaire_completed, created_at, updated_at, last_login
       `;
 
       const result = await database.query(query, values);
