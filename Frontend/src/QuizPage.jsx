@@ -187,6 +187,18 @@ export default function QuizPage() {
       questions.length) *
     100;
 
+    const handleBack = () => {
+  const confirmLeave = window.confirm(
+    "All progress will be lost if you leave without completing. Are you sure?"
+  );
+
+  if (confirmLeave) {
+    navigate(-1);
+  }
+};
+
+const [showLeaveModal, setShowLeaveModal] = useState(false);
+
   return (
     <main className="quiz-main">
       <div className="quiz-wrapper">
@@ -200,7 +212,7 @@ export default function QuizPage() {
 
               <button
                 className="quiz-back-btn"
-                onClick={() => navigate(-1)}
+                onClick={() => setShowLeaveModal(true)}
               >
                 ← Back
               </button>
@@ -238,6 +250,35 @@ export default function QuizPage() {
               </h3>
             </div>
           </div>
+
+          {showLeaveModal && (
+  <div className="modal-overlay">
+    <div className="leave-modal">
+      <h3>Leave Quiz?</h3>
+
+      <p>
+        All progress will be lost if you leave without
+        completing.
+      </p>
+
+      <div className="modal-actions">
+        <button
+          onClick={() => setShowLeaveModal(false)}
+          className="cancel-btn"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={() => navigate(-1)}
+          className="confirm-btn"
+        >
+          Yes
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
         </section>
 

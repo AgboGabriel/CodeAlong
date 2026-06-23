@@ -408,13 +408,13 @@ body {
 }
 
 .video-info h4 {
-  font-size: 14px;
+  font-size:18px;
   margin-bottom: 4px;
   color:#137fec;
 }
 
 .video-info p {
-  font-size: 12px;
+  font-size: 14px;
   color: #545960;
   font-weight: bold;
 }
