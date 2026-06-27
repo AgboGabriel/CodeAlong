@@ -281,7 +281,49 @@ ON ast_analyses(user_id, topic_id, created_at DESC);
 
 
 
+-- ── Chat Conversations ────────────────────────────────────────────────────
+-- One row per user session/thread. A user can have multiple conversations
+-- (e.g. one per curriculum-building session).
+CREATE TABLE chat_conversations (
+  id          SERIAL PRIMARY KEY,
+  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 
+  -- Optional: tag what this conversation was about
+  context     VARCHAR(50) DEFAULT 'general'
+              CHECK (context IN ('general', 'curriculum')),
+
+  created_at  TIMESTAMP DEFAULT NOW(),
+  updated_at  TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_chat_conversations_user
+  ON chat_conversations(user_id, created_at DESC);
+
+
+-- ── Chat Messages ─────────────────────────────────────────────────────────
+-- One row per message (user or assistant) inside a conversation.
+CREATE TABLE chat_messages (
+  id              SERIAL PRIMARY KEY,
+  conversation_id INTEGER NOT NULL
+                  REFERENCES chat_conversations(id) ON DELETE CASCADE,
+  user_id         INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+
+  role            VARCHAR(20) NOT NULL
+                  CHECK (role IN ('user', 'assistant', 'system')),
+
+  content         TEXT NOT NULL,
+
+  -- For curriculum messages, store the parsed curriculum object too
+  curriculum_data JSONB,
+
+  created_at      TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_chat_messages_conversation
+  ON chat_messages(conversation_id, created_at ASC);
+
+CREATE INDEX idx_chat_messages_user
+  ON chat_messages(user_id, created_at DESC);
 
 
 

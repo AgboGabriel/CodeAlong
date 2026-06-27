@@ -1,336 +1,270 @@
+import chatModel from "../models/Chatmodel.js";
+
+
+const HISTORY_WINDOW = 8;
+
+const MAX_STORED_MESSAGES = 20;
+
 export class ChatController {
-    constructor(groqService) {
-        this.groqService = groqService;
-        
-        // Store conversations (in production, use database)
-        this.conversations = new Map();
-        
-        console.log('Chat Controller initialized');
-    }
-    
-    /**
-     * Process a chat message
-     */
-    async processMessage(userId, message, options = {}) {
-        try {
-            console.log('ChatController.processMessage called:', { 
-                userId, 
-                message: message ? `"${message.substring(0, 50)}${message.length > 50 ? '...' : ''}"` : 'null',
-                options 
-            });
-            
-            // 1. Validate input
-            console.log('Validating input...');
-            this.validateInput(message);
-            console.log('Input validated');
-            
-            // 2. Get conversation history
-            console.log(' Getting conversation for userId:', userId);
-            const conversation = this._getConversationArray(userId);
-            console.log(' Conversation history length:', conversation.length);
-            
-            // 3. Add message to history
-            console.log('Adding user message to history');
-            conversation.push({
-                role: 'user',
-                content: message,
-                timestamp: new Date()
-            });
-            
-            // 4. Generate response using service
-            console.log('Calling groqService.generateText()');
-            const priorMessages = conversation
-                .slice(Math.max(0, conversation.length - 8), conversation.length - 1)
-                .map((entry) => ({
-                    role: entry.role === "assistant" ? "assistant" : "user",
-                    content: entry.content,
-                }));
+  constructor(groqService) {
+    this.groqService = groqService;
+    console.log("Chat Controller initialized (DB-backed)");
+  }
 
-            const aiResponse = await this.groqService.generateText(message, {
-                ...options,
-                history: priorMessages,
-            });
-            console.log('Groq API response received');
-            
-            // 5. Add AI response to history
-            conversation.push({
-                role: 'assistant',
-                content: aiResponse,
-                timestamp: new Date()
-            });
-            
-            // 6. Limit conversation history
-            this._limitConversationHistory(conversation);
-            
-            // 7. Return formatted response
-            const response = {
-                success: true,
-                message: aiResponse,
-                conversationId: userId,
-                timestamp: new Date().toISOString(),
-                historyLength: conversation.length
-            };
-            
-            console.log('Request processed successfully');
-            return response;
-            
-        } catch (error) {
-            console.error('ChatController error in processMessage:');
-            console.error('- Error type:', error.constructor.name);
-            console.error('- Error message:', error.message);
-            console.error('- Error stack:', error.stack);
-            
-            // If it's a Groq API error, log more details
-            if (error.response) {
-                console.error('- Groq API Error Status:', error.response.status);
-                console.error('- Groq API Error Data:', error.response.data);
-            }
-            
-            return this.createErrorResponse(error);
-        }
+ 
+  async _getOrCreateConversation(userId, context = "general") {
+    let conversation = await chatModel.getLatestConversation({ userId, context });
+    if (!conversation) {
+      conversation = await chatModel.createConversation({ userId, context });
+    }
+    return conversation;
+  }
+
+ 
+  async _getRecentHistory(conversationId) {
+    const rows = await chatModel.getMessages(conversationId, HISTORY_WINDOW);
+    return rows.map((row) => ({
+      role: row.role === "assistant" ? "assistant" : "user",
+      content: row.content,
+    }));
+  }
+
+  validateInput(message) {
+    if (!message || typeof message !== "string") {
+      throw new Error("Message must be a non-empty string");
+    }
+    if (message.trim().length === 0) {
+      throw new Error("Message cannot be empty or whitespace");
+    }
+    if (message.length > 5000) {
+      throw new Error("Message too long (max 5000 characters)");
+    }
+    if (this.containsInappropriateContent(message)) {
+      throw new Error("Message contains inappropriate content");
+    }
+  }
+
+  containsInappropriateContent(message) {
+    const blockedTerms = [];
+    const lower = message.toLowerCase();
+    return blockedTerms.some((term) => lower.includes(term));
+  }
+
+  createErrorResponse(error) {
+    let statusCode = 500;
+    let userMessage = "An error occurred while processing your request";
+
+    if (
+      error.message.includes("Message must be") ||
+      error.message.includes("Message cannot be") ||
+      error.message.includes("Message too long")
+    ) {
+      statusCode = 400;
+      userMessage = error.message;
+    } else if (error.message.includes("inappropriate content")) {
+      statusCode = 403;
+      userMessage = error.message;
+    } else if (
+      error.message.includes("GROQ_API_KEY") ||
+      error.message.includes("Failed to generate text") ||
+      error.response
+    ) {
+      statusCode = 503;
+      userMessage = "AI service is currently unavailable. Please try again later.";
     }
 
-    async buildCurriculum(userId, message, options = {}) {
-        try {
-            console.log('ChatController.buildCurriculum called:', {
-                userId,
-                message: message ? `"${message.substring(0, 50)}${message.length > 50 ? '...' : ''}"` : 'null',
-                options
-            });
+    return {
+      success: false,
+      error: userMessage,
+      statusCode,
+      internalError:
+        process.env.NODE_ENV === "development" ? error.message : undefined,
+      timestamp: new Date().toISOString(),
+    };
+  }
 
-            this.validateInput(message);
+ 
 
-            const conversation = this._getConversationArray(userId);
-            conversation.push({
-                role: 'user',
-                content: message,
-                timestamp: new Date()
-            });
+  /** General chat — persists to DB, uses recent history as context. */
+  async processMessage(userId, message, options = {}) {
+    try {
+      this.validateInput(message);
 
-            const curriculum = await this.groqService.generateCurriculum(message, options);
+      const conversation = await this._getOrCreateConversation(userId, "general");
 
-            conversation.push({
-                role: 'assistant',
-                content: JSON.stringify(curriculum),
-                timestamp: new Date()
-            });
+      // Save the user message
+      await chatModel.addMessage({
+        conversationId: conversation.id,
+        userId,
+        role: "user",
+        content: message,
+      });
 
-            this._limitConversationHistory(conversation);
+      // Build context window for the LLM (excludes the message we just added)
+      const history = await this._getRecentHistory(conversation.id);
+      // The message we just stored is already the last item; slice it off so
+      // we don't double-send it (generateText appends it internally)
+      const priorHistory = history.slice(0, -1);
 
-            return {
-                success: true,
-                curriculum,
-                conversationId: userId,
-                timestamp: new Date().toISOString(),
-                historyLength: conversation.length
-            };
-        } catch (error) {
-            console.error('ChatController error in buildCurriculum:', error);
-            return this.createErrorResponse(error);
-        }
+      const aiResponse = await this.groqService.generateText(message, {
+        ...options,
+        history: priorHistory,
+      });
+
+      // Save the assistant reply
+      await chatModel.addMessage({
+        conversationId: conversation.id,
+        userId,
+        role: "assistant",
+        content: aiResponse,
+      });
+
+      // Trim if we've gone over the cap
+      await chatModel.trimMessages(conversation.id, MAX_STORED_MESSAGES);
+
+      return {
+        success: true,
+        message: aiResponse,
+        conversationId: conversation.id,
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      console.error("ChatController.processMessage error:", error.message);
+      return this.createErrorResponse(error);
     }
-    
-    /**
-     * Validate user input
-     */
-    validateInput(message) {
-        console.log('validateInput called with:', typeof message, message);
-        
-        if (!message || typeof message !== 'string') {
-            console.error(' Validation failed: Message is not a string or is null');
-            throw new Error('Message must be a non-empty string');
-        }
-        
-        if (message.trim().length === 0) {
-            console.error(' Validation failed: Message is empty or whitespace');
-            throw new Error('Message cannot be empty or whitespace');
-        }
-        
-        if (message.length > 5000) {
-            console.error(' Validation failed: Message too long');
-            throw new Error('Message too long (max 5000 characters)');
-        }
-        
-        // Optional: Add content moderation
-        if (this.containsInappropriateContent(message)) {
-            console.error('Validation failed: Inappropriate content');
-            throw new Error('Message contains inappropriate content');
-        }
-        
-        console.log('Message validation passed');
+  }
+
+  /** Curriculum builder — persists conversation + structured curriculum data. */
+  async buildCurriculum(userId, message, options = {}) {
+    try {
+      this.validateInput(message);
+
+      const conversation = await this._getOrCreateConversation(userId, "curriculum");
+
+      // Save the user message
+      await chatModel.addMessage({
+        conversationId: conversation.id,
+        userId,
+        role: "user",
+        content: message,
+      });
+
+      const curriculum = await this.groqService.generateCurriculum(message, options);
+
+      // Save the assistant reply — store the raw JSON as content AND in
+      // curriculum_data so it can be queried/displayed without re-parsing
+      await chatModel.addMessage({
+        conversationId: conversation.id,
+        userId,
+        role: "assistant",
+        content: JSON.stringify(curriculum),
+        curriculumData: curriculum,
+      });
+
+      await chatModel.trimMessages(conversation.id, MAX_STORED_MESSAGES);
+
+      return {
+        success: true,
+        curriculum,
+        conversationId: conversation.id,
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      console.error("ChatController.buildCurriculum error:", error.message);
+      return this.createErrorResponse(error);
     }
-    
-    /**
-     * Get or create conversation ARRAY (private method)
-     */
-    _getConversationArray(userId) {
-        console.log('_getConversationArray called for userId:', userId);
-        
-        if (!this.conversations.has(userId)) {
-            console.log('Creating new conversation for userId:', userId);
-            this.conversations.set(userId, []);
-        } else {
-            console.log('Existing conversation found for userId:', userId);
-        }
-        
-        const conversation = this.conversations.get(userId);
-        console.log('Returning conversation array with length:', conversation.length);
-        return conversation;
+  }
+
+  /**
+   * Build a rich system prompt from video metadata so the AI has full
+   * context about what the lesson covers before the user asks anything.
+   */
+  buildVideoSystemPrompt({ video, topic } = {}) {
+    const lines = [
+      "You are a helpful coding tutor embedded inside a video lesson page.",
+      "Answer questions about the current lesson, explain concepts clearly, and help debug code.",
+      "Be concise, educational, and refer to the video content when relevant.",
+      "",
+    ];
+
+    if (topic?.title) {
+      lines.push(`## Current Topic`);
+      lines.push(`The student is studying: "${topic.title}".`);
+      lines.push("");
     }
-    
-    /**
-     * Limit conversation history (private method)
-     */
-    _limitConversationHistory(conversation, maxMessages = 20) {
-        if (conversation.length > maxMessages) {
-            console.log(`Limiting conversation from ${conversation.length} to ${maxMessages} messages`);
-            // Remove oldest messages, keep recent ones
-            conversation.splice(0, conversation.length - maxMessages);
-        }
+
+    if (video) {
+      lines.push(`## Lesson Video`);
+
+      if (video.title) {
+        lines.push(`**Title:** ${video.title}`);
+      }
+
+      if (video.channel_title || video.channelTitle) {
+        lines.push(`**Channel:** ${video.channel_title || video.channelTitle}`);
+      }
+
+      if (video.duration) {
+        lines.push(`**Duration:** ${video.duration}`);
+      }
+
+      if (video.description) {
+        // YouTube descriptions can be very long; truncate to keep the prompt lean
+        const desc = video.description.length > 1500
+          ? video.description.slice(0, 1500) + "…"
+          : video.description;
+
+        lines.push("");
+        lines.push(`**Video Description (what this lesson covers):**`);
+        lines.push(desc);
+      }
+
+      lines.push("");
+      lines.push(
+        "Use the video title, channel, and description above to answer questions like " +
+        "'what does this video cover?', 'what will I learn?', or 'what happens at a certain point in the video?'. " +
+        "When the description mentions timestamps (e.g. 0:00, 2:30), use them to answer questions about specific sections."
+      );
     }
-    
-    /**
-     * Simple content check (expand as needed)
-     */
-    containsInappropriateContent(message) {
-        const blockedTerms = [
-            // Add terms you want to block
-        ];
-        
-        const lowerMessage = message.toLowerCase();
-        return blockedTerms.some(term => lowerMessage.includes(term));
+
+    return lines.join("\n");
+  }
+
+  /** Return full message history for a user's most recent conversation. */
+  async getConversation(userId, context = "general") {
+    try {
+      const conversation = await chatModel.getLatestConversation({ userId, context });
+      if (!conversation) return [];
+
+      const messages = await chatModel.getMessages(conversation.id);
+      return messages.map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+        curriculumData: msg.curriculum_data ?? undefined,
+        timestamp: msg.created_at,
+      }));
+    } catch (error) {
+      console.error("ChatController.getConversation error:", error.message);
+      return [];
     }
-    
-    /**
-     * Create standardized error response
-     */
-    createErrorResponse(error) {
-        console.log('createErrorResponse called for error:', error.message);
-        
-        let statusCode = 500;
-        let userMessage = 'An error occurred while processing your request';
-        
-        if (error.message.includes('Message must be') || 
-            error.message.includes('Message cannot be') ||
-            error.message.includes('Message too long')) {
-            statusCode = 400; // Bad request
-            userMessage = error.message;
-            console.log('Setting statusCode to 400 (Bad Request)');
-        } else if (error.message.includes('inappropriate content')) {
-            statusCode = 403; // Forbidden
-            userMessage = error.message;
-            console.log('Setting statusCode to 403 (Forbidden)');
-        } else if (error.message.includes('GROQ_API_KEY') || 
-                   error.message.includes('Failed to generate text') ||
-                   error.response) {
-            statusCode = 503; // Service unavailable
-            userMessage = 'AI service is currently unavailable. Please try again later.';
-            console.log('Setting statusCode to 503 (Service Unavailable)');
-        }
-        
-        const errorResponse = {
-            success: false,
-            error: userMessage,
-            statusCode: statusCode,
-            internalError: process.env.NODE_ENV === 'development' ? error.message : undefined,
-            timestamp: new Date().toISOString()
-        };
-        
-        console.log('Error response created:', errorResponse);
-        return errorResponse;
+  }
+
+  /** Clear messages for the user's current conversation. */
+  async clearConversation(userId, context = "general") {
+    try {
+      const conversation = await chatModel.getLatestConversation({ userId, context });
+      if (conversation) {
+        await chatModel.clearMessages(conversation.id, userId);
+      }
+      return {
+        success: true,
+        message: "Conversation history cleared",
+        userId,
+        hadPreviousConversation: !!conversation,
+      };
+    } catch (error) {
+      console.error("ChatController.clearConversation error:", error.message);
+      return { success: false, error: error.message };
     }
-    
-    /**
-     * Get conversation history for API response
-     */
-    getConversationHistory(userId) {
-        console.log('getConversationHistory called for userId:', userId);
-        
-        const conversation = this._getConversationArray(userId);
-        const response = {
-            userId: userId,
-            messages: conversation.map(msg => ({
-                role: msg.role,
-                content: msg.content.substring(0, 100) + (msg.content.length > 100 ? '...' : ''),
-                timestamp: msg.timestamp
-            })),
-            totalMessages: conversation.length,
-            lastUpdated: conversation.length > 0 ? conversation[conversation.length - 1].timestamp : null
-        };
-        
-        console.log('Returning conversation history with', conversation.length, 'messages');
-        return response;
-    }
-    
-    /**
-     * Clear conversation history
-     */
-    clearConversation(userId) {
-        console.log('clearConversation called for userId:', userId);
-        
-        const hadConversation = this.conversations.has(userId);
-        this.conversations.delete(userId);
-        
-        const response = {
-            success: true,
-            message: 'Conversation history cleared',
-            userId: userId,
-            hadPreviousConversation: hadConversation
-        };
-        
-        console.log('Conversation cleared for userId:', userId);
-        return response;
-    }
-    
-    /**
-     * Get conversation - alias for your route (returns the array)
-     */
-    getConversation(userId) {
-        console.log('getConversation (public) called for userId:', userId);
-        const conversation = this._getConversationArray(userId);
-        
-        // Return the full conversation array for the route
-        return conversation.map(msg => ({
-            role: msg.role,
-            content: msg.content,
-            timestamp: msg.timestamp
-        }));
-    }
-    
-    /**
-     * Generate multiple responses (for testing/options)
-     */
-    async generateMultiple(prompt, variations = 3) {
-        console.log('generateMultiple called with prompt:', prompt.substring(0, 50));
-        
-        const responses = [];
-        
-        for (let i = 0; i < variations; i++) {
-            try {
-                console.log(`Generating variation ${i + 1}/${variations}`);
-                const response = await this.groqService.generateText(prompt, {
-                    temperature: 0.7 + (i * 0.1), // Different creativity levels
-                    model: 'llama-3.1-8b-instant'
-                });
-                responses.push({
-                    variation: i + 1,
-                    temperature: 0.7 + (i * 0.1),
-                    content: response
-                });
-                console.log(`Variation ${i + 1} completed`);
-            } catch (error) {
-                console.error(`Error in variation ${i + 1}:`, error.message);
-                responses.push({
-                    variation: i + 1,
-                    error: error.message
-                });
-            }
-            
-            // Small delay between requests
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
-        
-        console.log('All variations generated');
-        return responses;
-    }
+  }
 }

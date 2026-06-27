@@ -26,8 +26,8 @@ function ensureAuthenticated(req, res, next) {
 }
 
 function getUserID(req) {
-    // In production, extract user ID from auth token or session
-    return req.headers['x-user-id'] || 'guest_user';
+    // Prefer the real authenticated user id; fall back to header for dev/test
+    return req.user?.id ?? req.headers['x-user-id'] ?? 'guest_user';
 }
 
 router.get('/', (req, res) => {
@@ -153,6 +153,21 @@ router.post('/db-test/users',async(req,res)=>{
         res.status(500).json({ success: false, error: error.message });
     }
 });
+//POST /chat/video-context — returns a system prompt built from video metadata
+router.post('/chat/video-context', (req, res) => {
+    try {
+        const { video, topic } = req.body;
+        if (!video) {
+            return res.status(400).json({ success: false, error: 'video is required' });
+        }
+        const systemPrompt = chatController.buildVideoSystemPrompt({ video, topic });
+        return res.status(200).json({ success: true, systemPrompt });
+    } catch (error) {
+        console.error('Video context route error:', error);
+        return res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 //POST /chat which is to send messages
 router.post('/chat',async(req,res)=>{
     try{
@@ -197,7 +212,7 @@ router.post('/chat/curriculum', async(req,res)=>{
 router.get("/chat/history", async(req,res)=>{
   try{
     const userId= getUserID(req);
-    const conversation= chatController.getConversation(userId);
+    const conversation = await chatController.getConversation(userId);
     res.status(200).json({
         success:true,
         conversation: conversation
@@ -216,7 +231,7 @@ router.delete("/chat/history", async(req,res)=>{
 
     try{
         const userId= getUserID(req);
-        const result= chatController.clearConversation(userId);
+        const result = await chatController.clearConversation(userId);
         res.status(200).json({
             success:true,
             message: result

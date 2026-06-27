@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Sidebar from "./Components/Sidebar";
 import Header from "./Components/Header";
 import "./LearningPath.css";
+import { useUser } from "./Components/useUser"; // ← shared hook
 
 import {
   MdAccountTree,
@@ -84,9 +85,6 @@ function LpBody() {
         throw new Error(data.error || "Failed to confirm curriculum.");
       }
 
-      // Fire video fetch in the BACKGROUND — do NOT await it.
-      // This is the YouTube API call that was blocking navigation.
-      // MyLessons fetches its own fresh data on mount anyway.
       const activeModule = data.activeModule;
       if (activeModule?.id) {
         fetch(`/api/videos/module/${activeModule.id}`, {
@@ -97,7 +95,6 @@ function LpBody() {
         );
       }
 
-      // Navigate immediately — don't wait for video fetch
       navigate("/MyLessons", { state: { fromConfirm: true } });
     } catch (error) {
       console.error("Confirm curriculum error:", error);
@@ -341,14 +338,7 @@ function LpBody() {
 }
 
 export default function LearningPath() {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    fetch("/auth/me", { credentials: "include" })
-      .then((r) => r.json())
-      .then((data) => { if (data.user) setUser(data.user); })
-      .catch((err) => console.error("Failed to fetch user:", err));
-  }, []);
+  const { user } = useUser(); // ← replaces manual fetch + useState
 
   return (
     <div className="app-shell">

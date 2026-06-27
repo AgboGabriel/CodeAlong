@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import "./MyLessons.css";
 import Sidebar from "./Components/Sidebar";
 import Header from "./Components/Header";
+import { useUser } from "./Components/useUser"; // ← shared hook
 
 import {
   MdAccountTree,
@@ -23,14 +24,6 @@ import {
 const CACHE_KEY = "myLessons_cache";
 const CACHE_TTL_MS = 60 * 1000;
 
-function generateInitials(name) {
-  if (!name) return "";
-  const parts = name.trim().split(" ");
-  return parts.length === 1
-    ? parts[0][0].toUpperCase()
-    : (parts[0][0] + parts[1][0]).toUpperCase();
-}
-
 function formatPaths(curriculums) {
   return curriculums.map((curriculum) => ({
     id: curriculum.id,
@@ -49,8 +42,8 @@ function formatPaths(curriculums) {
 export default function MyLessons() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user: authUser } = useUser(); // ← instant from cache, no flash
 
-  const [user, setUser] = useState({ name: "", initials: "" });
   const [learningPaths, setLearningPaths] = useState([]);
   const [loadingPaths, setLoadingPaths] = useState(true);
 
@@ -65,22 +58,24 @@ export default function MyLessons() {
   const [showQuizPopup, setShowQuizPopup] = useState(false);
   const [selectedTopic, setSelectedTopic] = useState(null);
 
+  // Build a Header-compatible user object from the cached auth user.
+  // This mirrors what MyLessons previously built from /auth/me.
+  const headerUser = authUser
+    ? { ...authUser, name: authUser.username || authUser.full_name || authUser.name }
+    : null;
+
   const fetchData = useCallback(async () => {
-    // If we just confirmed a new curriculum, bust the cache so the
-    // new course shows up immediately without the user having to reload.
     const cameFromConfirm = location.state?.fromConfirm === true;
     if (cameFromConfirm) {
       sessionStorage.removeItem(CACHE_KEY);
     }
 
-    // Try cache (only if we didn't just bust it)
     if (!cameFromConfirm) {
       try {
         const cached = sessionStorage.getItem(CACHE_KEY);
         if (cached) {
-          const { timestamp, user: cachedUser, paths } = JSON.parse(cached);
+          const { timestamp, paths } = JSON.parse(cached);
           if (Date.now() - timestamp < CACHE_TTL_MS) {
-            setUser(cachedUser);
             setLearningPaths(paths);
             setLoadingPaths(false);
             return;
@@ -91,25 +86,10 @@ export default function MyLessons() {
       }
     }
 
-    // Fresh fetch
+    // Only fetch curriculum now — user comes from useUser
     try {
-      const [userRes, curriculumRes] = await Promise.all([
-        fetch("/auth/me", { credentials: "include" }),
-        fetch("/api/curriculum", { credentials: "include" }),
-      ]);
-
-      const [userData, curriculumData] = await Promise.all([
-        userRes.json(),
-        curriculumRes.json(),
-      ]);
-
-      const userInfo =
-        userRes.ok && userData.user
-          ? {
-              name: userData.user.username,
-              initials: generateInitials(userData.user.username),
-            }
-          : { name: "", initials: "" };
+      const curriculumRes = await fetch("/api/curriculum", { credentials: "include" });
+      const curriculumData = await curriculumRes.json();
 
       if (!curriculumRes.ok || !curriculumData.success) {
         throw new Error(curriculumData.error || "Failed to fetch curriculums");
@@ -119,10 +99,9 @@ export default function MyLessons() {
 
       sessionStorage.setItem(
         CACHE_KEY,
-        JSON.stringify({ timestamp: Date.now(), user: userInfo, paths })
+        JSON.stringify({ timestamp: Date.now(), paths })
       );
 
-      setUser(userInfo);
       setLearningPaths(paths);
     } catch (error) {
       console.error("Failed to load page data:", error);
@@ -235,7 +214,7 @@ export default function MyLessons() {
       <div className="app-shell">
         <Sidebar />
         <main className="main">
-          <Header user={user} />
+          <Header user={headerUser} />
           <div className="content">
             <div className="content-inner">
               <div className="lessons-header">
@@ -267,7 +246,7 @@ export default function MyLessons() {
       <div className="app-shell">
         <Sidebar />
         <main className="main">
-          <Header user={user} />
+          <Header user={headerUser} />
           <div className="content">
             <div className="content-inner">
               <div className="lessons-header">
@@ -348,7 +327,7 @@ export default function MyLessons() {
     <div className="app-shell">
       <Sidebar />
       <main className="main">
-        <Header user={user} />
+        <Header user={headerUser} />
         <div className="content">
           <div className="content-inner">
             <div className="learning-header">

@@ -908,7 +908,8 @@ export default function Videolesson() {
 
   const [currentVideo, setCurrentVideo] = useState(video || null);
   const [, setVideos] = useState([]);
-  const [loadingVideo, setLoadingVideo] = useState(true);
+  // If a video was passed via navigation state we already have it — skip the loading screen
+  const [loadingVideo, setLoadingVideo] = useState(!video);
 
   /* ================= REFS ================= */
   const messagesEndRef = useRef(null);
@@ -918,6 +919,8 @@ export default function Videolesson() {
   /* ================= STATE ================= */
   const [output, setOutput] = useState("");
   const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatSystemPrompt, setChatSystemPrompt] = useState(null);
 
   // Hint state
   const [hintLoading, setHintLoading] = useState(false);
@@ -936,36 +939,21 @@ export default function Videolesson() {
 
   const [activeTab, setActiveTab] = useState(1);
 
-  const [conversations, setConversations] = useState([
-    {
-      id: 1,
-      title: "Variables",
-      messages: [
-        { role: "ai", content: "Hi 👋 Ask questions about the lesson or your code." },
-      ],
-    },
-    {
-      id: 2,
-      title: "Loops",
-      messages: [
-        { role: "ai", content: "Hi 👋 Ask questions about the lesson or your code." },
-      ],
-    },
-    {
-      id: 3,
-      title: "c# basics",
-      messages: [
-        { role: "ai", content: "Hi 👋 Ask questions about the lesson or your code." },
-      ],
-    },
-    {
-      id: 4,
-      title: "functions",
-      messages: [
-        { role: "ai", content: "Hi 👋 Ask questions about the lesson or your code." },
-      ],
-    },
-  ]);
+  const [conversations, setConversations] = useState(() => {
+    const title = topic?.title || video?.title || "New Chat";
+    return [
+      {
+        id: 1,
+        title,
+        messages: [
+          {
+            role: "ai",
+            content: `Hi 👋 I'm your AI assistant for this lesson${topic?.title ? ` on **${topic.title}**` : ""}. Ask me anything about the video, the concepts, or your code.`,
+          },
+        ],
+      },
+    ];
+  });
 
   const [activeConversationId, setActiveConversationId] = useState(1);
   const [showHistory, setShowHistory] = useState(false);
@@ -1097,10 +1085,11 @@ export default function Videolesson() {
   }, [tabs, activeTab, selectedLang.monaco, topic]);
 
   /* ================= CHAT ================= */
-  const handleSendMessage = () => {
-    if (!chatInput.trim()) return;
+  const handleSendMessage = async () => {
+    const trimmed = chatInput.trim();
+    if (!trimmed || chatLoading) return;
 
-    const userMsg = { role: "user", content: chatInput };
+    const userMsg = { role: "user", content: trimmed };
 
     setConversations((prev) =>
       prev.map((conv) =>
@@ -1109,37 +1098,50 @@ export default function Videolesson() {
           : conv
       )
     );
-
     setChatInput("");
+    setChatLoading(true);
 
-    setTimeout(() => {
+    try {
+      const systemPrompt = chatSystemPrompt ||
+        (topic?.title
+          ? `You are a helpful coding tutor assisting a student learning "${topic.title}". Answer questions about the lesson, explain concepts clearly, and help debug code. Be concise and educational.`
+          : "You are a helpful coding tutor. Answer questions about programming concepts and help debug code. Be concise and educational.");
+
+      const response = await fetch("/chat", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: trimmed, options: { systemPrompt } }),
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || "Failed to get a response");
+
+      const aiMsg = { role: "ai", content: data.message };
       setConversations((prev) =>
         prev.map((conv) =>
           conv.id === activeConversationId
-            ? {
-                ...conv,
-                messages: [
-                  ...conv.messages,
-                  {
-                    role: "ai",
-                    content:
-                      "I can help explain concepts, debug code, and guide you through the lesson.",
-                  },
-                ],
-              }
+            ? { ...conv, messages: [...conv.messages, aiMsg] }
             : conv
         )
       );
-    }, 700);
+    } catch (error) {
+      console.error("Chat error:", error);
+      setConversations((prev) =>
+        prev.map((conv) =>
+          conv.id === activeConversationId
+            ? { ...conv, messages: [...conv.messages, { role: "ai", content: "Sorry, I couldn't get a response. Please try again." }] }
+            : conv
+        )
+      );
+    } finally {
+      setChatLoading(false);
+    }
   };
 
   /* ================= CHAT HELPERS ================= */
   const getChatTitle = () => {
-    const path = location.pathname.toLowerCase();
-    if (path.includes("variable")) return "Variables";
-    if (path.includes("loop")) return "Loops";
-    if (path.includes("array")) return "Arrays";
-    return "New Chat";
+    return topic?.title || video?.title || "New Chat";
   };
 
   const handleNewChat = () => {
@@ -1287,6 +1289,28 @@ export default function Videolesson() {
 
     fetchVideos();
   }, [moduleId]);
+
+  // Build a video-aware system prompt for the chat whenever the video changes
+  useEffect(() => {
+    if (!currentVideo) return;
+    const buildVideoContext = async () => {
+      try {
+        const response = await fetch("/chat/video-context", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ video: currentVideo, topic }),
+        });
+        const data = await response.json();
+        if (data.success && data.systemPrompt) {
+          setChatSystemPrompt(data.systemPrompt);
+        }
+      } catch (error) {
+        console.error("Failed to build video context for chat:", error);
+      }
+    };
+    buildVideoContext();
+  }, [currentVideo, topic]);
 
   useEffect(() => {
     setConversations((prev) =>
@@ -1540,12 +1564,13 @@ export default function Videolesson() {
           <div className="chat-input-area">
             <input
               value={chatInput}
-              placeholder="Ask anything..."
+              placeholder={chatLoading ? "Waiting for response..." : "Ask anything..."}
               onChange={(e) => setChatInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+              disabled={chatLoading}
             />
-            <button className="chat-send-btn" onClick={handleSendMessage}>
-              Send
+            <button className="chat-send-btn" onClick={handleSendMessage} disabled={chatLoading}>
+              {chatLoading ? "..." : "Send"}
             </button>
           </div>
         </div>

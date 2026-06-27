@@ -1,8 +1,10 @@
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "./Dashboard.css";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import UserProfile, { getUserDisplayName } from "./Components/UserProfile";
+import { useUser } from "./Components/useUser"; // ← shared hook
 
 import {
   MdCode,
@@ -141,7 +143,7 @@ function AssessmentsBanner() {
   );
 }
 
-function RecommendedLessons({ recommendations, loading }) {
+function RecommendedLessons({ recommendations, loading, navigate }) {
   if (loading) {
     return (
       <div className="lesson-hero">
@@ -160,6 +162,28 @@ function RecommendedLessons({ recommendations, loading }) {
     );
   }
 
+  const handleVideoClick = (video) => {
+    navigate("/Videolesson", {
+      state: {
+        video: {
+          videoId: video.videoId,
+          video_id: video.videoId,
+          title: video.title,
+          description: video.description || "",
+          channel_title: video.channelTitle || video.channel || "",
+          channelTitle: video.channelTitle || video.channel || "",
+          thumbnail: video.thumbnail,
+          url: video.url,
+          duration: video.duration || "",
+          view_count: video.viewCount || 0,
+          like_count: video.likeCount || 0,
+        },
+        topic: { title: video.title, id: null },
+        moduleId: null,
+      },
+    });
+  };
+
   return (
     <div className="lesson-hero recommended-wrapper">
       <div className="lesson-hero-content">
@@ -175,12 +199,11 @@ function RecommendedLessons({ recommendations, loading }) {
 
       <div className="video-grid">
         {videos.map((video, index) => (
-          <a
+          <div
             key={video.videoId || video.url || index}
             className="video-card"
-            href={video.url || `https://www.youtube.com/watch?v=${video.videoId}`}
-            target="_blank"
-            rel="noreferrer"
+            onClick={() => handleVideoClick(video)}
+            style={{ cursor: "pointer" }}
           >
             <div className="video-thumbnail">
               <img src={video.thumbnail} alt={video.title} />
@@ -190,7 +213,7 @@ function RecommendedLessons({ recommendations, loading }) {
               <h4>{video.title}</h4>
               <p>{video.channelTitle || video.channel}</p>
             </div>
-          </a>
+          </div>
         ))}
       </div>
     </div>
@@ -198,29 +221,13 @@ function RecommendedLessons({ recommendations, loading }) {
 }
 
 export default function Dashboard() {
-  const [currentUser, setCurrentUser] = useState(null);
+  const navigate = useNavigate();
+  const { user: currentUser } = useUser(); // ← replaces manual fetch + useState
   const [hasStartedLearning] = useState(false);
   const [recommendedVideos, setRecommendedVideos] = useState([]);
   const [loadingRecommendations, setLoadingRecommendations] = useState(true);
 
   useEffect(() => {
-    async function loadCurrentUser() {
-      try {
-        const response = await fetch("/auth/me", {
-          credentials: "include",
-        });
-
-        if (!response.ok) {
-          return;
-        }
-
-        const userData = await response.json();
-        setCurrentUser(userData.user);
-      } catch (error) {
-        console.error("Error fetching current user:", error);
-      }
-    }
-
     async function loadRecommendations() {
       try {
         const response = await fetch("/api/dashboard/recommendations", {
@@ -240,7 +247,6 @@ export default function Dashboard() {
       }
     }
 
-    loadCurrentUser();
     loadRecommendations();
   }, []);
 
@@ -270,6 +276,7 @@ export default function Dashboard() {
                 <RecommendedLessons
                   recommendations={recommendedVideos}
                   loading={loadingRecommendations}
+                  navigate={navigate}
                 />
               )}
 
