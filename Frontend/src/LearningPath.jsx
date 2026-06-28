@@ -338,7 +338,7 @@ function LpBody() {
 }
 
 export default function LearningPath() {
-  const { user } = useUser(); // ← replaces manual fetch + useState
+  const { user } = useUser(); 
 
   return (
     <div className="app-shell">

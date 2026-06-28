@@ -392,54 +392,79 @@ export default function MyLessons() {
                   <p>Select a topic to expand lessons</p>
                 </div>
                 <div className="topics-list">
-                  {selectedModule.topics.map((topic, index) => (
-                    <div key={index} className="topic-card">
-                      <div
-                        className={`topic-header ${topic.locked ? "locked-topic" : ""}`}
-                        onClick={() => toggleTopic(index, topic.locked)}
-                      >
-                        <div className="topic-title">
-                          <MdFolder className="topic-icon" />
-                          <h3>{topic.title}</h3>
-                        </div>
-                        <span className="chevron-icon">
-                          {topic.locked ? <MdLock /> : expandedTopics.has(index) ? <MdKeyboardArrowUp /> : <MdKeyboardArrowDown />}
-                        </span>
-                      </div>
+                  {selectedModule.topics.map((topic, index) => {
+                    // Derive locked state from DB status field.
+                    // 'active' and 'unlocked' are open; 'locked' is locked; 'completed' is done.
+                    const status = (topic.status || "locked").toLowerCase();
+                    const isLocked = status === "locked";
+                    const isCompleted = status === "completed";
 
-                      {!topic.locked && expandedTopics.has(index) && (
-                        <div className="video-list">
-                          <div className="quiz-item" onClick={() => handleQuizClick(topic)}>
-                            <MdQuiz className="quiz-icon" />
-                            <span>{topic.title}</span>
+                    return (
+                      <div
+                        key={topic.id || index}
+                        className={`topic-card${isLocked ? " locked-topic-card" : ""}${isCompleted ? " completed-topic-card" : ""}`}
+                      >
+                        <div
+                          className={`topic-header${isLocked ? " locked-topic" : ""}`}
+                          onClick={() => !isLocked && toggleTopic(index, false)}
+                          style={{ cursor: isLocked ? "not-allowed" : "pointer" }}
+                        >
+                          <div className="topic-title">
+                            {isCompleted
+                              ? <MdFolderOpen className="topic-icon" style={{ color: "#22c55e" }} />
+                              : isLocked
+                              ? <MdLock className="topic-icon" style={{ color: "#94a3b8" }} />
+                              : <MdFolder className="topic-icon" />}
+                            <h3 style={{ color: isLocked ? "#94a3b8" : undefined }}>{topic.title}</h3>
                           </div>
-                          {(topic.videos || []).map((video, i) => (
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            {isCompleted && <span className="topic-badge completed-badge">✓ Done</span>}
+                            {isLocked && <span className="topic-badge locked-badge">🔒 Locked</span>}
+                            {!isLocked && !isCompleted && <span className="topic-badge unlocked-badge">Available</span>}
+                            {!isLocked && (expandedTopics.has(index) ? <MdKeyboardArrowUp /> : <MdKeyboardArrowDown />)}
+                          </div>
+                        </div>
+
+                        {isLocked && (
+                          <p className="locked-topic-msg">
+                            Complete the previous topic's coding challenge to unlock this topic.
+                          </p>
+                        )}
+
+                        {!isLocked && expandedTopics.has(index) && (
+                          <div className="video-list">
+                            <div className="quiz-item" onClick={() => handleQuizClick(topic)}>
+                              <MdQuiz className="quiz-icon" />
+                              <span>Prior Knowledge Check</span>
+                            </div>
+                            {(topic.videos || []).map((video, i) => (
+                              <Link
+                                key={video.videoId || i}
+                                to="/Videolesson"
+                                state={{ moduleId: selectedModule?.id, topic, video }}
+                                className="video-link"
+                              >
+                                <div className="video-item">
+                                  <MdPlayCircleFilled className="video-icon" />
+                                  <span>{video.title}</span>
+                                </div>
+                              </Link>
+                            ))}
                             <Link
-                              key={video.videoId || i}
-                              to="/Videolesson"
-                              state={{ moduleId: selectedModule?.id, topic, video }}
-                              className="video-link"
+                              to="/challenges"
+                              state={{ moduleId: selectedModule?.id, topic }}
+                              className="challenge-link"
                             >
-                              <div className="video-item">
-                                <MdPlayCircleFilled className="video-icon" />
-                                <span>{video.title}</span>
+                              <div className="challenge-item">
+                                <MdCode className="challenge-icon" />
+                                <span>Coding Challenge — {topic.title}</span>
                               </div>
                             </Link>
-                          ))}
-                          <Link
-                            to="/challenges"
-                            state={{ moduleId: selectedModule?.id, topic }}
-                            className="challenge-link"
-                          >
-                            <div className="challenge-item">
-                              <MdCode className="challenge-icon" />
-                              <span>{topic.title} Coding Challenge</span>
-                            </div>
-                          </Link>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

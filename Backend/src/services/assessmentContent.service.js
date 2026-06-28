@@ -1,6 +1,7 @@
 import youtubeVideoModel from "../models/youtubeVideoModel.js";
 import curriculumModel from "../models/curriculumModel.js";
 import bktModel from "../models/bktModel.js";
+import BKTService from "./bkt.service.js";
 import Judge0Service from "./Judge0.service.js";
 import { groqService } from "./Chat.service.js";
 import questionnaireService from "./questionnaire.service.js";
@@ -161,17 +162,34 @@ function normalizeQuizQuestions(questions, { topicTitle, languageName, targetCou
   });
 }
 
+function buildFallbackTests(topicTitle) {
+  // Safe fallback: a trivial echo test that will always pass so the challenge
+  // can at least be saved and shown to the learner.
+  return [
+    {
+      id: "public_1",
+      input: "hello",
+      expectedOutput: "hello",
+      explanation: `Fallback test for ${topicTitle}: output the input unchanged.`,
+    },
+  ];
+}
+
 function normalizeChallenge(challenge) {
   if (!challenge?.title || !challenge?.prompt) {
     throw new Error("Generated challenge is missing title or prompt");
   }
 
-  const publicTests = Array.isArray(challenge.publicTests) ? challenge.publicTests : [];
-  const hiddenTests = Array.isArray(challenge.hiddenTests) ? challenge.hiddenTests : [];
+  const rawPublic = Array.isArray(challenge.publicTests) ? challenge.publicTests : [];
+  const rawHidden = Array.isArray(challenge.hiddenTests) ? challenge.hiddenTests : [];
 
-  if (publicTests.length === 0 && hiddenTests.length === 0) {
-    throw new Error("Generated challenge must include at least one test case");
-  }
+  // Keep only tests that have a non-empty expectedOutput
+  const publicTests = rawPublic.filter(t => t?.expectedOutput != null && String(t.expectedOutput).trim() !== "");
+  const hiddenTests = rawHidden.filter(t => t?.expectedOutput != null && String(t.expectedOutput).trim() !== "");
+
+  // If still empty after filtering, use fallback instead of throwing
+  const finalPublic = publicTests.length > 0 ? publicTests : buildFallbackTests(challenge.title);
+  const finalHidden = hiddenTests;
 
   return {
     title: challenge.title,
@@ -181,16 +199,16 @@ function normalizeChallenge(challenge) {
       ? challenge.expectedConcepts
       : [],
     starterCodeByLanguage: challenge.starterCodeByLanguage || {},
-    publicTests: publicTests.map((test, index) => ({
+    publicTests: finalPublic.map((test, index) => ({
       id: test.id || `public_${index + 1}`,
       input: test.input ?? "",
-      expectedOutput: test.expectedOutput ?? "",
+      expectedOutput: String(test.expectedOutput ?? ""),
       explanation: test.explanation || "",
     })),
-    hiddenTests: hiddenTests.map((test, index) => ({
+    hiddenTests: finalHidden.map((test, index) => ({
       id: test.id || `hidden_${index + 1}`,
       input: test.input ?? "",
-      expectedOutput: test.expectedOutput ?? "",
+      expectedOutput: String(test.expectedOutput ?? ""),
     })),
     difficulty: challenge.difficulty || "medium",
     structuralExpectations: challenge.structuralExpectations || {},
@@ -387,8 +405,13 @@ Rules:
     const languageName = context.expectedLanguage?.name || context.expectedLanguage?.key || "the curriculum language";
 
     // ── Cache lookup: reuse an existing challenge for this topic/user ──
+    // Skip cache if the stored challenge only has fallback tests (bad generation).
     const existing = await challengeModel.findLatestByTopicId(context.topic.id, userId);
-    if (existing?.challenge_data) {
+    const isFallbackOnly = (ch) => {
+      const tests = ch?.challenge_data?.publicTests || [];
+      return tests.length > 0 && tests.every(t => String(t.explanation || "").startsWith("Fallback test for"));
+    };
+    if (existing?.challenge_data && !isFallbackOnly(existing)) {
       return {
         id: existing.id,
         ...existing.challenge_data,
@@ -402,7 +425,7 @@ Rules:
     }
 
     const prompt = `
-Generate one programming challenge that tests the learner's understanding of a single topic.
+Generate one programming challenge that tests ONLY the concepts taught in the given topic.
 
 Return only valid JSON with this shape:
 {
@@ -410,7 +433,7 @@ Return only valid JSON with this shape:
   "prompt": "string",
   "instructions": ["string"],
   "expectedConcepts": ["string"],
-  "difficulty": "easy|medium",
+  "difficulty": "easy",
   "starterCodeByLanguage": {
     "javascript": "string",
     "python": "string",
@@ -424,17 +447,17 @@ Return only valid JSON with this shape:
   },
   "publicTests": [
     {
-      "id": "string",
-      "input": "string",
-      "expectedOutput": "string",
+      "id": "public_1",
+      "input": "string — the exact value written to stdin, or empty string if no input",
+      "expectedOutput": "string — the exact text the program must print to stdout",
       "explanation": "string"
     }
   ],
   "hiddenTests": [
     {
-      "id": "string",
+      "id": "hidden_1",
       "input": "string",
-      "expectedOutput": "string"
+      "expectedOutput": "string — must be non-empty"
     }
   ],
   "structuralExpectations": {
@@ -446,26 +469,23 @@ Return only valid JSON with this shape:
     "minimumConditionals": 0,
     "minimumLoops": 0
   },
-  "source": "string"
+  "source": "ai_generated_topic_aligned"
 }
 
 Context:
 - curriculum language: ${languageName}
-- module title: ${moduleTitle}
-- topic title: ${topicTitle}
-- video title: ${videoTitle}
-- video description: ${videoDescription}
+- module: ${moduleTitle}
+- topic: ${topicTitle}
 
-Rules:
-- The challenge must directly test the topic, not generic coding ability.
-- The main challenge, examples, starter code, and tests must be for ${languageName}.
-- Do not generate a challenge for another programming language.
-- Use stdin/stdout style tests so the problem works across all supported languages.
-- Include 2 public tests and 3 hidden tests. Every test MUST have a non-empty expectedOutput.
-- Keep the problem small enough for a single lesson challenge.
-- Starter code should be minimal and language-specific.
-- Structural expectations should reflect the topic when possible.
-- source must be "ai_generated_topic_aligned".
+STRICT RULES — read carefully:
+1. The challenge must ONLY use concepts taught in "${topicTitle}". Do NOT introduce concepts from other topics (e.g. if topic is "Variables and Data Types", do NOT use conditionals, loops, or functions).
+2. Write the program as a COMPLETE RUNNABLE SCRIPT — not a function. The program reads from stdin (if needed) and prints to stdout.
+3. Every publicTest and hiddenTest MUST have a non-empty expectedOutput string — this is required for automated grading.
+4. Include exactly 2 publicTests and 3 hiddenTests.
+5. expectedOutput must match exactly what the program prints — no extra spaces or newlines unless intentional.
+6. All code, starter code, and test values must use ${languageName} conventions.
+7. Keep the challenge small — one short program, solvable in under 20 lines.
+8. source must be "ai_generated_topic_aligned".
 `;
 
     // ── LLM call with up to 3 retries ──
@@ -649,12 +669,17 @@ Rules:
       });
     }
 
-    if (isCorrect || BKTService.isMastered(updatedProbability)) {
-      await curriculumModel.updateTopicStatus(topicId, "completed");
-    }
-
     const progressionThreshold = 0.80;
     const canProgress = Number(updatedProbability) >= progressionThreshold;
+
+    // Challenge is the ONLY gate for unlocking the next topic.
+    // Prior knowledge quiz alone cannot unlock progression.
+    let unlockResult = null;
+    if (canProgress) {
+      await curriculumModel.updateTopicStatus(topicId, "completed");
+      // unlockNextTopic returns { unlockedTopicId, unlockedModuleId } or null (end of curriculum)
+      unlockResult = await curriculumModel.unlockNextTopic(topicId, userId);
+    }
 
     return {
       evaluation,
@@ -663,6 +688,8 @@ Rules:
       mastered: BKTService.isMastered(updatedProbability),
       canProgress,
       progressionThreshold,
+      // Passed to the frontend so it shows the right banner message
+      unlockResult,
     };
   }
 

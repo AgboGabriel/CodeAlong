@@ -56,7 +56,7 @@ class AssessmentContentController {
       const userId = req.user?.id;
       const { challengeId, topicId, moduleId, curriculumId, source_code, language_id, test_cases } = req.body;
 
-      const evaluation =
+      const result =
         await assessmentContentService.evaluateChallengeSubmission({
           userId,
           challengeId,
@@ -68,9 +68,16 @@ class AssessmentContentController {
           testCases: test_cases,
         });
 
+      // Flatten the service result so the frontend can destructure directly:
+      // { success, evaluation, canProgress, unlockResult, mastery, mastered }
       return res.status(200).json({
         success: true,
-        evaluation,
+        evaluation:          result.evaluation,
+        canProgress:         result.canProgress,
+        unlockResult:        result.unlockResult,
+        mastery:             result.mastery,
+        mastered:            result.mastered,
+        progressionThreshold: result.progressionThreshold,
       });
     } catch (error) {
       console.error("Error evaluating challenge submission:", error);

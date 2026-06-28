@@ -922,6 +922,13 @@ export default function Videolesson() {
   const [chatLoading, setChatLoading] = useState(false);
   const [chatSystemPrompt, setChatSystemPrompt] = useState(null);
 
+  // Skip-video popup: shown when pretest score >= 70%
+  const [showSkipPopup, setShowSkipPopup] = useState(
+    () => location.state?.canSkipVideo === true
+  );
+  // Shown after challenge passes and next topic is unlocked
+  const [progressionResult, setProgressionResult] = useState(null);
+
   // Hint state
   const [hintLoading, setHintLoading] = useState(false);
   const [hintOpen, setHintOpen] = useState(false);
@@ -1361,6 +1368,87 @@ export default function Videolesson() {
   /* ================= RENDER ================= */
   return (
     <div className="Videolesson-container">
+
+      {/* ── Skip-Video Popup ──────────────────────────────────────────────── */}
+      {showSkipPopup && (
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)",
+          zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center"
+        }}>
+          <div style={{
+            background: "#1e293b", borderRadius: 16, padding: 36, maxWidth: 440,
+            width: "90%", textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.5)"
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>🎯</div>
+            <h2 style={{ color: "#f1f5f9", marginBottom: 8 }}>You already know this!</h2>
+            <p style={{ color: "#94a3b8", marginBottom: 8 }}>
+              Your prior knowledge quiz shows strong familiarity with{" "}
+              <strong style={{ color: "#e2e8f0" }}>{topic?.title || "this topic"}</strong>.
+            </p>
+            <p style={{ color: "#64748b", fontSize: 13, marginBottom: 24 }}>
+              You can skip the video and go straight to the coding challenge.
+              You still need to <strong style={{ color: "#f59e0b" }}>pass the challenge</strong> to unlock the next topic.
+            </p>
+            <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+              <button
+                onClick={() => {
+                  setShowSkipPopup(false);
+                  navigate("/challenges", { state: { moduleId, topic } });
+                }}
+                style={{
+                  background: "#6366f1", color: "#fff", border: "none",
+                  borderRadius: 8, padding: "10px 20px", cursor: "pointer", fontWeight: 600
+                }}
+              >
+                Skip to Challenge →
+              </button>
+              <button
+                onClick={() => setShowSkipPopup(false)}
+                style={{
+                  background: "#334155", color: "#cbd5e1", border: "none",
+                  borderRadius: 8, padding: "10px 20px", cursor: "pointer"
+                }}
+              >
+                Watch Video Anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Progression Banner ────────────────────────────────────────────── */}
+      {progressionResult && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, zIndex: 999,
+          background: "linear-gradient(90deg, #16a34a, #15803d)",
+          color: "#fff", padding: "14px 24px",
+          display: "flex", alignItems: "center", gap: 16
+        }}>
+          <span style={{ fontSize: 22 }}>🎉</span>
+          <div style={{ flex: 1 }}>
+            <strong>Topic Mastered!</strong>{" "}
+            {progressionResult.unlockedTopicId
+              ? "The next topic has been unlocked."
+              : "You've completed this module!"}
+          </div>
+          <button
+            onClick={() => { setProgressionResult(null); navigate("/MyLessons"); }}
+            style={{
+              background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 6,
+              color: "#fff", padding: "6px 14px", cursor: "pointer", fontWeight: 600
+            }}
+          >
+            Back to Lessons →
+          </button>
+          <button
+            onClick={() => setProgressionResult(null)}
+            style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", fontSize: 18 }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       <Split
         className="Videolesson-layout"
         sizes={[35, 40, 25]}

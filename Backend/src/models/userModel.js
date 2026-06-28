@@ -36,29 +36,45 @@ class UserModel {
 
   async createUser(userData) {
     const {
-      username,
-      email,
-      password_hash = null,
-      auth_provider = 'email',
-      provider_id = null,
+        username,
+        email,
+        password_hash = null,
+        auth_provider = 'email',
+        provider_id = null,
     } = userData;
 
     try {
-      const query = `
-        INSERT INTO users (username, email, password_hash, auth_provider, provider_id, questionnaire_completed, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
-        RETURNING id, username, email, auth_provider, provider_id, questionnaire_completed, created_at
-      `;
+        // If username is taken, append a random suffix
+        let finalUsername = username;
+        const existing = await this.findByUsername(username);
+        if (existing) {
+            finalUsername = `${username}_${Math.random().toString(36).slice(2, 7)}`;
+        }
 
-      const values = [username, email, password_hash, auth_provider, provider_id];
-      const result = await database.query(query, values);
-      return result.rows[0];
+        const query = `
+            INSERT INTO users (username, email, password_hash, auth_provider, provider_id, questionnaire_completed, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+            RETURNING id, username, email, auth_provider, provider_id, questionnaire_completed, created_at
+        `;
+
+        const values = [finalUsername, email, password_hash, auth_provider, provider_id, false];
+        const result = await database.query(query, values);
+        return result.rows[0];
     } catch (error) {
-      console.error('Error in createUser:', error);
-      throw error;
+        console.error('Error in createUser:', error);
+        throw error;
     }
-  }
-
+}
+async findByUsername(username) {
+    try {
+        const query = 'SELECT id FROM users WHERE username = $1';
+        const result = await database.query(query, [username]);
+        return result.rows[0] || null;
+    } catch (error) {
+        console.error('Error in findByUsername:', error);
+        throw error;
+    }
+}
   async updateLastLogin(id) {
     try {
       const query = `

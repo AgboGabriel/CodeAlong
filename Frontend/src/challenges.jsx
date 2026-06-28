@@ -1,8 +1,7 @@
-//updated one
 import { useEffect, useMemo, useState, useCallback } from "react";
 import Editor from "@monaco-editor/react";
 import Split from "react-split";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import "./challenges.css";
 import { buildLearnerFeedback } from "./learnerFeedback";
 
@@ -29,6 +28,7 @@ const FALLBACK_TEMPLATES = {
   ruby: "# Write Ruby code here\n",
   rust: "// Write Rust code here\n",
 };
+
 /* ================= HINT MODAL (same pattern as Videolesson) ================= */
 function HintModal({ open, onClose, loading, feedback, error }) {
   if (!open) return null;
@@ -135,13 +135,13 @@ function HintModal({ open, onClose, loading, feedback, error }) {
   );
 }
 
-
-
 /* ================= MAIN COMPONENT ================= */
 export default function Challenges() {
   const location = useLocation();
+  const navigate = useNavigate();                        // ← added (was missing)
+
   const moduleId = location.state?.moduleId;
-  const topic = location.state?.topic;
+  const topic    = location.state?.topic;
 
   const [output, setOutput] = useState("");
 
@@ -156,23 +156,27 @@ export default function Challenges() {
 
   const [activeTab, setActiveTab] = useState(1);
 
-  const currentTab = tabs.find((tab) => tab.id === activeTab);
+  const currentTab   = tabs.find((tab) => tab.id === activeTab);
   const selectedLang = currentTab?.language || LANGUAGES[0];
-  const code = currentTab?.code || "";
+  const code         = currentTab?.code || "";
 
-  const [challenge, setChallenge] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [challenge,    setChallenge]    = useState(null);
+  const [loading,      setLoading]      = useState(true);
   const [submitSummary, setSubmitSummary] = useState(null);
 
-  // Hint state — inline panel, no modal
-  const [hintLoading, setHintLoading] = useState(false);
+  // Hint state
+  const [hintLoading,  setHintLoading]  = useState(false);
   const [hintFeedback, setHintFeedback] = useState(null);
-  const [hintError, setHintError] = useState("");
-  const [hintOpen, setHintOpen] = useState(false);
+  const [hintError,    setHintError]    = useState("");
+  const [hintOpen,     setHintOpen]     = useState(false);
 
-  // Legacy diagnostics for submit flow (kept separate from hint)
-  const [astFeedback, setAstFeedback] = useState([]);
+  // Submit feedback
+  const [astFeedback,    setAstFeedback]    = useState([]);
   const [learnerFeedback, setLearnerFeedback] = useState(null);
+
+  // ── Progression banner (mirrors VideoLesson exactly) ──────────────────────
+  const [progressionResult, setProgressionResult] = useState(null);
+  const [progressionError,  setProgressionError]  = useState("");
 
   /* ================= MONACO ================= */
   const handleEditorBeforeMount = useCallback((monacoInstance) => {
@@ -353,7 +357,7 @@ export default function Challenges() {
       }
 
       const workspaceFeedback = data.workspace?.feedback || {};
-      const activeTabResult = data.tabs?.find((t) => t.tabId === activeTab);
+      const activeTabResult   = data.tabs?.find((t) => t.tabId === activeTab);
 
       const localFeedback = buildLearnerFeedback({
         compileOutput: "",
@@ -405,25 +409,30 @@ export default function Challenges() {
     setSubmitSummary(null);
     setAstFeedback([]);
     setLearnerFeedback(null);
-    // Clear hint on new submission
     setHintOpen(false);
     setHintFeedback(null);
+    setProgressionResult(null);
+    setProgressionError("");
 
     try {
+      // Evaluate the challenge and run AST analysis in parallel.
+      // NOTE: do NOT pass userId in the body — the server reads it from
+      // req.user (session). Passing userId: null caused the service to throw
+      // "User authentication is required" before it even ran the tests,
+      // which produced a blank/error page.
       const [evaluationResponse, astResponse] = await Promise.all([
         fetch("/api/assessment/challenge/evaluate", {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            userId: null,
-            challengeId: challenge?.id,
-            topicId: topic?.id,
+            challengeId:  challenge?.id,
+            topicId:      topic?.id,
             moduleId,
             curriculumId: topic?.curriculumId || null,
-            source_code: code,
-            language_id: selectedLang.id,
-            test_cases: [...challenge.publicTests, ...challenge.hiddenTests],
+            source_code:  code,
+            language_id:  selectedLang.id,
+            test_cases:   [...challenge.publicTests, ...challenge.hiddenTests],
           }),
         }),
         fetch("/api/ast/parse", {
@@ -441,35 +450,49 @@ export default function Challenges() {
       ]);
 
       const evaluationData = await evaluationResponse.json();
-      const astData = await astResponse.json();
+      const astData        = await astResponse.json();
 
       if (!evaluationResponse.ok || !evaluationData.success) {
         throw new Error(evaluationData.error || "Challenge evaluation failed");
       }
 
-      setSubmitSummary(evaluationData.evaluation);
+      // The controller now flattens the service response so we can read
+      // evaluation, canProgress, and unlockResult directly off evaluationData.
+      const evaluation   = evaluationData.evaluation;
+      const canProgress  = evaluationData.canProgress  ?? false;
+      const unlockResult = evaluationData.unlockResult ?? null;
 
+      if (!evaluation) {
+        throw new Error("No evaluation data returned from server.");
+      }
+
+      setSubmitSummary(evaluation);
+      setOutput(`Passed ${evaluation.passed} of ${evaluation.total} test cases.`);
+
+      // AST structural feedback
       const diagnostics = astData.normalizedAst?.diagnostics || [];
       setAstFeedback(diagnostics);
 
-      const failedCase = evaluationData.evaluation.results.find(
-        (result) => !result.passed
-      );
-
+      const failedCase = evaluation.results.find((r) => !r.passed);
       setLearnerFeedback(
         buildLearnerFeedback({
           compileOutput: failedCase?.compileOutput || "",
-          stderr: failedCase?.stderr || "",
-          ast: astData.normalizedAst?.ast || null,
+          stderr:        failedCase?.stderr || "",
+          ast:           astData.normalizedAst?.ast || null,
           diagnostics,
-          summary: astData.normalizedAst?.summary || {},
-          languageKey: selectedLang.monaco,
+          summary:       astData.normalizedAst?.summary || {},
+          languageKey:   selectedLang.monaco,
         })
       );
 
-      setOutput(
-        `Passed ${evaluationData.evaluation.passed} of ${evaluationData.evaluation.total} test cases.`
-      );
+      // If BKT mastery hit ≥ 0.8 the service already marked the current topic
+      // "completed" and unlocked the next one in the DB. Clear the MyLessons
+      // cache so the next visit re-fetches fresh statuses, then show the banner.
+      if (canProgress) {
+        sessionStorage.removeItem("myLessons_cache");
+        setProgressionResult(unlockResult ?? {});
+      }
+
     } catch (error) {
       console.error("Challenge submission error:", error);
       setOutput(error.message || "Unable to evaluate challenge");
@@ -512,6 +535,61 @@ export default function Challenges() {
 
   return (
     <div className="challenge-container">
+
+      {/* ── Progression Banner — fixed green bar, same design as VideoLesson ── */}
+      {progressionResult && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, zIndex: 999,
+          background: "linear-gradient(90deg, #16a34a, #15803d)",
+          color: "#fff", padding: "14px 24px",
+          display: "flex", alignItems: "center", gap: 16,
+        }}>
+          <span style={{ fontSize: 22 }}>🎉</span>
+          <div style={{ flex: 1 }}>
+            <strong>Topic Mastered!</strong>{" "}
+            {progressionResult.unlockedTopicId
+              ? "The next topic has been unlocked."
+              : progressionResult.unlockedModuleId
+              ? "Module complete! The next module is now unlocked."
+              : "You've completed all topics in this curriculum!"}
+          </div>
+          <button
+            onClick={() => { setProgressionResult(null); navigate("/MyLessons"); }}
+            style={{
+              background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 6,
+              color: "#fff", padding: "6px 14px", cursor: "pointer", fontWeight: 600,
+            }}
+          >
+            Back to Lessons →
+          </button>
+          <button
+            onClick={() => setProgressionResult(null)}
+            style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", fontSize: 18 }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* ── Non-fatal BKT/unlock error ── */}
+      {progressionError && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, zIndex: 999,
+          background: "linear-gradient(90deg, #b45309, #92400e)",
+          color: "#fff", padding: "12px 24px",
+          display: "flex", alignItems: "center", gap: 16,
+        }}>
+          <span>⚠</span>
+          <span style={{ flex: 1 }}>{progressionError}</span>
+          <button
+            onClick={() => setProgressionError("")}
+            style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", fontSize: 18 }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       <Split className="challenge-layout" sizes={[35, 65]} minSize={120} gutterSize={6}>
 
         {/* LEFT: Question Panel */}
@@ -595,8 +673,6 @@ export default function Challenges() {
                   )}
                 </section>
               )}
-
-              
 
               {/* Submit results */}
               {submitSummary && (
@@ -786,7 +862,7 @@ export default function Challenges() {
             </div>
           </Split>
         </div>
- </Split>
+      </Split>
 
       <HintModal
         open={hintOpen}

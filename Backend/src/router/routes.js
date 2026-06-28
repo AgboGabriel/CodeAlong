@@ -45,6 +45,12 @@ router.post(
   (req, res) => bktController.submitTopicAttempt(req, res)
 );
 
+router.post(
+  "/api/topic/:topicId/unlock-next",
+  ensureAuthenticated,
+  (req, res) => bktController.unlockNextTopic(req, res)
+);
+
 router.get(
   "/api/topic/:topicId/mastery",
   ensureAuthenticated,

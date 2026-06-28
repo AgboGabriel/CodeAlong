@@ -1,7 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-
 import "./QuizPage.css";
+
+// ─── BKT helper ──────────────────────────────────────────────────────────────
+// The prior-knowledge quiz must NEVER push mastery to 0.8+ because that would
+// allow the system to grant progression to someone who just got lucky. We hard-
+// cap the mastery that can come out of a pretest at MAX_PRETEST_MASTERY.
+const MAX_PRETEST_MASTERY = 0.79;
+
+// Score threshold above which we consider the learner to have prior knowledge
+// and show the "skip to challenge" option.
+const SKIP_SCORE_THRESHOLD = 0.7; // ≥ 70 % correct
 
 export default function QuizPage() {
   const navigate = useNavigate();
@@ -19,14 +28,13 @@ export default function QuizPage() {
   const [submitError, setSubmitError] = useState("");
   const [seconds, setSeconds] = useState(0);
 
+  // Timer
   useEffect(() => {
-    const timer = setInterval(() => {
-      setSeconds((prev) => prev + 1);
-    }, 1000);
-
+    const timer = setInterval(() => setSeconds((prev) => prev + 1), 1000);
     return () => clearInterval(timer);
   }, []);
 
+  // Fetch quiz
   useEffect(() => {
     const fetchDynamicQuiz = async () => {
       if (!topic?.id) {
@@ -42,13 +50,8 @@ export default function QuizPage() {
         const response = await fetch("/api/assessment/prior-quiz", {
           method: "POST",
           credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            topicId: topic.id,
-            moduleId,
-          }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ topicId: topic.id, moduleId }),
         });
 
         const data = await response.json();
@@ -82,40 +85,30 @@ export default function QuizPage() {
         delete updated[currentQuestion];
         return updated;
       }
-
-      return {
-        ...prev,
-        [currentQuestion]: optionIndex,
-      };
+      return { ...prev, [currentQuestion]: optionIndex };
     });
   };
 
   const handleNext = () => {
-    if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion((prev) => prev + 1);
-    }
+    if (currentQuestion < questions.length - 1) setCurrentQuestion((p) => p + 1);
   };
 
   const handlePrevious = () => {
-    if (currentQuestion > 0) {
-      setCurrentQuestion((prev) => prev - 1);
-    }
+    if (currentQuestion > 0) setCurrentQuestion((p) => p - 1);
   };
 
   const handleFlag = () => {
-    setFlaggedQuestions((prev) => {
-      if (prev.includes(currentQuestion)) {
-        return prev.filter((q) => q !== currentQuestion);
-      }
-
-      return [...prev, currentQuestion];
-    });
+    setFlaggedQuestions((prev) =>
+      prev.includes(currentQuestion)
+        ? prev.filter((q) => q !== currentQuestion)
+        : [...prev, currentQuestion]
+    );
   };
 
   const handleSubmit = async () => {
     if (!questions.length) return;
 
-    const answeredAll = questions.every((_, index) => answers[index] !== undefined);
+    const answeredAll = questions.every((_, i) => answers[i] !== undefined);
     if (!answeredAll) {
       setSubmitError("Please answer all questions before submitting.");
       return;
@@ -123,24 +116,27 @@ export default function QuizPage() {
 
     setSubmitError("");
 
-    const quizResponses = questions.map((question, index) => ({
-      ...question,
-      selectedIndex: answers[index],
-    }));
-
     const correctCount = questions.reduce(
-      (sum, question, index) =>
-        sum + (answers[index] === question.correctIndex ? 1 : 0),
+      (sum, q, i) => sum + (answers[i] === q.correctIndex ? 1 : 0),
       0
     );
+    const scoreRatio = correctCount / questions.length;
+
+    // ── BKT cap ──────────────────────────────────────────────────────────
+    // Tell the backend this is a pretest and pass the cap so it never writes
+    // a mastery value ≥ 0.8 from a prior-knowledge quiz alone.
+    const quizResponses = questions.map((q, i) => ({
+      ...q,
+      selectedIndex: answers[i],
+    }));
+
+    const passed = scoreRatio >= SKIP_SCORE_THRESHOLD;
 
     try {
       const response = await fetch(`/api/topic/${topic.id}/attempt`, {
         method: "POST",
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           curriculumId: topic.curriculumId || null,
           moduleId,
@@ -148,7 +144,9 @@ export default function QuizPage() {
           questions: quizResponses,
           correctCount,
           totalCount: questions.length,
-          passed: correctCount / questions.length >= 0.7,
+          passed,
+          // ← tells the backend to cap mastery at MAX_PRETEST_MASTERY
+          masterycap: MAX_PRETEST_MASTERY,
         }),
       });
 
@@ -162,11 +160,29 @@ export default function QuizPage() {
       return;
     }
 
+    // ── Navigate to VideoLesson ───────────────────────────────────────────
+    // If the learner scored ≥ 70 % we set canSkipVideo=true so VideoLesson
+    // immediately shows the "skip to challenge" popup. The popup lets them
+    // choose: go straight to the challenge, or stay and watch the video.
+    // Either way they still need to pass the challenge to unlock the next topic.
     navigate("/Videolesson", {
       state: {
         moduleId,
         topic,
         video: quiz?.context?.video || null,
+        canSkipVideo: passed, // ← triggers the skip popup in VideoLesson
+      },
+    });
+  };
+
+  // Allow skipping to the video even when there's no quiz (error / missing topic)
+  const handleSkipToLesson = () => {
+    navigate("/Videolesson", {
+      state: {
+        moduleId,
+        topic,
+        video: null,
+        canSkipVideo: false,
       },
     });
   };
@@ -192,7 +208,7 @@ export default function QuizPage() {
           <div className="question-card">
             <h2>Quiz unavailable</h2>
             <p>{loadError || "No quiz questions were generated for this topic."}</p>
-            <button className="next-btn" onClick={handleSubmit}>
+            <button className="next-btn" onClick={handleSkipToLesson}>
               Continue to lesson
             </button>
           </div>
@@ -207,16 +223,14 @@ export default function QuizPage() {
         <section className="quiz-progress-header">
           <div className="quiz-progress-left">
             <div className="quiz-title-row">
-
               <button
                 className="quiz-back-btn"
                 onClick={() => navigate("/MyLessons")}
               >
                 ← Back
               </button>
- <h1>{quiz?.title || `${topic?.title || "Topic"} Quiz`}</h1>
-             
 
+              <h1>{quiz?.title || `${topic?.title || "Topic"} Quiz`}</h1>
 
               <span>
                 Question {currentQuestion + 1} of {questions.length}
@@ -260,7 +274,9 @@ export default function QuizPage() {
                     onClick={() => handleOptionSelect(index)}
                   >
                     <div className="radio-circle">
-                      {answers[currentQuestion] === index && <div className="radio-fill" />}
+                      {answers[currentQuestion] === index && (
+                        <div className="radio-fill" />
+                      )}
                     </div>
                     <span>{option}</span>
                   </div>
@@ -281,11 +297,13 @@ export default function QuizPage() {
                 </button>
               )}
 
-              {currentQuestion === questions.length - 1 && Object.keys(answers).length === questions.length && (
-                <button className="quiz-submit-btn" onClick={handleSubmit}>
-                  Submit Assessment
-                </button>
-              )}
+              {currentQuestion === questions.length - 1 &&
+                Object.keys(answers).length === questions.length && (
+                  <button className="quiz-submit-btn" onClick={handleSubmit}>
+                    Submit Assessment
+                  </button>
+                )}
+
               {submitError && (
                 <div className="quiz-error-message">{submitError}</div>
               )}
@@ -333,8 +351,9 @@ export default function QuizPage() {
             <div className="Note-card">
               <h4>Note</h4>
               <p>
-                This quiz is dynamically generated from the topic and lesson context to
-                measure prior knowledge only. It is not graded.
+                This quiz measures prior knowledge only and is not graded.
+                Even a perfect score here will not skip the video — you still
+                need to complete the challenge to unlock the next topic.
               </p>
             </div>
           </div>

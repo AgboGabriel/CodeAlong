@@ -12,22 +12,27 @@ class bktModel {
     }
 
     async createBktParameters(topicId, params = {}, db = database) {
-        const {
-            p_init = 0.20,
-            p_learn = 0.15,
-            p_guess = 0.20,
-            p_slip = 0.10,
-        } = params;
+    const {
+        p_init = 0.20,
+        p_learn = 0.15,
+        p_guess = 0.20,
+        p_slip = 0.10,
+    } = params;
 
-        const query = `
-        INSERT INTO bkt_parameters(topic_id, p_init, p_learn, p_guess, p_slip)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING *
-        `;
+    const query = `
+    INSERT INTO bkt_parameters(topic_id, p_init, p_learn, p_guess, p_slip)
+    VALUES ($1, $2, $3, $4, $5)
+    ON CONFLICT (topic_id) DO UPDATE SET
+        p_init = EXCLUDED.p_init,
+        p_learn = EXCLUDED.p_learn,
+        p_guess = EXCLUDED.p_guess,
+        p_slip = EXCLUDED.p_slip
+    RETURNING *
+    `;
 
-        const result = await db.query(query, [topicId, p_init, p_learn, p_guess, p_slip]);
-        return result.rows[0];
-    }
+    const result = await db.query(query, [topicId, p_init, p_learn, p_guess, p_slip]);
+    return result.rows[0];
+}
 
     async getTopicMastery(userId, topicId, db = database) {
         const query = `

@@ -60,7 +60,7 @@ export function configurePassport() {
                         username: profile.displayName,
                         email,
                         auth_provider: "google",
-                        google_id: profile.id,
+                        provider_id: profile.id,
                     });
                     return done(null, newUser);
                 } catch (error) {
