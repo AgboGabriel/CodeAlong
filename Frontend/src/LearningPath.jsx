@@ -351,7 +351,7 @@ export default function LearningPath() {
       <Sidebar />
 
       <main className="main">
-        <Header />
+        <Header page="Learning Path" />
 
         <div className="content">
           <LpBody />

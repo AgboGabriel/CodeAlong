@@ -72,7 +72,7 @@ const selectedPath = location.state?.selectedPath;
       <Sidebar />
 
       <main className="main">
-        <Header />
+        <Header page="Topics" />
 
         <div className="content">
           <div className="content-inner">

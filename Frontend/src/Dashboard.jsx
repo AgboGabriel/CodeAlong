@@ -228,7 +228,7 @@ export default function Dashboard() {
       <Sidebar />
 
       <main className="main">
-        <Header />
+        <Header page="Dashboard" />
 
         <div className="content">
           <div className="content-inner">

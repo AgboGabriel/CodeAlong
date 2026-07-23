@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MdNotifications, MdSettings } from "react-icons/md";
+import { MdNotifications, MdSettings,  MdChevronRight } from "react-icons/md";
 import UserProfile, { user } from "./UserProfile";
 import "./Header.css";
 
@@ -18,13 +18,24 @@ const NOTIFICATIONS = [
   },
 ];
 
-export default function Header() {
+export default function Header({ previousPage, page }) {
   const [showNotifications, setShowNotifications] = useState(false);
 
   return (
     <header className="header">
-      <div className="search-wrap"></div>
+      <div className="header-left">
 
+        {page && (
+          <nav className="page-breadcrumb">
+            <a href="#">Previous</a>
+            <MdChevronRight />
+            <span className="page-current">
+              {page}
+            </span>
+          </nav>
+        )}
+
+  </div>
       <div className="header-right">
 
         {/* Notifications */}

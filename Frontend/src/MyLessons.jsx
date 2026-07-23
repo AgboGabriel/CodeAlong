@@ -131,13 +131,12 @@ const modules = [
         <Sidebar />
 
         <main className="main">
-          <Header />
+         <Header page="My Lessons" />
 
           <div className="content">
             <div className="content-inner">
              <div className="lessons-header">
                           <div>
-                            <p className="lesson-badge">✨ Custom Learning Paths</p>
                             <h1>Choose Your Learning Path</h1>
                             <p className="lesson-subtitle">
                               Start exploring your personalized learning paths.
