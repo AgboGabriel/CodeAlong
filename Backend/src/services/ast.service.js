@@ -159,6 +159,12 @@ class AstService {
       topicId,
       topicTitle,
       languageKey: dominantLanguageKey,
+      // Pass the challenge's structural expectations through so the
+      // workspace-level "gaps" feedback only flags missing functions/
+      // loops/conditionals when the exercise actually calls for them —
+      // e.g. a "Hello World" challenge shouldn't be told it's missing a
+      // loop just because it doesn't have one.
+      expectations: analysisOptions?.expectations || {},
     });
 
     return { success: true, tabs: tabResults, workspace };

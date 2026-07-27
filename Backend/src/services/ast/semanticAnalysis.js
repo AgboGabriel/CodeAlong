@@ -78,6 +78,13 @@ class SemanticAnalysisEngine {
             type: node.type,
             startLine: node.startPosition?.line,
             startColumn: node.startPosition?.column,
+            // A declaration that already contains an initializer (e.g.
+            // `const x = 5`, `let y = foo()`, or a default/typed function
+            // parameter) is "assigned" at the point of declaration. This
+            // prevents false USED_BEFORE_ASSIGNMENT diagnostics for normal
+            // declare+initialize statements, which never separately call
+            // recordAssignment().
+            hasInitializer: this.declarationHasInitializer(node),
           });
         }
       }
@@ -91,6 +98,7 @@ class SemanticAnalysisEngine {
             node,
             operator,
             inCondition: this.isInCondition(node, ancestry),
+            inLoop: ancestry.some((ancestor) => ancestor.kind === "loop" || ancestor.type?.includes("loop")),
             parentType: ancestry[ancestry.length - 1]?.type,
             startLine: node.startPosition?.line,
             startColumn: node.startPosition?.column,
@@ -381,10 +389,104 @@ class SemanticAnalysisEngine {
     );
   }
 
+  /**
+   * True only when `node` sits inside the actual parenthesized condition
+   * clause of an if/while/for/switch — e.g. `if (x = 5)`.
+   *
+   * Previously this matched ANY descendant of an "if_statement" node,
+   * which incorrectly flagged ordinary assignments inside the if/else
+   * *body* (e.g. `if (cond) { x = true; } else { x = false; }`) as
+   * "assignment in condition". We now require the nearest condition-like
+   * ancestor in the chain to actually be the condition clause itself
+   * (Tree-sitter typically names this node type "condition", "parenthesized_expression"
+   * directly under the if/while/for, or similar — never the consequence/
+   * alternative block).
+   */
   isInCondition(node, ancestry) {
-    return ancestry.some((p) =>
-      p.type.includes("condition") || p.type.includes("if_statement")
-    );
+    // Walk ancestry from nearest to farthest. Stop as soon as we hit a
+    // block/consequence/alternative node — if we reach one of those before
+    // finding an actual condition node, the assignment is in the BODY, not
+    // the condition, and should not be flagged.
+    for (let i = ancestry.length - 1; i >= 0; i -= 1) {
+      const ancestorType = ancestry[i].type || "";
+
+      // Reached the statement body before finding a condition clause —
+      // this assignment is in the if/while/for BODY, not its condition.
+      if (
+        ancestorType.includes("consequence") ||
+        ancestorType.includes("alternative") ||
+        ancestorType.includes("else_clause") ||
+        ancestorType.includes("block") ||
+        ancestorType.includes("statement_block")
+      ) {
+        return false;
+      }
+
+      // Found the actual condition clause.
+      if (
+        ancestorType === "condition" ||
+        ancestorType === "parenthesized_expression" ||
+        ancestorType.endsWith("_condition") ||
+        ancestorType.includes("condition_clause")
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Detects whether a declaration node already includes an initializer,
+   * e.g. `const x = 5`, `let y = foo()`, or a default/typed function
+   * parameter like `function f(input = "Hello")`.
+   *
+   * IMPORTANT: in our normalized Tree-sitter output (see
+   * normalizeTreeSitterAst.js), `children` only contains NAMED children —
+   * anonymous tokens like the literal `=` sign are stripped out. So we
+   * can never reliably find a literal "=" child node; instead we infer an
+   * initializer from node shape and text, with multiple fallbacks so a
+   * `null`/truncated `.text` (which getNodeText() can return for very
+   * short or empty slices) never causes a false negative.
+   */
+  declarationHasInitializer(node) {
+    const nodeType = node.type || "";
+
+    // Function parameters are always "initialized" from the caller's
+    // perspective by the time the function body runs — including default
+    // parameters, typed parameters, and plain parameters.
+    if (nodeType.includes("parameter")) {
+      return true;
+    }
+
+    // A declarator node (e.g. `variable_declarator`) with an "=" anywhere
+    // in its own text has an initializer right there in the same
+    // statement. This is the primary, most reliable signal.
+    if (node.text && node.text.includes("=")) {
+      return true;
+    }
+
+    // Fallback 1: a declarator with 2+ named children is virtually always
+    // `identifier = value` shaped (the "=" token itself is an anonymous
+    // node and won't appear in `children`, but the value expression will).
+    // A bare declaration with no initializer (`let x;`) has exactly 1
+    // named child — just the identifier.
+    if (
+      (nodeType.includes("declarator") || nodeType.includes("declaration")) &&
+      Array.isArray(node.children) &&
+      node.children.length >= 2
+    ) {
+      return true;
+    }
+
+    // Fallback 2: look for an explicit "=" text on a direct child, in case
+    // a parser/version does expose it as a named node.
+    for (const child of node.children || []) {
+      if (child.text === "=" || (child.text && child.text.startsWith("="))) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   extractVariableName(node) {
@@ -514,3 +616,4 @@ class SemanticAnalysisEngine {
 }
 
 export default SemanticAnalysisEngine;
+

@@ -172,7 +172,21 @@ class VariableTracker {
   }
 
   /**
-   * Find variables used before assignment
+   * Find variables used before assignment.
+   *
+   * IMPORTANT: a variable that was declared WITH an initializer
+   * (e.g. `const x = 5;`, function parameters with defaults, etc.)
+   * is considered assigned at its declaration point. We treat
+   * `variable.declaration.initialized` (set by the caller when the
+   * declaration includes an initializer) as an implicit "assignment"
+   * so we never flag a same-statement declare+initialize as a
+   * used-before-assignment issue.
+   *
+   * We also require BOTH a real use AND a real prior assignment in
+   * order to flag this — a variable with no assignments at all is
+   * either a parameter (already initialized by the caller) or an
+   * undeclared identifier (already covered by
+   * POSSIBLE_UNDECLARED_IDENTIFIER), not a used-before-assignment case.
    */
   findUsedBeforeAssignment() {
     const issues = [];
@@ -180,14 +194,32 @@ class VariableTracker {
       for (const variable of scope.allVariables()) {
         if (!variable.declaration || variable.uses.length === 0) continue;
 
-        // Check if first use comes before first assignment
+        // A declaration that already carries an initializer (const x = 5,
+        // function parameter, etc.) counts as the first assignment even if
+        // it was never pushed onto variable.assignments[].
+        const declarationIsInitialized =
+          variable.declaration?.hasInitializer === true ||
+          variable.declaration?.type === "parameter" ||
+          variable.declaration?.type?.includes("parameter");
+
+        if (declarationIsInitialized) continue;
+
+        // Need an explicit, real assignment recorded after declaration to
+        // even evaluate ordering — otherwise this isn't a used-before-
+        // assignment case, it's an undeclared/unknown identifier which is
+        // handled by a different diagnostic.
+        if (variable.assignments.length === 0) continue;
+
         const firstUse = variable.uses[0];
         const firstAssignment = variable.assignments[0];
 
-        if (firstUse && (!firstAssignment || 
-            (firstUse.startLine < firstAssignment.startLine) ||
-            (firstUse.startLine === firstAssignment.startLine && 
-             firstUse.startColumn < firstAssignment.startColumn))) {
+        if (
+          firstUse &&
+          firstAssignment &&
+          ((firstUse.startLine < firstAssignment.startLine) ||
+            (firstUse.startLine === firstAssignment.startLine &&
+              firstUse.startColumn < firstAssignment.startColumn))
+        ) {
           issues.push({
             name: variable.name,
             firstUse,
@@ -227,23 +259,30 @@ class VariableTracker {
    */
   findLoopVariables() {
     const loopVars = [];
-    for (const scope of this.scopes) {
-      if (scope.type !== "loop") continue;
-      for (const variable of scope.allVariables()) {
-        const isAccumulator = this.isAccumulatorPattern(variable);
-        const isCounter = this.isCounterPattern(variable);
-        const isIndexing = this.isIndexingPattern(variable);
-        
-        if (isAccumulator || isCounter || isIndexing) {
-          loopVars.push({
-            name: variable.name,
-            scope: scope.type,
-            isAccumulator,
-            isCounter,
-            isIndexing,
-            variable,
-          });
-        }
+    const seen = new Set();
+    const variables = this.globalScope.allVariables(true);
+
+    for (const variable of variables) {
+      if (!variable.name || seen.has(variable.name)) continue;
+      const hasLoopActivity =
+        variable.assignments?.some((assignment) => assignment.inLoop) ||
+        variable.uses?.some((use) => use.context === "subscript");
+      if (!hasLoopActivity) continue;
+
+      const isAccumulator = this.isAccumulatorPattern(variable);
+      const isCounter = this.isCounterPattern(variable);
+      const isIndexing = this.isIndexingPattern(variable);
+
+      if (isAccumulator || isCounter || isIndexing) {
+        seen.add(variable.name);
+        loopVars.push({
+          name: variable.name,
+          scope: "loop",
+          isAccumulator,
+          isCounter,
+          isIndexing,
+          variable,
+        });
       }
     }
     return loopVars;
@@ -254,20 +293,31 @@ class VariableTracker {
    */
   isAccumulatorPattern(variable) {
     if (!variable.assignments) return false;
-    return variable.assignments.some((a) => 
-      a.operator && ["+=", "-=", "*=", "/=", "%="].includes(a.operator)
-    );
+    return variable.assignments.some((assignment) => {
+      if (!assignment.inLoop) return false;
+      if (assignment.operator && ["+=", "-=", "*=", "/=", "%="].includes(assignment.operator)) {
+        return true;
+      }
+      const text = assignment.node?.text || "";
+      const escapedName = variable.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return new RegExp(`\\b${escapedName}\\b\\s*=\\s*\\b${escapedName}\\b\\s*[+\\-*/%]`).test(text);
+    });
   }
-
   /**
    * Check if variable follows counter pattern (e.g., i++, i += 1)
    */
   isCounterPattern(variable) {
     if (!variable.assignments) return false;
-    return variable.assignments.some((a) =>
-      a.operator === "+=" && a.value === 1 || 
-      a.operator === "++/postfix"
-    );
+    return variable.assignments.some((assignment) => {
+      if (!assignment.inLoop) return false;
+      const text = assignment.node?.text || "";
+      return (
+        assignment.operator === "++" ||
+        assignment.operator === "--" ||
+        /\+=\s*1\b/.test(text) ||
+        /-=\s*1\b/.test(text)
+      );
+    });
   }
 
   /**

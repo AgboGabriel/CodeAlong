@@ -29,6 +29,72 @@ const FALLBACK_TEMPLATES = {
   rust: "// Write Rust code here\n",
 };
 
+/**
+ * Diagnostic codes that are purely informational/decorative and never
+ * actionable for a learner (e.g. "your code parsed fine"). These are
+ * always dropped from the Structural Feedback panel regardless of level.
+ */
+const NOISE_DIAGNOSTIC_CODES = new Set([
+  "AST_PARSE_SUCCESS",
+  "NO_FUNCTION_STRUCTURE_DETECTED",
+  "LOW_CONTROL_FLOW_COMPLEXITY",
+  "INCOMPLETE_SOLUTION_PATTERN",
+  "WEAK_BRANCHING_LOGIC",
+  "EXPECTED_BRANCHING_WEAK",
+  "EXPECTED_FUNCTION_MISSING",
+  "EXPECTED_CONDITIONAL_MISSING",
+  "EXPECTED_LOOP_MISSING",
+  "FUNCTION_COUNT_BELOW_EXPECTATION",
+  "EXPRESSION_COUNT_BELOW_EXPECTATION",
+  "STRUCTURE_TOO_SHALLOW",
+  "LOOP_NO_INCREMENT",
+  "UNUSED_VARIABLE",
+]);
+
+/** Human-readable titles for the diagnostic codes we DO want to show. */
+const DIAGNOSTIC_TITLES = {
+  DUPLICATE_DECLARATION: "Duplicate declaration",
+  POSSIBLE_UNDECLARED_IDENTIFIER: "Possible typo or missing declaration",
+  ASSIGNMENT_IN_CONDITION: "Assignment inside a condition",
+  USED_BEFORE_ASSIGNMENT: "Used before it's assigned",
+  INFINITE_LOOP_DETECTED: "This loop may never end",
+  MISSING_RETURN_STATEMENT: "Missing a return statement",
+  MISPLACED_LOOP_CONTROL: "break/continue outside a loop",
+  MISPLACED_RETURN_STATEMENT: "return outside a function",
+  OFF_BY_ONE_POTENTIAL: "Possible off-by-one error",
+  LOOP_START_INDEX_WARNING: "Loop may skip the first element",
+  FORBIDDEN_NODE_TYPE_DETECTED: "Unexpected pattern for this exercise",
+};
+
+/**
+ * Filters raw AST diagnostics down to genuinely actionable feedback for a
+ * learner: drops info-level noise, decorative "parsed successfully"
+ * messages, and expectation nags that aren't real bugs — keeping only
+ * warning/error-level structural issues that a learner can act on.
+ */
+const EXPECTATION_DIAGNOSTIC_RULES = {
+  EXPECTED_FUNCTION_MISSING: (expectations = {}) =>
+    expectations.requireFunction || (expectations.minimumFunctions || 0) > 0,
+  EXPECTED_CONDITIONAL_MISSING: (expectations = {}) =>
+    expectations.requireConditional || (expectations.minimumConditionals || 0) > 0,
+  EXPECTED_LOOP_MISSING: (expectations = {}) =>
+    expectations.requireLoop || (expectations.minimumLoops || 0) > 0,
+};
+
+function filterActionableDiagnostics(diagnostics = [], expectations = {}) {
+  return diagnostics.filter((item) => {
+    if (!item?.code) return false;
+
+    const isRequiredExpectation = EXPECTATION_DIAGNOSTIC_RULES[item.code]?.(expectations);
+    if (isRequiredExpectation) return true;
+
+    if (NOISE_DIAGNOSTIC_CODES.has(item.code)) return false;
+    // Only surface warnings and errors - "info" level is developer-facing
+    // detail, not learner-facing guidance.
+    return item.level === "warning" || item.level === "error";
+  });
+}
+
 /* ================= HINT MODAL (same pattern as Videolesson) ================= */
 function HintModal({ open, onClose, loading, feedback, error }) {
   if (!open) return null;
@@ -362,10 +428,16 @@ export default function Challenges() {
       const localFeedback = buildLearnerFeedback({
         compileOutput: "",
         stderr: "",
-        diagnostics: activeTabResult?.diagnostics || [],
-        summary: activeTabResult?.normalizedAst?.summary || {},
-        ast: activeTabResult?.normalizedAst?.ast || null,
-        languageKey: selectedLang.monaco,
+        diagnostics: filterActionableDiagnostics(activeTabResult?.diagnostics || [], challenge?.structuralExpectations || {}),
+        summary:            activeTabResult?.normalizedAst?.summary || {},
+        ast:                activeTabResult?.normalizedAst?.ast || null,
+        languageKey:        selectedLang.monaco,
+        // Pass richer analysis data for the hint path too, so detected
+        // patterns and topic-specific misconceptions are included when the
+        // learner asks for a hint without submitting first.
+        analysis:           activeTabResult?.normalizedAst?.analysis || {},
+        topicMisconceptions: activeTabResult?.normalizedAst?.topicMisconceptions || [],
+        topicTitle:         topic?.title || "",
       });
 
       setHintFeedback({
@@ -442,6 +514,8 @@ export default function Challenges() {
           body: JSON.stringify({
             source_code: code,
             language_id: selectedLang.id,
+            topic_id: topic?.id || null,
+            topic_title: topic?.title || "",
             analysis_options: {
               expectations: challenge.structuralExpectations || {},
             },
@@ -469,19 +543,29 @@ export default function Challenges() {
       setSubmitSummary(evaluation);
       setOutput(`Passed ${evaluation.passed} of ${evaluation.total} test cases.`);
 
-      // AST structural feedback
-      const diagnostics = astData.normalizedAst?.diagnostics || [];
+      // AST structural feedback — only keep genuinely actionable
+      // warning/error diagnostics; drop info-level noise and decorative
+      // "parsed successfully" style messages before they ever reach state.
+      const rawDiagnostics = astData.normalizedAst?.diagnostics || [];
+      const diagnostics = filterActionableDiagnostics(rawDiagnostics, challenge?.structuralExpectations || {});
       setAstFeedback(diagnostics);
 
       const failedCase = evaluation.results.find((r) => !r.passed);
       setLearnerFeedback(
         buildLearnerFeedback({
-          compileOutput: failedCase?.compileOutput || "",
-          stderr:        failedCase?.stderr || "",
-          ast:           astData.normalizedAst?.ast || null,
+          compileOutput:      failedCase?.compileOutput || "",
+          stderr:             failedCase?.stderr || "",
+          ast:                astData.normalizedAst?.ast || null,
           diagnostics,
-          summary:       astData.normalizedAst?.summary || {},
-          languageKey:   selectedLang.monaco,
+          summary:            astData.normalizedAst?.summary || {},
+          languageKey:        selectedLang.monaco,
+          // Pass the richer analysis data so buildLearnerFeedback can
+          // generate strengths from detected patterns (accumulators,
+          // counters, flags, etc.) and surface topic-specific misconception
+          // hints alongside the generic structural feedback.
+          analysis:           astData.normalizedAst?.analysis || {},
+          topicMisconceptions: astData.normalizedAst?.topicMisconceptions || [],
+          topicTitle:         topic?.title || "",
         })
       );
 
@@ -523,12 +607,15 @@ export default function Challenges() {
   };
 
   /* ================= RENDER ================= */
+  // astFeedback is already filtered down to actionable warning/error
+  // diagnostics by the time it reaches state (see filterActionableDiagnostics
+  // calls in handleSubmit/handleHint), so every item here is meant to be shown.
   const renderAstFeedback = astFeedback.map((item, index) => (
     <div
       key={`${item.code}-${index}`}
       className={`challenge-feedback ${item.level || "info"}`}
     >
-      <strong>{item.code}</strong>
+      <strong>{DIAGNOSTIC_TITLES[item.code] || "Heads up"}</strong>
       <p>{item.message}</p>
     </div>
   ));
@@ -874,3 +961,6 @@ export default function Challenges() {
     </div>
   );
 }
+
+
+

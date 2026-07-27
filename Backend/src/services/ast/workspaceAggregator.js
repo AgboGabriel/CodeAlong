@@ -267,10 +267,27 @@ function aggregateMisconceptions(tabResults, topicTitle, languageKey) {
 /**
  * Builds the human-readable, concept-focused feedback object.
  */
-function buildWorkspaceFeedback(inventory, conceptScores, intent, topicMisconceptions, tabResults) {
+function buildWorkspaceFeedback(inventory, conceptScores, intent, topicMisconceptions, tabResults, expectations = {}) {
   const strengths = [];
   const gaps = [];
   const suggestions = [];
+
+  // Only treat functions/loops/conditionals as "expected" structures if the
+  // challenge's structuralExpectations actually calls for them. Without
+  // this gate, every trivial exercise (e.g. "print Hello World") gets told
+  // it's "missing" a function, loop, and conditional — none of which were
+  // ever required. requireX / minimumXCount > 0 are the same fields the
+  // AST rule engine already uses in buildAstRuleFeedback.js.
+  const expectedCoreConcepts = new Set();
+  if (expectations.requireFunction || (expectations.minimumFunctions || 0) > 0) {
+    expectedCoreConcepts.add("functions");
+  }
+  if (expectations.requireLoop || (expectations.minimumLoops || 0) > 0) {
+    expectedCoreConcepts.add("loops");
+  }
+  if (expectations.requireConditional || (expectations.minimumConditionals || 0) > 0) {
+    expectedCoreConcepts.add("conditionals");
+  }
 
   // Strengths: demonstrated with reasonable confidence
   for (const score of conceptScores) {
@@ -291,8 +308,10 @@ function buildWorkspaceFeedback(inventory, conceptScores, intent, topicMisconcep
   // Gaps: not demonstrated at all
   for (const score of conceptScores) {
     if (!score.demonstrated) {
-      // Only surface as a gap if it's a core concept (not patterns)
-      if (["functions", "loops", "conditionals"].includes(score.concept)) {
+      // Only surface as a gap if it's a core concept the challenge actually
+      // requires — never nag about a missing loop/function/conditional on
+      // an exercise that doesn't call for one.
+      if (expectedCoreConcepts.has(score.concept)) {
         gaps.push({
           concept: score.concept,
           message: `No ${score.concept} were detected anywhere in your workspace.`,
@@ -318,14 +337,18 @@ function buildWorkspaceFeedback(inventory, conceptScores, intent, topicMisconcep
     crossTabNote = "You're spreading your solution across tabs. That works — just make sure each piece fits together when combined.";
   }
 
-  // Summary
+  // Summary — use the same confidence gate as strengths (>= 0.4) so the
+  // summary line never claims a concept is meaningfully "shown" when it
+  // only appeared once in a trivial, incidental way (e.g. `lines[0]` in a
+  // 4-line Hello World script technically uses array indexing, but that's
+  // not a notable pattern worth calling out).
   const demonstratedNames = conceptScores
-    .filter((s) => s.demonstrated)
+    .filter((s) => s.demonstrated && s.confidence >= 0.4)
     .map((s) => s.concept);
 
   const summary = demonstratedNames.length > 0
     ? `Across your ${tabResults.length} tab(s), your workspace shows: ${demonstratedNames.join(", ")}.`
-    : "Your workspace doesn't show any structural patterns yet. Add some code to get feedback.";
+    : "Your workspace doesn't show any notable structural patterns yet — that's expected for short or simple solutions.";
 
   return { summary, strengths, gaps, suggestions, crossTabNote, misconceptions: topicMisconceptions };
 }
@@ -377,6 +400,7 @@ export function aggregateWorkspace({
   topicId = null,
   topicTitle = "",
   languageKey = "",
+  expectations = {},
 }) {
   // Accept any tab marked "parsed" — ast may be null if tree-sitter package is missing
   // but diagnostics are still present. Downstream functions guard against null ast.
@@ -413,7 +437,7 @@ export function aggregateWorkspace({
   const conceptScores = scoreConceptDemonstration(conceptInventory, tabConcepts, parsedResults);
   const topicMisconceptions = aggregateMisconceptions(parsedResults, topicTitle, languageKey);
   const feedback = buildWorkspaceFeedback(
-    conceptInventory, conceptScores, workspaceIntent, topicMisconceptions, parsedResults
+    conceptInventory, conceptScores, workspaceIntent, topicMisconceptions, parsedResults, expectations
   );
   const masterySignals = buildMasterySignals(
     conceptScores, parsedResults, topicId, topicMisconceptions

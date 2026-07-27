@@ -38,10 +38,18 @@ class AstController {
         source_code,
         language_id,
         topic_id,
+        topic_title,
         persist = false,
         analysis_options = {},
         exercise_rules = {},
       } = req.body;
+
+      const mergedAnalysisOptions = {
+        ...(Object.keys(analysis_options).length > 0
+          ? analysis_options
+          : exercise_rules),
+        topicTitle: topic_title || analysis_options.topicTitle || exercise_rules.topicTitle || "",
+      };
 
       const result = await astService.parseSource({
         sourceCode: source_code,
@@ -49,10 +57,7 @@ class AstController {
         userId,
         topicId: topic_id || null,
         persist,
-        analysisOptions:
-          Object.keys(analysis_options).length > 0
-            ? analysis_options
-            : exercise_rules,
+        analysisOptions: mergedAnalysisOptions,
       });
 
       return res.status(200).json(result);
@@ -141,3 +146,4 @@ class AstController {
 }
 
 export default new AstController();
+

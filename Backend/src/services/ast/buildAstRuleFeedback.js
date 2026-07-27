@@ -192,30 +192,49 @@ export function buildAstRuleFeedback(astRoot, metrics, analysisOptions = {}) {
 
   const misconceptionSignals = [];
 
-  if (metrics.functions === 0) {
+  // Only emit generic structural signals when the code is complex enough
+  // that their absence is meaningful. Short scripts (< 8 nodes, no expectations
+  // set) are almost always simple I/O solutions — don't spam the learner.
+  const isComplexEnough = metrics.totalNodes >= 8;
+  // Include ALL expectation flags — requireBranching, minimumDepth, and
+  // minimumExpressions were previously missing, so exercises that only set
+  // those flags would silently fall through with no structural feedback.
+  const hasStructuralExpectations =
+    expectations.requireFunction ||
+    expectations.requireLoop ||
+    expectations.requireConditional ||
+    expectations.requireBranching ||
+    expectations.minimumFunctions > 0 ||
+    expectations.minimumLoops > 0 ||
+    expectations.minimumConditionals > 0 ||
+    expectations.minimumExpressions > 0 ||
+    expectations.minimumDepth > 0;
+
+  if (isComplexEnough && hasStructuralExpectations && metrics.functions === 0) {
     misconceptionSignals.push({
       level: "info",
       code: "NO_FUNCTION_STRUCTURE_DETECTED",
       message:
-        "No function-like structure was detected. This may be valid for small scripts, but it can also signal an incomplete solution structure.",
+        "No function-like structure was detected. This exercise expects one — check that you've defined the required function.",
     });
   }
 
-  if (metrics.conditionals === 0 && metrics.loops === 0) {
+  // Only flag missing control flow when the exercise explicitly requires it
+  if (hasStructuralExpectations && metrics.conditionals === 0 && metrics.loops === 0) {
     misconceptionSignals.push({
       level: "info",
       code: "LOW_CONTROL_FLOW_COMPLEXITY",
       message:
-        "No loops or conditional branches were detected. For problems that require decision-making or iteration, this can be a useful review signal.",
+        "No loops or conditional branches were detected, but this exercise expects them. Make sure your solution includes the required logic.",
     });
   }
 
-  if (metrics.conditionals > 0 && !expectationState.hasElseBranch) {
+  if (expectations.requireBranching && metrics.conditionals > 0 && !expectationState.hasElseBranch) {
     misconceptionSignals.push({
       level: "info",
       code: "WEAK_BRANCHING_LOGIC",
       message:
-        "Conditional logic was detected, but no explicit else-style branch was found. This can signal weak branching coverage in some exercises.",
+        "Conditional logic was detected, but no explicit else-style branch was found. This exercise expects branching to cover both paths.",
     });
   }
 
@@ -237,7 +256,9 @@ export function buildAstRuleFeedback(astRoot, metrics, analysisOptions = {}) {
     });
   }
 
+  // Only flag incomplete pattern when expectations demand structure
   if (
+    hasStructuralExpectations &&
     metrics.totalNodes > 8 &&
     metrics.functions === 0 &&
     metrics.conditionals === 0 &&
@@ -247,7 +268,7 @@ export function buildAstRuleFeedback(astRoot, metrics, analysisOptions = {}) {
       level: "info",
       code: "INCOMPLETE_SOLUTION_PATTERN",
       message:
-        "The solution has syntax structure, but it lacks the higher-level control or callable patterns often expected in a complete solution.",
+        "The solution has syntax but lacks the structure this exercise calls for — check the instructions for required functions, loops, or conditionals.",
     });
   }
 

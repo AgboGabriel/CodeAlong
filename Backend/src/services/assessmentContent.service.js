@@ -175,6 +175,123 @@ function buildFallbackTests(topicTitle) {
   ];
 }
 
+// Each starter:
+//   - reads the first line from stdin into a string variable ("input" / "input_val")
+//   - also parses it as an integer ("n") so arithmetic challenges work without
+//     the learner having to do the conversion themselves
+//   - does NOT print anything on its own, so the output panel stays clean until
+//     the learner adds their own cout/print/fmt.Println/etc.
+const STDIN_STARTERS = {
+  // `input` = raw string, `n` = parsed integer
+  javascript:
+    "const lines = require('fs').readFileSync('/dev/stdin', 'utf8').trim().split('\\n');\n" +
+    "const input = lines[0] || '';\n" +
+    "const n = parseInt(input, 10);\n" +
+    "// write your solution below\n",
+
+  // `input_val` = raw string, `n` = parsed integer (falls back to string for non-numeric input)
+  python:
+    "import sys\n" +
+    "input_val = sys.stdin.read().strip()\n" +
+    "n = int(input_val) if input_val.lstrip('-').isdigit() else input_val\n" +
+    "# write your solution below\n",
+
+  // `input` = raw string, `n` = parsed int (0 if not numeric)
+  java:
+    "import java.util.Scanner;\n" +
+    "public class Main {\n" +
+    "    public static void main(String[] args) {\n" +
+    "        Scanner sc = new Scanner(System.in);\n" +
+    "        String input = sc.hasNextLine() ? sc.nextLine().trim() : \"\";\n" +
+    "        int n = 0;\n" +
+    "        try { n = Integer.parseInt(input); } catch (NumberFormatException e) {}\n" +
+    "        // write your solution below\n" +
+    "    }\n" +
+    "}",
+
+  // `n` = integer read directly from stdin
+  cpp:
+    "#include<iostream>\n" +
+    "using namespace std;\n" +
+    "int main(){\n" +
+    "    int n;\n" +
+    "    cin >> n;\n" +
+    "    // write your solution below\n" +
+    "    return 0;\n" +
+    "}",
+
+  // `input` = raw string (newline stripped), `n` = parsed int via atoi
+  c:
+    "#include<stdio.h>\n" +
+    "#include<stdlib.h>\n" +
+    "#include<string.h>\n" +
+    "int main(){\n" +
+    "    char input[1024] = \"\";\n" +
+    "    fgets(input, sizeof(input), stdin);\n" +
+    "    input[strcspn(input, \"\\n\")] = 0;\n" +
+    "    int n = atoi(input);\n" +
+    "    // write your solution below\n" +
+    "    return 0;\n" +
+    "}",
+
+  // `input` = raw string, `n` = parsed int (0 if not numeric)
+  csharp:
+    "using System;\n" +
+    "class Program {\n" +
+    "    static void Main() {\n" +
+    "        string input = Console.ReadLine() ?? \"\";\n" +
+    "        int.TryParse(input.Trim(), out int n);\n" +
+    "        // write your solution below\n" +
+    "    }\n" +
+    "}",
+
+  // `input` = raw string (trimmed), `n` = parsed int64 (0 if not numeric)
+  // NOTE: no fmt.Println() here — that was a bug that printed a blank line on every run
+  go:
+    "package main\n" +
+    "import (\n" +
+    "    \"bufio\"\n" +
+    "    \"fmt\"\n" +
+    "    \"os\"\n" +
+    "    \"strconv\"\n" +
+    "    \"strings\"\n" +
+    ")\n" +
+    "func main() {\n" +
+    "    r := bufio.NewReader(os.Stdin)\n" +
+    "    line, _ := r.ReadString('\\n')\n" +
+    "    input := strings.TrimSpace(line)\n" +
+    "    n, _ := strconv.ParseInt(input, 10, 64)\n" +
+    "    _ = input\n" +
+    "    _ = n\n" +
+    "    _ = fmt.Sprintf // import kept available\n" +
+    "    // write your solution below\n" +
+    "}",
+
+  // `input` = raw string, `n` = parsed integer (nil if not numeric)
+  ruby:
+    "input = ($stdin.gets || '').chomp\n" +
+    "n = Integer(input) rescue nil\n" +
+    "# write your solution below\n",
+
+  // `input` = raw string, `n` = parsed i64 (0 if not numeric)
+  rust:
+    "use std::io::{self, BufRead};\n" +
+    "fn main() {\n" +
+    "    let stdin = io::stdin();\n" +
+    "    let input = stdin.lock().lines().next()\n" +
+    "        .unwrap_or(Ok(String::new())).unwrap();\n" +
+    "    let n: i64 = input.trim().parse().unwrap_or(0);\n" +
+    "    // write your solution below\n" +
+    "}",
+};
+
+function mergeStarterCode(aiStarters = {}) {
+  // Always use the platform's canonical stdin starter code.
+  // AI-generated starter blocks may accidentally include full solutions,
+  // so we ignore them and keep the safe placeholder implementation.
+  return { ...STDIN_STARTERS };
+}
+
 function normalizeChallenge(challenge) {
   if (!challenge?.title || !challenge?.prompt) {
     throw new Error("Generated challenge is missing title or prompt");
@@ -198,7 +315,8 @@ function normalizeChallenge(challenge) {
     expectedConcepts: Array.isArray(challenge.expectedConcepts)
       ? challenge.expectedConcepts
       : [],
-    starterCodeByLanguage: challenge.starterCodeByLanguage || {},
+    // Always use correct stdin starters - never trust the AI's raw starter code
+    starterCodeByLanguage: mergeStarterCode(challenge.starterCodeByLanguage),
     publicTests: finalPublic.map((test, index) => ({
       id: test.id || `public_${index + 1}`,
       input: test.input ?? "",
@@ -348,7 +466,7 @@ Rules:
           {
             role: "system",
             content:
-              "You generate strict JSON quizzes for programming prior-knowledge checks. Keep questions topic-specific, concise, diagnostic, and in the requested curriculum language.",
+              "You are a JSON generator. Return only valid JSON. Generate prior-knowledge quiz questions that are topic-specific and diagnostic.",
           },
           {
             role: "user",
@@ -359,9 +477,10 @@ Rules:
           },
         ],
         {
-          model: "llama-3.1-8b-instant",
+          model: "meta-llama/llama-4-scout-17b-16e-instruct",
           temperature: 0.2,
           response_format: { type: "json_object" },
+          max_tokens: 2000,
         }
       );
 
@@ -404,14 +523,27 @@ Rules:
     const videoDescription = context.video?.description || "No video description is available yet.";
     const languageName = context.expectedLanguage?.name || context.expectedLanguage?.key || "the curriculum language";
 
-    // ── Cache lookup: reuse an existing challenge for this topic/user ──
+    // -- Cache lookup: reuse an existing challenge for this topic/user --
     // Skip cache if the stored challenge only has fallback tests (bad generation).
     const existing = await challengeModel.findLatestByTopicId(context.topic.id, userId);
     const isFallbackOnly = (ch) => {
       const tests = ch?.challenge_data?.publicTests || [];
       return tests.length > 0 && tests.every(t => String(t.explanation || "").startsWith("Fallback test for"));
     };
-    if (existing?.challenge_data && !isFallbackOnly(existing)) {
+    // Also skip cache if the JS starter code uses prompt() or defines a function
+    // without stdin reading - those challenges will always fail in Judge0.
+    const hasBrokenStarterCode = (ch) => {
+      const jsCode = ch?.challenge_data?.starterCodeByLanguage?.javascript || "";
+      // prompt() — browser API, not available in Judge0 Node.js
+      if (jsCode.includes("prompt(")) return true;
+      // split('') — splits into individual characters instead of lines,
+      // so input 'Hello' becomes ['H','e','l','l','o'] and lines[0] is 'H'
+      if (jsCode.includes("split('')") || jsCode.includes('split("")')) return true;
+      // Bare function without stdin reading — won't receive test case input
+      if (jsCode.includes("function ") && !jsCode.includes("readFileSync") && !jsCode.includes("readline")) return true;
+      return false;
+    };
+    if (existing?.challenge_data && !isFallbackOnly(existing) && !hasBrokenStarterCode(existing)) {
       return {
         id: existing.id,
         ...existing.challenge_data,
@@ -424,71 +556,19 @@ Rules:
       };
     }
 
-    const prompt = `
-Generate one programming challenge that tests ONLY the concepts taught in the given topic.
+    const prompt = `Generate a coding challenge. Topic: "${topicTitle}". Module: "${moduleTitle}". Language: ${languageName}.
 
-Return only valid JSON with this shape:
-{
-  "title": "string",
-  "prompt": "string",
-  "instructions": ["string"],
-  "expectedConcepts": ["string"],
-  "difficulty": "easy",
-  "starterCodeByLanguage": {
-    "javascript": "string",
-    "python": "string",
-    "java": "string",
-    "cpp": "string",
-    "c": "string",
-    "csharp": "string",
-    "go": "string",
-    "ruby": "string",
-    "rust": "string"
-  },
-  "publicTests": [
-    {
-      "id": "public_1",
-      "input": "string — the exact value written to stdin, or empty string if no input",
-      "expectedOutput": "string — the exact text the program must print to stdout",
-      "explanation": "string"
-    }
-  ],
-  "hiddenTests": [
-    {
-      "id": "hidden_1",
-      "input": "string",
-      "expectedOutput": "string — must be non-empty"
-    }
-  ],
-  "structuralExpectations": {
-    "requireFunction": false,
-    "requireConditional": false,
-    "requireLoop": false,
-    "requireBranching": false,
-    "minimumFunctions": 0,
-    "minimumConditionals": 0,
-    "minimumLoops": 0
-  },
-  "source": "ai_generated_topic_aligned"
-}
+Return ONLY valid JSON with this exact shape (no markdown, no extra keys):
+{"title":"string","prompt":"string","instructions":["string"],"expectedConcepts":["string"],"difficulty":"easy","starterCodeByLanguage":{"${languageName}":"<complete runnable solution in ${languageName}>"},"publicTests":[{"id":"test1","input":"","expectedOutput":""},{"id":"test2","input":"","expectedOutput":""}],"hiddenTests":[{"id":"test3","input":"","expectedOutput":""},{"id":"test4","input":"","expectedOutput":""},{"id":"test5","input":"","expectedOutput":""}],"structuralExpectations":{"requireFunction":false,"requireConditional":false,"requireLoop":false,"requireBranching":false,"minimumFunctions":0,"minimumConditionals":0,"minimumLoops":0},"source":"ai_generated_topic_aligned"}
 
-Context:
-- curriculum language: ${languageName}
-- module: ${moduleTitle}
-- topic: ${topicTitle}
-
-STRICT RULES — read carefully:
-1. The challenge must ONLY use concepts taught in "${topicTitle}". Do NOT introduce concepts from other topics (e.g. if topic is "Variables and Data Types", do NOT use conditionals, loops, or functions).
-2. Write the program as a COMPLETE RUNNABLE SCRIPT — not a function. The program reads from stdin (if needed) and prints to stdout.
-3. Every publicTest and hiddenTest MUST have a non-empty expectedOutput string — this is required for automated grading.
-4. Include exactly 2 publicTests and 3 hiddenTests.
-5. expectedOutput must match exactly what the program prints — no extra spaces or newlines unless intentional.
-6. All code, starter code, and test values must use ${languageName} conventions.
-7. Keep the challenge small — one short program, solvable in under 20 lines.
-8. source must be "ai_generated_topic_aligned".
+MANDATORY RULES:
+1. Only test concepts from "${topicTitle}". No advanced concepts.
+2. Every starterCodeByLanguage value must be a minimal placeholder — just the language name and "// solution here". The real starter code is injected server-side and any AI-provided code beyond the placeholder will be ignored. Do NOT write actual code in starterCodeByLanguage.
+3. publicTests: exactly 2 items (test1, test2). hiddenTests: exactly 3 items (test3, test4, test5). All expectedOutput values must be non-empty strings.
+4. expectedOutput = the exact text printed to stdout, trailing whitespace trimmed.
+5. source must equal "ai_generated_topic_aligned".
 `;
-
-    // ── LLM call with up to 3 retries ──
+    // -- LLM call with up to 3 retries --
     let normalized = null;
     let lastError = null;
 
@@ -504,20 +584,21 @@ STRICT RULES — read carefully:
             {
               role: "system",
               content:
-                "You create strict JSON coding challenges for programming topics. Make the challenge tightly aligned to the topic and usable with Judge0 test execution.",
+                "You are a JSON generator. Return only valid JSON. Create a coding challenge aligned to the topic and runnable in Judge0.",
             },
             { role: "user", content: prompt + retryNote },
           ],
           {
-            model: "llama-3.1-8b-instant",
+            model: "meta-llama/llama-4-scout-17b-16e-instruct",
             temperature: 0.4 + attempt * 0.1,
             response_format: { type: "json_object" },
+            max_tokens: 1500,
           }
         );
 
         const parsed = extractJson(llmContent);
         normalized = normalizeChallenge(parsed);
-        break; // success — exit retry loop
+        break; // success - exit retry loop
       } catch (err) {
         lastError = err;
         console.warn(`generateTopicChallenge attempt ${attempt + 1} failed: ${err.message}`);
@@ -587,13 +668,28 @@ STRICT RULES — read carefully:
         testCase.input || ""
       );
 
-      const stdout = decodeBase64IfNeeded(submission.stdout);
-      const stderr = decodeBase64IfNeeded(submission.stderr);
-      const compileOutput = decodeBase64IfNeeded(submission.compile_output);
-      const passed =
-        !stderr &&
-        !compileOutput &&
-        compareOutput(stdout || "", testCase.expectedOutput || "");
+      const result = await Judge0Service.pollSubmissionResult(
+        submission.token,
+        10,
+        1500
+      );
+
+      // Improved decoding that works for all languages
+      const stdout = this._decodeOutput(result.stdout);
+      const stderr = this._decodeOutput(result.stderr);
+      const compileOutput = this._decodeOutput(result.compile_output);
+      
+      // Check for execution errors
+      const hasExecutionError = result.status && result.status.id >= 5 && result.status.id <= 14;
+      const hasCompileError = compileOutput && compileOutput.trim().length > 0;
+      const hasRuntimeError = stderr && stderr.trim().length > 0;
+      
+      // Compare outputs with flexible matching
+      const passed = 
+        !hasExecutionError &&
+        !hasCompileError &&
+        !hasRuntimeError &&
+        this._compareOutputs(stdout || "", testCase.expectedOutput || "");
 
       results.push({
         id: testCase.id,
@@ -603,9 +699,12 @@ STRICT RULES — read carefully:
         actualOutput: stdout || "",
         stderr: stderr || "",
         compileOutput: compileOutput || "",
-        status: submission.status,
-        time: submission.time,
-        memory: submission.memory,
+        status: result.status,
+        time: result.time,
+        memory: result.memory,
+        executionError: hasExecutionError,
+        compileError: hasCompileError,
+        runtimeError: hasRuntimeError,
       });
     }
 
@@ -641,13 +740,23 @@ STRICT RULES — read carefully:
     const correctnessThreshold = 0.7;
     const isCorrect = scoreForAttempt >= correctnessThreshold;
 
-    const updatedProbability = BKTService.updateMasteryProbability(
+    const bktUpdatedProbability = BKTService.updateMasteryProbability(
       Number(mastery.mastery_probability),
       isCorrect,
       Number(effectiveParams.p_guess),
       Number(effectiveParams.p_slip),
       Number(effectiveParams.p_learn)
     );
+
+    // ── Challenge-pass override ─────────────────────────────────────────
+    // Passing the section challenge IS the mastery demonstration. BKT's
+    // gradual posterior can't jump from a low pretest prior to 0.80+ in one
+    // shot, so we floor the stored mastery at the threshold whenever the
+    // learner passes. The raw BKT value is still computed for analytics.
+    const progressionThreshold = 0.80;
+    const updatedProbability = isCorrect
+      ? Math.max(bktUpdatedProbability, progressionThreshold)
+      : bktUpdatedProbability;
 
     const updatedMastery = await bktModel.updateTopicMastery({
       userId,
@@ -669,15 +778,12 @@ STRICT RULES — read carefully:
       });
     }
 
-    const progressionThreshold = 0.80;
-    const canProgress = Number(updatedProbability) >= progressionThreshold;
+    // Passing the challenge unlocks progression outright.
+    const canProgress = isCorrect || Number(updatedProbability) >= progressionThreshold;
 
-    // Challenge is the ONLY gate for unlocking the next topic.
-    // Prior knowledge quiz alone cannot unlock progression.
     let unlockResult = null;
     if (canProgress) {
       await curriculumModel.updateTopicStatus(topicId, "completed");
-      // unlockNextTopic returns { unlockedTopicId, unlockedModuleId } or null (end of curriculum)
       unlockResult = await curriculumModel.unlockNextTopic(topicId, userId);
     }
 
@@ -688,9 +794,79 @@ STRICT RULES — read carefully:
       mastered: BKTService.isMastered(updatedProbability),
       canProgress,
       progressionThreshold,
-      // Passed to the frontend so it shows the right banner message
       unlockResult,
     };
+  }
+
+  // Helper method to decode Judge0 output
+  _decodeOutput(value) {
+    if (!value || typeof value !== "string") {
+      return "";
+    }
+
+    try {
+      // Try to decode as base64
+      const decoded = Buffer.from(value, "base64").toString("utf8");
+      // Check if decoded is readable text
+      if (decoded && decoded.length > 0) {
+        const printableChars = (decoded.match(/[\x20-\x7E\r\n]/g) || []).length;
+        const ratio = printableChars / decoded.length;
+        if (ratio > 0.8) {
+          return decoded;
+        }
+      }
+      return value;
+    } catch (error) {
+      return value;
+    }
+  }
+
+  // Helper method to compare outputs with flexible comparison
+  _compareOutputs(actual, expected) {
+    if (!actual && !expected) return true;
+    if (!actual || !expected) return false;
+
+    // Normalize both strings for comparison
+    const normalize = (str) => {
+      return str
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+        .join('\n')
+        .trim();
+    };
+
+    const normalizedActual = normalize(actual);
+    const normalizedExpected = normalize(expected);
+
+    // Try exact match first
+    if (normalizedActual === normalizedExpected) {
+      return true;
+    }
+
+    // Try numeric comparison (for number outputs)
+    const actualNum = parseFloat(normalizedActual);
+    const expectedNum = parseFloat(normalizedExpected);
+    if (!isNaN(actualNum) && !isNaN(expectedNum)) {
+      if (Math.abs(actualNum - expectedNum) < 0.000001) {
+        return true;
+      }
+    }
+
+    // Try removing all whitespace and comparing
+    const stripAllWhitespace = (str) => str.replace(/\s/g, '');
+    if (stripAllWhitespace(normalizedActual) === stripAllWhitespace(normalizedExpected)) {
+      return true;
+    }
+
+    // Try case-insensitive comparison
+    if (normalizedActual.toLowerCase() === normalizedExpected.toLowerCase()) {
+      return true;
+    }
+
+    return false;
   }
 
   async buildLessonChatReply({
@@ -726,7 +902,7 @@ ${codeSnippet || "No code provided"}
     ];
 
     return CHAT_SERVICE.generateChatCompletion(messages, {
-      model: "llama-3.1-8b-instant",
+      model: "meta-llama/llama-4-scout-17b-16e-instruct",
       temperature: 0.4,
     });
   }

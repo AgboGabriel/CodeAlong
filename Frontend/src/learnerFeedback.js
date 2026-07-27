@@ -39,8 +39,90 @@ function extractDiagnosticIdentifier(message = "") {
   return match?.[1] || null;
 }
 
+function extractDuplicateIdentifier(message = "") {
+  const match = String(message).match(/"(.+?)" is declared more than once/);
+  return match?.[1] || null;
+}
+
 function hasAny(text, patterns = []) {
   return patterns.some((pattern) => text.includes(pattern));
+}
+
+function describeSimpleProgram(astRoot, languageKey = "") {
+  if (!astRoot) return [];
+
+  const facts = {
+    readsInput: false,
+    printsOutput: false,
+    declaresValues: false,
+    computesValue: false,
+    usesLoop: false,
+    usesConditional: false,
+  };
+
+  walkAst(astRoot, (node) => {
+    const text = normalizeText(node.text).toLowerCase();
+    if (!text) return;
+
+    if (
+      text.includes("cin >>") ||
+      text.includes("scanf") ||
+      text.includes("input(") ||
+      text.includes("readline") ||
+      text.includes("scanner") ||
+      text.includes("fmt.scan")
+    ) {
+      facts.readsInput = true;
+    }
+
+    if (
+      text.includes("cout") ||
+      text.includes("printf") ||
+      text.includes("print(") ||
+      text.includes("println") ||
+      text.includes("console.log") ||
+      text.includes("system.out") ||
+      text.includes("fmt.print")
+    ) {
+      facts.printsOutput = true;
+    }
+
+    if (node.kind === "declaration") facts.declaresValues = true;
+    if (node.kind === "loop") facts.usesLoop = true;
+    if (node.kind === "conditional") facts.usesConditional = true;
+
+    if (
+      node.kind === "expression" &&
+      /[a-z0-9_)\]]\s*[+\-*/%]\s*[a-z0-9_(\[]/i.test(node.text || "")
+    ) {
+      facts.computesValue = true;
+    }
+  });
+
+  const descriptions = [];
+  if (facts.readsInput && facts.printsOutput && facts.computesValue) {
+    descriptions.push("Your code reads input, computes a value, and prints the result.");
+  } else if (facts.readsInput && facts.printsOutput) {
+    descriptions.push("Your code reads input and prints a value.");
+  } else if (facts.printsOutput && facts.computesValue) {
+    descriptions.push("Your code computes a value and prints it.");
+  } else if (facts.printsOutput) {
+    descriptions.push("Your code prints output to the console.");
+  } else if (facts.readsInput) {
+    descriptions.push("Your code reads a value from input.");
+  }
+
+  if (facts.declaresValues) {
+    descriptions.push("You declared named values to hold data while the program runs.");
+  }
+  if (facts.usesLoop) {
+    descriptions.push("Your solution uses a loop to repeat work.");
+  }
+  if (facts.usesConditional) {
+    descriptions.push("Your solution uses a conditional to choose between paths.");
+  }
+
+  return [...new Set(descriptions)];
 }
 
 function getLanguageProfile(languageKey = "") {
@@ -164,9 +246,22 @@ function shouldSuppressUndeclaredDiagnostic(item, declaredSymbols) {
 function buildCompilerHints(compilerText, diagnostics = []) {
   const hints = [];
   const lowered = compilerText.toLowerCase();
-  const undeclaredIdentifier = diagnostics.find(
-    (item) => item.code === "POSSIBLE_UNDECLARED_IDENTIFIER"
+  const duplicateDiag = diagnostics.find((d) => d.code === "DUPLICATE_DECLARATION");
+  const duplicateNames = new Set(
+    diagnostics
+      .filter((item) => item.code === "DUPLICATE_DECLARATION")
+      .map((item) => extractDuplicateIdentifier(item.message))
+      .filter(Boolean)
   );
+  const undeclaredIdentifier = diagnostics.find((item) => {
+    if (item.code !== "POSSIBLE_UNDECLARED_IDENTIFIER") return false;
+    const identifier = extractDiagnosticIdentifier(item.message);
+    return !identifier || !duplicateNames.has(identifier);
+  });
+
+  if (duplicateDiag) {
+    hints.push(duplicateDiag.message);
+  }
 
   if (undeclaredIdentifier) {
     const match = undeclaredIdentifier.message.match(/Identifier "(.+?)"/);
@@ -183,7 +278,18 @@ function buildCompilerHints(compilerText, diagnostics = []) {
     }
   }
 
+  // Duplicate / redeclaration errors
   if (
+    !duplicateDiag &&
+    (lowered.includes("has already been declared") ||
+      lowered.includes("already defined") ||
+      lowered.includes("duplicate local variable") ||
+      lowered.includes("redeclaration of"))
+  ) {
+    hints.push(
+      "A variable is declared more than once with the same name. Remove the duplicate declaration or rename one of them."
+    );
+  } else if (
     lowered.includes("was not declared in this scope") ||
     lowered.includes("undeclared") ||
     lowered.includes("cannot find symbol") ||
@@ -256,6 +362,13 @@ function buildAstHints(diagnostics = []) {
   const hints = [];
 
   for (const item of diagnostics) {
+    if (item.code === "DUPLICATE_DECLARATION") {
+      hints.push(item.message);
+      hints.push(
+        "Tip: delete the starter code lines you no longer need, or scroll to the top of the editor and remove the conflicting declaration."
+      );
+    }
+
     if (item.code === "WEAK_BRANCHING_LOGIC") {
       hints.push(
         "Your code makes a decision in one direction, but it may not handle the alternative path clearly."
@@ -502,6 +615,10 @@ function buildIntentGuidance({
     problems.push("A return value is missing from a function that the compiler expects to produce one.");
   }
 
+  if (!intent.length) {
+    intent.push(...describeSimpleProgram(astRoot, languageKey));
+  }
+
   if (!intent.length && summary.functions > 0) {
     intent.push("A function-like structure was detected.");
   }
@@ -523,7 +640,13 @@ function buildIntentGuidance({
       ].includes(item.code)
     );
 
-    if (semanticProblem?.code === "POSSIBLE_UNDECLARED_IDENTIFIER" && !declaredSymbols.has(extractDiagnosticIdentifier(semanticProblem.message) || "")) {
+    const dupDiag = diagnostics.find((d) => d.code === "DUPLICATE_DECLARATION");
+    if (dupDiag) {
+      problems.push(dupDiag.message);
+      fixes.push(
+        "Find the second declaration of the same variable and either delete it or rename it to something different."
+      );
+    } else if (semanticProblem?.code === "POSSIBLE_UNDECLARED_IDENTIFIER" && !declaredSymbols.has(extractDiagnosticIdentifier(semanticProblem.message) || "")) {
       problems.push("A name is being used before it has been declared or spelled correctly.");
     }
     if (semanticProblem?.code === "MISPLACED_RETURN_STATEMENT") {
@@ -541,6 +664,81 @@ function buildIntentGuidance({
   };
 }
 
+/**
+ * Builds human-readable strengths from the semantic analysis patterns
+ * detected by SemanticAnalysisEngine (accumulators, counters, flags, etc.).
+ * This is the "What you did well" layer that was previously missing.
+ */
+function buildPatternStrengths(analysis = {}, topicTitle = "") {
+  const strengths = [];
+  const patterns = analysis.detectedPatterns || {};
+  const variables = analysis.variables || {};
+  const controlFlow = analysis.controlFlow || {};
+
+  // Accumulator pattern (sum += x, total += price, etc.)
+  if ((patterns.accumulators || []).length > 0) {
+    const names = patterns.accumulators.slice(0, 2).map((n) => `\`${n}\``).join(" and ");
+    strengths.push(`You used an accumulator pattern with ${names} — that's the right approach for building up a running total.`);
+  }
+
+  // Counter pattern (i++, count += 1)
+  if ((patterns.counters || []).length > 0) {
+    const names = patterns.counters.slice(0, 2).map((n) => `\`${n}\``).join(" and ");
+    strengths.push(`You used a counter variable (${names}) to track iterations — good technique.`);
+  }
+
+  // Indexing pattern (arr[i] style subscripting)
+  if ((patterns.indexing || []).length > 0) {
+    strengths.push("You used index-based access to reach into a collection — that's the right pattern here.");
+  }
+
+  // Flag variables (isActive, hasError, etc.)
+  if ((patterns.flagVariables || []).length > 0) {
+    const names = patterns.flagVariables.slice(0, 2).map((n) => `\`${n}\``).join(" and ");
+    strengths.push(`You used boolean flag variable(s) (${names}) to track state — clear and readable.`);
+  }
+
+  // Good variable hygiene (low unused/used-before-assignment ratio)
+  if (
+    variables.totalVariables > 0 &&
+    variables.unusedVariables === 0 &&
+    variables.usedBeforeAssignment === 0 &&
+    (variables.qualityScore || 0) >= 90
+  ) {
+    strengths.push("All your variables are declared and used correctly — clean variable hygiene.");
+  }
+
+  // Good control-flow quality
+  if (
+    controlFlow.totalFunctions > 0 &&
+    controlFlow.functionsWithoutReturn === 0 &&
+    controlFlow.potentialInfiniteLoops === 0
+  ) {
+    strengths.push("Your function(s) all have return statements and no obvious infinite loop risk.");
+  }
+
+  return strengths;
+}
+
+/**
+ * Builds targeted hints from topic-specific misconception rules.
+ * These are the educational "what to watch out for" messages that the
+ * TopicMisconceptionRules engine matched against this topic's known pitfalls.
+ */
+function buildTopicMisconceptionHints(topicMisconceptions = []) {
+  const hints = [];
+  for (const misconception of topicMisconceptions) {
+    if (misconception.feedback) {
+      hints.push(misconception.feedback);
+    }
+    // Surface at most the first two hints per misconception to avoid overwhelming output
+    for (const hint of (misconception.hints || []).slice(0, 2)) {
+      hints.push(hint);
+    }
+  }
+  return [...new Set(hints)];
+}
+
 export function buildLearnerFeedback({
   compileOutput = "",
   stderr = "",
@@ -548,6 +746,10 @@ export function buildLearnerFeedback({
   summary = {},
   ast = null,
   languageKey = "",
+  // New parameters wired up by challenges.jsx Fix 4 — previously ignored
+  analysis = {},
+  topicMisconceptions = [],
+  topicTitle = "",
 }) {
   const compilerText = normalizeText(compileOutput) || normalizeText(stderr);
   const declaredSymbols = collectDeclaredSymbols(ast);
@@ -564,8 +766,17 @@ export function buildLearnerFeedback({
     languageKey,
   });
 
+  // ── Strengths ─────────────────────────────────────────────────────────────
+  // Layer 1: what the code is trying to do (intent)
   const strengths = [];
   strengths.push(...intentGuidance.intent);
+
+  // Layer 2: pattern-based strengths from SemanticAnalysisEngine
+  // (accumulators, counters, indexing, flags, quality scores, etc.)
+  const patternStrengths = buildPatternStrengths(analysis, topicTitle);
+  strengths.push(...patternStrengths);
+
+  // Layer 3: fall-through structural signals when nothing else fires
   if (!strengths.length && (summary.functions || 0) > 0) {
     strengths.push("A function-like structure was detected.");
   }
@@ -576,15 +787,25 @@ export function buildLearnerFeedback({
     strengths.push("Your solution includes iteration logic.");
   }
 
-  const nextSteps = [...intentGuidance.problems, ...compilerHints, ...astHints];
+  // ── Next steps ────────────────────────────────────────────────────────────
+  // Structural problems + compiler hints + AST hints + topic misconceptions
+  const topicHints = buildTopicMisconceptionHints(topicMisconceptions);
+  const nextSteps = [
+    ...intentGuidance.problems,
+    ...compilerHints,
+    ...astHints,
+    ...topicHints,
+  ];
 
   return {
-    strengths,
+    strengths: [...new Set(strengths)],
     nextSteps: [...new Set(nextSteps)],
     intent: intentGuidance.intent,
     problems: intentGuidance.problems,
     fixes: intentGuidance.fixes,
     compilerText,
+    // Expose for consumers that want the raw topic-level feedback
+    topicMisconceptions,
   };
 }
 

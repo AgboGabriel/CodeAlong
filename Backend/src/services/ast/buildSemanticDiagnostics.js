@@ -17,6 +17,40 @@ function isDeclarationContext(nodeType = "") {
   );
 }
 
+/**
+ * Collects every identifier that appears anywhere inside a function's
+ * parameter list, regardless of how deeply Tree-sitter nests it (plain
+ * parameter, default parameter, typed parameter, rest parameter, etc).
+ * This is a safety net for collectDeclaredIdentifiers below: the direct
+ * parent-type check (isDeclarationContext) can miss identifiers that are
+ * nested two or more levels inside a "parameters" node — e.g.
+ * `function f(input = "Hello World")` wraps `input` inside a
+ * `default_parameter` node, whose own parent is `formal_parameters`/
+ * `parameters`, not the identifier's *immediate* parent.
+ */
+function collectParameterIdentifiers(astRoot) {
+  const declared = new Set();
+
+  function walkParams(node, insideParameters) {
+    if (!node) return;
+
+    const nodeType = node.type || "";
+    const enteringParameters =
+      insideParameters || nodeType.includes("parameter") || nodeType === "formal_parameters";
+
+    if (enteringParameters && nodeType === "identifier" && node.text) {
+      declared.add(node.text);
+    }
+
+    for (const child of node.children || []) {
+      walkParams(child, enteringParameters);
+    }
+  }
+
+  walkParams(astRoot, false);
+  return declared;
+}
+
 function isReferenceContext(nodeType = "") {
   return (
     nodeType.includes("return") ||
@@ -29,16 +63,50 @@ function isReferenceContext(nodeType = "") {
 
 function collectDeclaredIdentifiers(astRoot) {
   const declared = new Set();
+  const declarationLocations = new Map(); // name -> first location
 
   walkAst(astRoot, (node, ancestry) => {
     if (node.type !== "identifier") return;
     const parent = ancestry[ancestry.length - 1];
     if (parent && isDeclarationContext(parent.type) && node.text) {
       declared.add(node.text);
+      if (!declarationLocations.has(node.text)) {
+        declarationLocations.set(node.text, node.startPosition || null);
+      }
     }
   });
 
-  return declared;
+  for (const name of collectParameterIdentifiers(astRoot)) {
+    declared.add(name);
+  }
+
+  return { declared, declarationLocations };
+}
+
+function collectDuplicateDeclarations(astRoot) {
+  const seen = new Map(); // name -> first location
+  const duplicates = [];
+
+  walkAst(astRoot, (node, ancestry) => {
+    if (node.type !== "identifier") return;
+    const parent = ancestry[ancestry.length - 1];
+    if (!parent || !isDeclarationContext(parent.type) || !node.text) return;
+    // Skip parameters — they can shadow outer vars legitimately
+    if (parent.type.includes("parameter")) return;
+
+    const name = node.text;
+    if (seen.has(name)) {
+      duplicates.push({
+        name,
+        firstLocation: seen.get(name),
+        secondLocation: node.startPosition || null,
+      });
+    } else {
+      seen.set(name, node.startPosition || null);
+    }
+  });
+
+  return duplicates;
 }
 
 export function buildSemanticDiagnostics(astRoot, languageKey) {
@@ -49,7 +117,8 @@ export function buildSemanticDiagnostics(astRoot, languageKey) {
     return [];
   }
 
-  const declared = collectDeclaredIdentifiers(astRoot);
+  const { declared } = collectDeclaredIdentifiers(astRoot);
+  const duplicates = collectDuplicateDeclarations(astRoot);
   const ignoreNames = new Set(["std", "cout", "cin", "System", "Console", "fmt", "main"]);
   const languageSpecificIgnores = {
     javascript: ["console", "window", "document", "Math", "JSON", "Array", "String", "Number", "Boolean", "Date", "setTimeout", "setInterval"],
@@ -85,6 +154,24 @@ export function buildSemanticDiagnostics(astRoot, languageKey) {
       location: node.startPosition || null,
     });
   });
+
+  // Duplicate declarations (e.g. const input = ... declared twice)
+  // This is a syntax error in strict-mode JS and confusing in all languages.
+  for (const dup of duplicates) {
+    const key = `dup:${dup.name}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      diagnostics.unshift({ // put at top — this is usually the real problem
+        level: "error",
+        code: "DUPLICATE_DECLARATION",
+        // startPosition.line is already 1-based (normalizeTreeSitterAst adds 1
+        // to row), so do NOT add 1 again — that was producing line numbers
+        // off by one in the error message shown to the learner.
+        message: `"${dup.name}" is declared more than once. The second declaration at line ${dup.secondLocation?.line ?? "?"} conflicts with the first at line ${dup.firstLocation?.line ?? "?"}. Remove or rename one of them.`,
+        location: dup.secondLocation,
+      });
+    }
+  }
 
   return diagnostics;
 }

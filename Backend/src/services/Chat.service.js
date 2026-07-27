@@ -6,6 +6,7 @@ dotenv.config();
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 const EMBEDDED_IDE_LANGUAGE_TERMS = buildEmbeddedIdeLanguageTerms();
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const SETUP_MODULE_PATTERN =
     /\b(setup|installation|install|environment setup|development environment|tooling setup|getting started with .* setup|configure|configuration)\b/i;
 
@@ -101,9 +102,9 @@ export class groqService {
 }
 
 async generateChatCompletion(messages, options = {}) {
-    const model = options.model || 'llama-3.1-8b-instant';
+    const model = options.model || 'meta-llama/llama-4-scout-17b-16e-instruct';
     const payload = {
-        model: model,
+        model,
         messages,
         temperature: options.temperature ?? 0.4,
     };
@@ -112,14 +113,58 @@ async generateChatCompletion(messages, options = {}) {
         payload.response_format = options.response_format;
     }
 
-    const response = await axios.post(this.apiUrl, payload, {
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.apiKey}`
-        }
-    });
+    if (options.max_tokens) {
+        payload.max_tokens = options.max_tokens;
+    }
 
-    return response.data.choices[0].message.content;
+    const doPost = async (body) => {
+        const response = await axios.post(this.apiUrl, body, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.apiKey}`
+            }
+        });
+        return response.data.choices[0].message.content;
+    };
+
+    try {
+        return await doPost(payload);
+    } catch (error) {
+        // Always log the real Groq error so we can see the actual message
+        const groqErr = error.response?.data?.error;
+        if (groqErr) {
+            console.error(`Groq API error [${error.response.status}] on model ${model}:`, JSON.stringify(groqErr));
+        }
+
+        // If Groq rejects with 400 and response_format was set, retry without it
+            if (error.response?.status === 400 && payload.response_format) {
+            console.warn(`Retrying without response_format on model ${model}.`);
+            await sleep(6000); // wait 6s before retry to avoid token exhaustion
+            const { response_format, ...fallbackPayload } = payload;
+            try {
+                return await doPost(fallbackPayload);
+            } catch (retryError) {
+                const retryErr = retryError.response?.data?.error;
+                if (retryErr) {
+                    console.error(`Groq retry error [${retryError.response.status}]:`, JSON.stringify(retryErr));
+                }
+                throw retryError;
+            }
+        }
+
+            // Also handle 429 explicitly — read the retry-after header:
+        if (error.response?.status === 429) {
+            const retryAfter = parseInt(error.response.headers?.['retry-after'] || '10', 10);
+            console.warn(`Rate limited. Waiting ${retryAfter}s before retry...`);
+            await sleep(retryAfter * 1000);
+            try {
+                return await doPost(payload);
+            } catch (retryError) {
+                throw retryError;
+            }
+        }
+        throw error;
+    }
 }
 
 async generateText(message, options = {}) {
@@ -188,7 +233,7 @@ ${skipSetupModule ? "- Do not include an installation, setup, environment config
             { role: "user", content: prompt }
         ];
         const completionOptions = {
-            model: options.model || 'llama-3.1-8b-instant',
+            model: options.model || 'meta-llama/llama-4-scout-17b-16e-instruct',
             temperature: options.temperature ?? 0.3,
             response_format: { type: "json_object" },
         };

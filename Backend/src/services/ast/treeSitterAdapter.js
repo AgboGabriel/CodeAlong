@@ -139,6 +139,42 @@ export async function parseWithTreeSitter({
       analysisOptions?.topicTitle || ""
     );
 
+    // When a DUPLICATE_DECLARATION exists for a variable name, suppress
+    // lower-quality USED_BEFORE_ASSIGNMENT and POSSIBLE_UNDECLARED_IDENTIFIER
+    // diagnostics for that same name. The duplicate IS the real problem —
+    // the secondary diagnostics are noise caused by the duplicate confusing
+    // the tracker, and showing all three to a learner obscures the actual fix.
+    const allRawDiagnostics = [
+      ...insights.misconceptionSignals,
+      ...semanticDiagnostics,
+      ...comprehensiveAnalysis.diagnostics,
+    ];
+
+    const duplicatedNames = new Set(
+      semanticDiagnostics
+        .filter((d) => d.code === "DUPLICATE_DECLARATION")
+        .map((d) => {
+          // Extract the variable name from the message: `"name" is declared...`
+          const match = d.message?.match(/^"([^"]+)"/);
+          return match ? match[1] : null;
+        })
+        .filter(Boolean)
+    );
+
+    const SUPPRESSED_BY_DUPLICATE = new Set([
+      "USED_BEFORE_ASSIGNMENT",
+      "POSSIBLE_UNDECLARED_IDENTIFIER",
+    ]);
+
+    const filteredDiagnostics = allRawDiagnostics.filter((d) => {
+      if (!SUPPRESSED_BY_DUPLICATE.has(d.code)) return true;
+      // Suppress if the name mentioned in this diagnostic belongs to a
+      // duplicate — the duplicate warning covers it more precisely.
+      const nameMatch = d.message?.match(/"([^"]+)"/);
+      if (!nameMatch) return true;
+      return !duplicatedNames.has(nameMatch[1]);
+    });
+
     return {
       schemaVersion: "normalized-ast-v1",
       status: "parsed",
@@ -164,13 +200,11 @@ export async function parseWithTreeSitter({
         expectationState: insights.expectationState,
         variables: comprehensiveAnalysis.analysis?.variables || {},
         controlFlow: comprehensiveAnalysis.analysis?.controlFlow || {},
-        detectedPatterns: comprehensiveAnalysis.analysis?.detectedPatterns || {},
+        detectedPatterns: comprehensiveAnalysis.analysis?.patterns || {},
       },
       diagnostics: [
         ...buildSuccessDiagnostics(language),
-        ...insights.misconceptionSignals,
-        ...semanticDiagnostics,
-        ...comprehensiveAnalysis.diagnostics,
+        ...filteredDiagnostics,
       ],
       topicMisconceptions: topicMisconceptions.length > 0 ? topicMisconceptions : undefined,
       reviewNotes: [
