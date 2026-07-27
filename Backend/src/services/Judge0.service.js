@@ -13,6 +13,74 @@ const JUDGE0_API_HOST = 'judge0-ce.p.rapidapi.com';
 const JUDGE0_API_KEY = process.env.JUDGE0_API_KEY;
 
 class Judge0Service {
+    static buildJudge0Error(error) {
+        const status = error?.response?.status;
+        const details = error?.response?.data?.error || error?.response?.data?.message || error.message;
+        const judge0Error = new Error();
+
+        if (status === 429) {
+            const retryAfter = error?.response?.headers?.["retry-after"];
+            judge0Error.message =
+                retryAfter
+                    ? `Judge0 rate limit reached. Please wait ${retryAfter} seconds and try again.`
+                    : "Judge0 rate limit reached. Please wait a moment and try again.";
+            judge0Error.statusCode = 429;
+            return judge0Error;
+        }
+
+        if (status === 503) {
+            judge0Error.message = "Judge0 queue is full right now. Please try again in a moment.";
+            judge0Error.statusCode = 503;
+            return judge0Error;
+        }
+
+        if (status === 400 && /wait not allowed/i.test(details || "")) {
+            judge0Error.message = "Judge0 does not allow synchronous wait on this host. Falling back to async polling.";
+            judge0Error.statusCode = 400;
+            return judge0Error;
+        }
+
+        if (status) {
+            judge0Error.message = `Judge0 API Error (${status}): ${details || "Unknown error"}`;
+            judge0Error.statusCode = status;
+            return judge0Error;
+        }
+
+        if (error?.request) {
+            judge0Error.message = "No response from Judge0 API - check network connection";
+            judge0Error.statusCode = 502;
+            return judge0Error;
+        }
+
+        judge0Error.message = `Request setup failed: ${details || "Unknown error"}`;
+        judge0Error.statusCode = 500;
+        return judge0Error;
+    }
+
+    static async requestWithRetry(options, maxRetries = 2) {
+        let lastError = null;
+
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            try {
+                return await axios.request(options);
+            } catch (error) {
+                lastError = error;
+                if (error?.response?.status !== 429 || attempt === maxRetries) {
+                    throw error;
+                }
+
+                const retryAfterHeader = Number(error?.response?.headers?.["retry-after"]);
+                const delayMs = Number.isFinite(retryAfterHeader) && retryAfterHeader > 0
+                    ? retryAfterHeader * 1000
+                    : 1000 * (attempt + 1);
+
+                await new Promise((resolve) => setTimeout(resolve, delayMs));
+            }
+        }
+
+        throw lastError;
+    }
+
     /**
      * Create a new code submission
      * @param {string} sourceCode - The source code to execute
@@ -26,7 +94,6 @@ class Judge0Service {
             url: JUDGE0_API_URL,
             params: { 
                 base64_encoded: 'true', 
-                wait: 'true',
                 fields: '*'  // Get all fields in response
             },
             headers: {  
@@ -46,7 +113,7 @@ class Judge0Service {
         };  
         
         try {
-            const response = await axios.request(options);
+            const response = await this.requestWithRetry(options);
             
             // Validate response
             if (!response.data.token) {
@@ -55,17 +122,7 @@ class Judge0Service {
             
             return response.data;
         } catch (error) {
-            // Improved error handling
-            if (error.response) {
-                // Judge0 API returned an error
-                throw new Error(`Judge0 API Error (${error.response.status}): ${error.response.data.error || 'Unknown error'}`);
-            } else if (error.request) {
-                // No response received
-                throw new Error('No response from Judge0 API - check network connection');
-            } else {
-                // Request setup error
-                throw new Error(`Request setup failed: ${error.message}`);
-            }
+            throw this.buildJudge0Error(error);
         }
     }
 
@@ -90,10 +147,10 @@ class Judge0Service {
                 'X-RapidAPI-Host': JUDGE0_API_HOST,
                 'X-RapidAPI-Key': JUDGE0_API_KEY
             }
-        };  
+        };
         
         try {
-            const response = await axios.request(options);
+            const response = await this.requestWithRetry(options, 1);
             
             // Decode base64 fields if they exist
             if (response.data.stdout) {
@@ -111,7 +168,7 @@ class Judge0Service {
             if (error.response?.status === 404) {
                 throw new Error(`Submission with token ${token} not found`);
             }
-            throw new Error(`Error fetching submission result: ${error.message}`);
+            throw this.buildJudge0Error(error);
         }
     }
 
@@ -121,7 +178,7 @@ class Judge0Service {
      * @param {number} maxAttempts - Maximum polling attempts
      * @param {number} delayMs - Delay between attempts in ms
      */
-    static async pollSubmissionResult(token, maxAttempts = 10, delayMs = 1000) {
+    static async pollSubmissionResult(token, maxAttempts = 8, delayMs = 1500) {
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
             const result = await this.getSubmissionResult(token);
             

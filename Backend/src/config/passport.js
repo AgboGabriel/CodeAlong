@@ -40,23 +40,27 @@ export function configurePassport() {
 
                     const existingGoogleUser = await userModel.findByGoogleId(profile.id);
                     if (existingGoogleUser) {
-                        return done(null, existingGoogleUser);
+                        // Re-fetch to ensure questionnaire_completed is current
+                        const freshUser = await userModel.findUserByID(existingGoogleUser.id);
+                        return done(null, freshUser || existingGoogleUser);
                     }
 
                     const existingUserByEmail = await userModel.findByEmail(email);
                     if (existingUserByEmail) {
-                        const updatedUser = await userModel.update(existingUserByEmail.id, {
-                            google_id: profile.id,
+                        await userModel.update(existingUserByEmail.id, {
+                            provider_id: profile.id,
                             auth_provider: "google",
                         });
-                        return done(null, updatedUser);
+                        // Re-fetch to get all fields including questionnaire_completed
+                        const freshUser = await userModel.findUserByID(existingUserByEmail.id);
+                        return done(null, freshUser);
                     }
 
                     const newUser = await userModel.createUser({
                         username: profile.displayName,
                         email,
                         auth_provider: "google",
-                        google_id: profile.id,
+                        provider_id: profile.id,
                     });
                     return done(null, newUser);
                 } catch (error) {

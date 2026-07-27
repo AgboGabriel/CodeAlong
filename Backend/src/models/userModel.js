@@ -14,7 +14,7 @@ class UserModel {
 
   async findByGoogleId(googleId) {
     try {
-      const query = 'SELECT * FROM users WHERE google_id = $1';
+      const query = 'SELECT * FROM users WHERE provider_id = $1';
       const result = await database.query(query, [googleId]);
       return result.rows[0] || null;
     } catch (error) {
@@ -36,36 +36,52 @@ class UserModel {
 
   async createUser(userData) {
     const {
-      username,
-      email,
-      password_hash = null,
-      auth_provider = 'email',
-      google_id = null,
+        username,
+        email,
+        password_hash = null,
+        auth_provider = 'email',
+        provider_id = null,
     } = userData;
 
     try {
-      const query = `
-        INSERT INTO users (username, email, password_hash, auth_provider, google_id, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-        RETURNING id, username, email, auth_provider, google_id, created_at
-      `;
+        // If username is taken, append a random suffix
+        let finalUsername = username;
+        const existing = await this.findByUsername(username);
+        if (existing) {
+            finalUsername = `${username}_${Math.random().toString(36).slice(2, 7)}`;
+        }
 
-      const values = [username, email, password_hash, auth_provider, google_id];
-      const result = await database.query(query, values);
-      return result.rows[0];
+        const query = `
+            INSERT INTO users (username, email, password_hash, auth_provider, provider_id, questionnaire_completed, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+            RETURNING id, username, email, auth_provider, provider_id, questionnaire_completed, created_at
+        `;
+
+        const values = [finalUsername, email, password_hash, auth_provider, provider_id, false];
+        const result = await database.query(query, values);
+        return result.rows[0];
     } catch (error) {
-      console.error('Error in createUser:', error);
-      throw error;
+        console.error('Error in createUser:', error);
+        throw error;
     }
-  }
-
+}
+async findByUsername(username) {
+    try {
+        const query = 'SELECT id FROM users WHERE username = $1';
+        const result = await database.query(query, [username]);
+        return result.rows[0] || null;
+    } catch (error) {
+        console.error('Error in findByUsername:', error);
+        throw error;
+    }
+}
   async updateLastLogin(id) {
     try {
       const query = `
         UPDATE users
         SET last_login = NOW(), updated_at = NOW()
         WHERE id = $1
-        RETURNING id, username, email, auth_provider, google_id, last_login, updated_at
+        RETURNING id, username, email, auth_provider, provider_id, questionnaire_completed, last_login, updated_at
       `;
 
       const result = await database.query(query, [id]);
@@ -78,7 +94,7 @@ class UserModel {
 
   async update(id, updates) {
     try {
-      const allowedFields = ['username', 'email', 'password_hash', 'auth_provider', 'google_id'];
+      const allowedFields = ['username', 'email', 'password_hash', 'auth_provider', 'provider_id'];
       const entries = Object.entries(updates).filter(([key]) => allowedFields.includes(key));
 
       if (entries.length === 0) {
@@ -94,7 +110,7 @@ class UserModel {
         UPDATE users
         SET ${setValues.join(', ')}, updated_at = NOW()
         WHERE id = $${values.length}
-        RETURNING id, username, email, auth_provider, google_id, created_at, updated_at, last_login
+        RETURNING id, username, email, auth_provider, provider_id, questionnaire_completed, created_at, updated_at, last_login
       `;
 
       const result = await database.query(query, values);

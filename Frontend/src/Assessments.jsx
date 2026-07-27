@@ -1,8 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import Sidebar from "./Components/Sidebar";
 import Header from "./Components/Header";
-import UserProfile, { user } from "./Components/UserProfile";
 import "./Assessments.css";
 
 import {
@@ -20,12 +19,34 @@ import {
 } from "react-icons/md";
 
 export default function Assessments() {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch("/auth/me", {
+          credentials: "include",
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.user) {
+          setUser(data.user);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user:", error);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
   return (
     <div className="app-shell">
       <Sidebar />
 
       <main className="main">
-        <Header page="Assignments" />
+        <Header user={user} />
 
         <div className="content">
           <div className="content-inner">
@@ -39,7 +60,7 @@ export default function Assessments() {
               </div>
               <div className="cap-page-actions">
                 <button className="cap-btn cap-btn--ghost">
-                 <MdFilterList />
+                  <MdFilterList />
                   Filter
                 </button>
               </div>
@@ -52,7 +73,7 @@ export default function Assessments() {
                   <p className="cap-stat__label">Pending</p>
                   <h3 className="cap-stat__value">4</h3>
                 </div>
-               <MdTimer className="cap-stat__bg-icon" />
+                <MdTimer className="cap-stat__bg-icon" />
               </div>
 
               <div className="cap-stat">
@@ -62,7 +83,7 @@ export default function Assessments() {
                   </p>
                   <h3 className="cap-stat__value cap-stat__value--dark">2</h3>
                 </div>
-               <MdVisibility className="cap-stat__bg-icon cap-stat__bg-icon--light" />
+                <MdVisibility className="cap-stat__bg-icon cap-stat__bg-icon--light" />
               </div>
 
               <div className="cap-stat">
@@ -76,14 +97,13 @@ export default function Assessments() {
               </div>
             </div>
 
-            {/* Upcoming Deliverables */}
+            {/* Available Assignments */}
             <section className="cap-section">
               <div className="cap-section__head">
                 <h2 className="cap-section__title">Available Assignments</h2>
               </div>
 
               <div className="cap-list">
-                {/* Card 1 */}
                 <div className="cap-card cap-card--accent">
                   <div className="cap-card__row">
                     <div className="cap-card__lead">
@@ -102,22 +122,17 @@ export default function Assessments() {
                           <span className="cap-tag cap-tag--amber">
                             Intermediate
                           </span>
-                          <span className="cap-meta-item cap-meta-item--danger">
-                          
-                          </span>
                         </div>
                       </div>
                     </div>
 
-                  <div className="cap-card__actions">
+                    <div className="cap-card__actions">
                       <button className="cap-btn cap-btn--outline">
                         Start Assignment
                       </button>
                     </div>
                   </div>
                 </div>
-
-          
               </div>
             </section>
 
@@ -146,13 +161,10 @@ export default function Assessments() {
                     className="cap-icon-btn cap-icon-btn--ghost"
                     aria-label="Download"
                   >
-                   Retake
+                    Retake
                   </button>
                 </div>
-
               </div>
-
-             
             </section>
           </div>
         </div>

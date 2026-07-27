@@ -8,16 +8,46 @@ export const user = {
   progress: 0,
 };
 
-export default function UserProfile({ small, onClick }) {
+// Utility function to generate initials from user name
+export const getInitials = (name) => {
+  if (!name) return "U";
+  return name
+    .split(" ")
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+};
+
+// Utility function to get user display name
+export const getUserDisplayName = (currentUser) => {
+  return (
+    currentUser?.username ||
+    currentUser?.full_name ||
+    currentUser?.name ||
+    currentUser?.email ||
+    user.name
+  );
+};
+
+export default function UserProfile({ small, onClick, user: userData }) {
+  const displayUser = userData || user;
+  const displayName = getUserDisplayName(displayUser);
+  const initials = getInitials(displayName);
+
   return (
     <>
       <div className={`avatar ${small ? "avatar-sm" : ""}`} onClick={onClick}>
-        <img src={user.avatar} alt={user.name} />
+        {displayUser.avatar ? (
+          <img src={displayUser.avatar} alt={displayName} />
+        ) : (
+          <span className="avatar-initials">{initials}</span>
+        )}
       </div>
 
       {!small && (
         <div className="user-info">
-          <div className="user-name">{user.name}</div>
+          <div className="user-name">{displayName}</div>
         </div>
       )}
     </>

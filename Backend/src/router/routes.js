@@ -1,6 +1,7 @@
 import express from 'express';
 import passport from 'passport';
 import Judge0Controller from "../controllers/judge0_compiler.controller.js";
+import astController from "../controllers/astController.js";
 import audioController from '../controllers/audio.controller.js';
 import authController from '../controllers/authController.js';
 import { ChatController } from '../controllers/chat.controller.js';
@@ -9,7 +10,8 @@ import userModel from '../models/userModel.js';
 import questionnaireController from '../controllers/questionnaire.controller.js';
 import curriculumController from '../controllers/curriculumController.js';
 import youtubeController from '../controllers/youtubeController.js';
-import bktController from "../controllers/bkt.controller.js";
+import bktController from "../controllers/bktController.js";
+import assessmentContentController from "../controllers/assessmentContentController.js";
 
 
 const router = express.Router();
@@ -24,8 +26,8 @@ function ensureAuthenticated(req, res, next) {
 }
 
 function getUserID(req) {
-    // In production, extract user ID from auth token or session
-    return req.headers['x-user-id'] || 'guest_user';
+    // Prefer the real authenticated user id; fall back to header for dev/test
+    return req.user?.id ?? req.headers['x-user-id'] ?? 'guest_user';
 }
 
 router.get('/', (req, res) => {
@@ -43,10 +45,27 @@ router.post(
   (req, res) => bktController.submitTopicAttempt(req, res)
 );
 
+router.post(
+  "/api/topic/:topicId/unlock-next",
+  ensureAuthenticated,
+  (req, res) => bktController.unlockNextTopic(req, res)
+);
+
 router.get(
   "/api/topic/:topicId/mastery",
   ensureAuthenticated,
   (req, res) => bktController.getTopicMastery(req, res)
+);
+// Add to routes.js
+
+router.post("/api/ast/workspace/parse", (req, res) => {
+  astController.parseWorkspace(req, res);
+});
+
+router.get(
+  "/api/topic/:topicId/can-progress",
+  ensureAuthenticated,
+  (req, res) => bktController.canProgressToNextTopic(req, res)
 );
 
 router.get('/health', (req, res) => {
@@ -61,10 +80,18 @@ router.get(
         failureRedirect: '/auth/google/failure',
         session: true,
     }),
-    (req, res) => {
-        const backendUrl = process.env.FRONTEND_URL || `http://localhost:${process.env.PORT || 3000}`;
-        res.redirect(`${backendUrl}/dashboard`);
+   (req, res) => {
+    const backendUrl =
+      process.env.FRONTEND_URL ||
+      `http://localhost:${process.env.PORT || 3000}`;
+
+    // check if questionnaire exists
+    if (!req.user.questionnaire_completed) {
+      return res.redirect(`${backendUrl}/Questionnaire`);
     }
+
+    return res.redirect(`${backendUrl}/dashboard`);
+}
 );
 router.get('/auth/google/failure', (req, res) => {
     res.status(401).json({ error: 'Google authentication failed' });
@@ -85,17 +112,34 @@ router.post("/api/questionnaire", ensureAuthenticated, (req,res)=>{
 router.get("/api/questionnaire", ensureAuthenticated, (req,res)=>{
     questionnaireController.getQuestionnaireByUserId(req,res);
 });
-
+router.get(
+  "/api/dashboard/recommendations",
+  ensureAuthenticated,
+  (req, res) => {
+    youtubeController
+      .getDashboardRecommendations(req, res);
+  }
+);
 //curriculum routes
 router.post("/api/curriculum/confirm", ensureAuthenticated, (req,res)=>{
     curriculumController.confirmCurriculum(req,res);
 });
+
+router.get(
+  "/api/curriculum",
+  ensureAuthenticated,
+  (req, res) => {
+    curriculumController.getUserCurriculums(req, res);
+  }
+);
+
 router.get("/api/curriculum/:curriculumId", ensureAuthenticated, (req,res)=>{
     curriculumController.getCurriculum(req,res);
 });
 
+
 //youtube video routes
-router.post("/api/videos/module/:moduleId", ensureAuthenticated, (req,res)=>{
+router.get("/api/videos/module/:moduleId", ensureAuthenticated, (req,res)=>{
     youtubeController.getVideosForModule(req,res);
 });
 
@@ -115,6 +159,21 @@ router.post('/db-test/users',async(req,res)=>{
         res.status(500).json({ success: false, error: error.message });
     }
 });
+//POST /chat/video-context — returns a system prompt built from video metadata
+router.post('/chat/video-context', (req, res) => {
+    try {
+        const { video, topic } = req.body;
+        if (!video) {
+            return res.status(400).json({ success: false, error: 'video is required' });
+        }
+        const systemPrompt = chatController.buildVideoSystemPrompt({ video, topic });
+        return res.status(200).json({ success: true, systemPrompt });
+    } catch (error) {
+        console.error('Video context route error:', error);
+        return res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 //POST /chat which is to send messages
 router.post('/chat',async(req,res)=>{
     try{
@@ -159,7 +218,7 @@ router.post('/chat/curriculum', async(req,res)=>{
 router.get("/chat/history", async(req,res)=>{
   try{
     const userId= getUserID(req);
-    const conversation= chatController.getConversation(userId);
+    const conversation = await chatController.getConversation(userId);
     res.status(200).json({
         success:true,
         conversation: conversation
@@ -178,7 +237,7 @@ router.delete("/chat/history", async(req,res)=>{
 
     try{
         const userId= getUserID(req);
-        const result= chatController.clearConversation(userId);
+        const result = await chatController.clearConversation(userId);
         res.status(200).json({
             success:true,
             message: result
@@ -203,5 +262,44 @@ router.post('/compile-poll', Judge0Controller.compileWithPolling);
 
 // GET /api/judge0/languages
 router.get('/languages', Judge0Controller.getLanguages);
+
+router.post(
+  "/api/assessment/prior-quiz",
+  ensureAuthenticated,
+  (req, res) => assessmentContentController.generatePriorKnowledgeQuiz(req, res)
+);
+
+router.post(
+  "/api/assessment/challenge",
+  ensureAuthenticated,
+  (req, res) => assessmentContentController.generateTopicChallenge(req, res)
+);
+
+router.post(
+  "/api/assessment/challenge/evaluate",
+  ensureAuthenticated,
+  (req, res) => assessmentContentController.evaluateChallengeSubmission(req, res)
+);
+
+// AST routes kept separate from Judge0 execution for review
+router.get("/api/ast/languages", (req, res) => {
+    astController.getSupportedLanguages(req, res);
+});
+
+router.get("/api/ast/blueprint", (req, res) => {
+    astController.getBlueprint(req, res);
+});
+
+router.post("/api/ast/parse", (req, res) => {
+    astController.parseSource(req, res);
+});
+
+router.get("/api/ast/history", ensureAuthenticated, (req, res) => {
+    astController.getHistory(req, res);
+});
+
+router.get("/api/ast/history/:topicId", ensureAuthenticated, (req, res) => {
+    astController.getHistory(req, res);
+});
 
 export default router;

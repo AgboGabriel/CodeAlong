@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { MdNotifications, MdSettings,  MdChevronRight } from "react-icons/md";
-import UserProfile, { user } from "./UserProfile";
+import { MdNotifications, MdSettings, MdChevronRight } from "react-icons/md";
+import UserProfile, { user as defaultUser, getUserDisplayName } from "./UserProfile";
 import "./Header.css";
 
 const NOTIFICATIONS = [
@@ -18,26 +18,24 @@ const NOTIFICATIONS = [
   },
 ];
 
-export default function Header({ previousPage, page }) {
+export default function Header({ user, page, previousPage }) {
   const [showNotifications, setShowNotifications] = useState(false);
+  const displayUser = user || defaultUser;
+  const displayName = getUserDisplayName(displayUser);
 
   return (
     <header className="header">
       <div className="header-left">
-
         {page && (
           <nav className="page-breadcrumb">
-            <a href="#">Previous</a>
+            <a href="#">{previousPage || "Previous"}</a>
             <MdChevronRight />
-            <span className="page-current">
-              {page}
-            </span>
+            <span className="page-current">{page}</span>
           </nav>
         )}
+      </div>
 
-  </div>
       <div className="header-right">
-
         {/* Notifications */}
         <div className="notification-wrapper">
           <button
@@ -51,7 +49,6 @@ export default function Header({ previousPage, page }) {
           {showNotifications && (
             <div className="notification-dropdown">
               <div className="notification-header">Notifications</div>
-
               {NOTIFICATIONS.map((item) => (
                 <div className="notification-item" key={item.id}>
                   <h4>{item.title}</h4>
@@ -68,16 +65,15 @@ export default function Header({ previousPage, page }) {
         {/* User Section */}
         <div className="header-user">
           <div className="header-user-text">
-            <div className="user-name">{user.name}</div>
+            <div className="user-name">{displayName}</div>
           </div>
 
-          <UserProfile small />
+          <UserProfile small user={displayUser} />
 
           <button className="icon-btn">
             <MdSettings size={30} />
           </button>
         </div>
-
       </div>
     </header>
   );

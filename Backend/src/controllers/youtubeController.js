@@ -10,7 +10,63 @@ class YoutubeController {
     this.questionnaireService = questionnaireService;
     this.curriculumModel = curriculumModel;
   }
+async getDashboardRecommendations(req, res) {
 
+  try {
+
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "User not authenticated",
+      });
+    }
+
+    const questionnaire =
+      await this.questionnaireService
+        .getQuestionnaireByUserId(userId);
+
+    if (!questionnaire) {
+      return res.status(404).json({
+        error: "Questionnaire not found",
+      });
+    }
+
+    const recommendations =
+      await this.youtubeService
+        .getRecommendedVideos({
+          careerPath:
+            questionnaire.career_path,
+
+          skillLevel:
+            questionnaire.skill_level,
+
+          knownLanguages:
+            questionnaire.known_languages,
+
+          learningLanguages:
+            questionnaire.learning_languages,
+        });
+
+    return res.status(200).json({
+      success: true,
+      recommendations,
+    });
+
+  } catch (error) {
+
+    console.error(
+      "Dashboard recommendations error:",
+      error
+    );
+
+    return res.status(500).json({
+      error:
+        error.message ||
+        "Failed to fetch recommendations",
+    });
+  }
+}
   async getVideosForModule(req, res) {
     try {
       const userId = req.user?.id;
@@ -36,12 +92,22 @@ class YoutubeController {
 
       const careerPath = questionnaire.career_path;
       const skillLevel = questionnaire.skill_level;
+      const expectedLanguage = this.youtubeService.inferLanguageFromContext(
+        module.curriculum_title,
+        module.title
+      );
       const videos = [];
+      const usedVideoIds = new Set();
 
       for (const topic of module.topics.slice(0, 5)) {
         const existingVideo = await this.youtubeVideoModel.findLatestByTopicId(topic.id);
 
-        if (existingVideo) {
+        if (
+          existingVideo &&
+          !usedVideoIds.has(existingVideo.video_id || existingVideo.videoId) &&
+          this.youtubeService.isVideoCompatibleWithLanguage(existingVideo, expectedLanguage)
+        ) {
+          usedVideoIds.add(existingVideo.video_id || existingVideo.videoId);
           videos.push({
             topic,
             video: existingVideo,
@@ -55,6 +121,8 @@ class YoutubeController {
           topic: topic.title,
           skillLevel,
           careerPath,
+          expectedLanguage,
+          excludedVideoIds: [...usedVideoIds],
         });
 
         if (!result.video) {
@@ -72,8 +140,16 @@ class YoutubeController {
           moduleId: module.id,
           topicId: topic.id,
           video: result.video,
+          replacement: existingVideo
+            ? {
+                isReplacement: true,
+                replacedVideoId: existingVideo.id,
+                reason: "Replaced duplicate or off-language topic video",
+              }
+            : {},
         });
 
+        usedVideoIds.add(savedVideo.video_id || savedVideo.videoId);
         videos.push({
           topic,
           video: savedVideo,
