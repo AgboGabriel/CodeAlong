@@ -27,6 +27,7 @@ export default function QuizPage() {
   const [flaggedQuestions, setFlaggedQuestions] = useState([]);
   const [submitError, setSubmitError] = useState("");
   const [seconds, setSeconds] = useState(0);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
 
   // Timer
   useEffect(() => {
@@ -225,7 +226,7 @@ export default function QuizPage() {
             <div className="quiz-title-row">
               <button
                 className="quiz-back-btn"
-                onClick={() => navigate("/MyLessons")}
+                onClick={() => setShowLeaveModal(true)}
               >
                 ← Back
               </button>
@@ -251,6 +252,35 @@ export default function QuizPage() {
               </h3>
             </div>
           </div>
+
+          {showLeaveModal && (
+            <div className="modal-overlay">
+              <div className="leave-modal">
+                <h3>Leave Quiz?</h3>
+
+                <p>
+                  All progress will be lost if you leave without
+                  completing.
+                </p>
+
+                <div className="modal-actions">
+                  <button
+                    onClick={() => setShowLeaveModal(false)}
+                    className="cancel-btn"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    onClick={() => navigate(-1)}
+                    className="confirm-btn"
+                  >
+                    Yes
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </section>
 
         <div className="quiz-grid">

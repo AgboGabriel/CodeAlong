@@ -594,8 +594,8 @@ export default function Challenges() {
 
         {/* LEFT: Question Panel */}
         <div className="question-panel">
-          <button className="back-btn" onClick={() => window.history.back()}>
-            Back
+          <button className="back-btn" onClick={() => navigate(-1)}>
+            ← Back
           </button>
 
           {loading ? (

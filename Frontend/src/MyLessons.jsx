@@ -6,8 +6,6 @@ import Header from "./Components/Header";
 import { useUser } from "./Components/useUser"; // ← shared hook
 
 import {
-  MdAccountTree,
-  MdDashboard,
   MdSearch,
   MdFilterList,
   MdPlayCircleFilled,
@@ -18,7 +16,6 @@ import {
   MdCode,
   MdLock,
   MdFolderOpen,
-  MdMenuBook,
 } from "react-icons/md";
 
 const CACHE_KEY = "myLessons_cache";
@@ -59,7 +56,6 @@ export default function MyLessons() {
   const [selectedTopic, setSelectedTopic] = useState(null);
 
   // Build a Header-compatible user object from the cached auth user.
-  // This mirrors what MyLessons previously built from /auth/me.
   const headerUser = authUser
     ? { ...authUser, name: authUser.username || authUser.full_name || authUser.name }
     : null;
@@ -86,7 +82,6 @@ export default function MyLessons() {
       }
     }
 
-    // Only fetch curriculum now — user comes from useUser
     try {
       const curriculumRes = await fetch("/api/curriculum", { credentials: "include" });
       const curriculumData = await curriculumRes.json();
@@ -214,7 +209,7 @@ export default function MyLessons() {
       <div className="app-shell">
         <Sidebar />
         <main className="main">
-          <Header user={headerUser} />
+          <Header user={headerUser} page="My Lessons" />
           <div className="content">
             <div className="content-inner">
               <div className="lessons-header">
@@ -246,7 +241,7 @@ export default function MyLessons() {
       <div className="app-shell">
         <Sidebar />
         <main className="main">
-          <Header user={headerUser} />
+          <Header user={headerUser} page="My Lessons" />
           <div className="content">
             <div className="content-inner">
               <div className="lessons-header">
@@ -327,7 +322,7 @@ export default function MyLessons() {
     <div className="app-shell">
       <Sidebar />
       <main className="main">
-        <Header user={headerUser} />
+        <Header user={headerUser} page={selectedPath.title} />
         <div className="content">
           <div className="content-inner">
             <div className="learning-header">
@@ -393,8 +388,6 @@ export default function MyLessons() {
                 </div>
                 <div className="topics-list">
                   {selectedModule.topics.map((topic, index) => {
-                    // Derive locked state from DB status field.
-                    // 'active' and 'unlocked' are open; 'locked' is locked; 'completed' is done.
                     const status = (topic.status || "locked").toLowerCase();
                     const isLocked = status === "locked";
                     const isCompleted = status === "completed";

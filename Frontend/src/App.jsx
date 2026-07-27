@@ -11,7 +11,7 @@ import MyLessons  from "./MyLessons";
 import LearningPath  from "./LearningPath";
 import Videolesson  from "./Videolesson";
 import QuizPage  from "./QuizPage";
-
+import Topics  from "./Topics";
 
 function App() {
   return (
@@ -30,6 +30,7 @@ function App() {
         <Route path="/LearningPath" element={<LearningPath />} />
         <Route path="/Videolesson" element={<Videolesson />} />
         <Route path="/QuizPage" element={<QuizPage />} />
+        <Route path="/Topics" element={<Topics />} />
       </Routes>
     </Router>
   );

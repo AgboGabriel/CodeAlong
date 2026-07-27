@@ -344,6 +344,8 @@ export default function LearningPath() {
     <div className="app-shell">
       <Sidebar />
       <main className="main">
+        <Header page="Learning Path" />
+
         <Header user={user} />
         <div className="content">
           <LpBody />
