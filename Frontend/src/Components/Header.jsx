@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MdNotifications, MdSettings } from "react-icons/md";
+import { MdNotifications, MdSettings, MdChevronRight } from "react-icons/md";
 import UserProfile, { user as defaultUser, getUserDisplayName } from "./UserProfile";
 import "./Header.css";
 
@@ -18,17 +18,24 @@ const NOTIFICATIONS = [
   },
 ];
 
-export default function Header({ user }) {
+export default function Header({ user, page, previousPage }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const displayUser = user || defaultUser;
   const displayName = getUserDisplayName(displayUser);
 
   return (
     <header className="header">
-      <div className="search-wrap"></div>
+      <div className="header-left">
+        {page && (
+          <nav className="page-breadcrumb">
+            <a href="#">{previousPage || "Previous"}</a>
+            <MdChevronRight />
+            <span className="page-current">{page}</span>
+          </nav>
+        )}
+      </div>
 
       <div className="header-right">
-
         {/* Notifications */}
         <div className="notification-wrapper">
           <button
@@ -42,7 +49,6 @@ export default function Header({ user }) {
           {showNotifications && (
             <div className="notification-dropdown">
               <div className="notification-header">Notifications</div>
-
               {NOTIFICATIONS.map((item) => (
                 <div className="notification-item" key={item.id}>
                   <h4>{item.title}</h4>
@@ -68,7 +74,6 @@ export default function Header({ user }) {
             <MdSettings size={30} />
           </button>
         </div>
-
       </div>
     </header>
   );

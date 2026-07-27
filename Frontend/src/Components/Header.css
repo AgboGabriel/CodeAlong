@@ -29,6 +29,32 @@
   z-index: 10;
   flex-shrink: 0;
 }
+.header-left {
+  display: flex;
+  align-items: center;
+}
+.page-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: bold;
+}
+.page-breadcrumb a {
+  color:#137fec;
+  text-decoration: none;
+}
+.cap-breadcrumb a:hover {
+  color: #137fec;
+}
+.page-breadcrumb svg {
+  font-size: 18px;
+  color: #137fec;
+}
+.page-current {
+  color: #111827;
+  font-weight: 700;
+}
 
 .header-right {
   display: flex;

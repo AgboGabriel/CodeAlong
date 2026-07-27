@@ -6,6 +6,8 @@ import Header from "./components/Header";
 import UserProfile, { getUserDisplayName } from "./Components/UserProfile";
 import { useUser } from "./Components/useUser"; // ← shared hook
 
+
+
 import {
   MdCode,
   MdLocalFireDepartment,
@@ -258,6 +260,7 @@ export default function Dashboard() {
       <Sidebar />
 
       <main className="main">
+        <Header page="Dashboard" />
         <Header user={currentUser} />
 
         <div className="content">
