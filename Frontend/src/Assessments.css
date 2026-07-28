@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap");
 
 :root {
   --primary: #137fec;
@@ -100,7 +100,7 @@ body {
   align-items: flex-start;
   flex-wrap: wrap;
   gap: 20px;
-  margin-bottom: 40px;
+  margin-bottom: 20px;
 }
 
 .cap-breadcrumb {
@@ -129,10 +129,8 @@ body {
   letter-spacing: -0.02em;
   color:#137fec;
   margin-bottom: 6px;
-  margin-top: -30px;
+  margin-top: -10px;
 }
-
-
 
 .cap-page-subtitle {
   font-size: 16px;
@@ -147,7 +145,7 @@ body {
 }
 
 .cap-btn {
-  height: 50px;
+  height: 45px;
   padding: 0 22px;
   border-radius: 14px;
   font-size: 16px;
@@ -177,51 +175,72 @@ body {
 .cap-btn--outline {
   background:#137fec;
   color: white;
-  border: 1px solid #137fec;
+  border: none;
   cursor: pointer;
 }
 .cap-btn--outline:hover {
-  background: #1a55d4;
+  background:#1a55d4;
 }
 .cap-btn--outline:active  {
   transform: scale(0.98);
 }
+.cap-status {
+  font-size: 16px;
+  font-weight: bold;
+  font-family: "Space Grotesk", sans-serif;
+  align-items: center;
+  background: #dcfce7;
+  color: #22c55e;
+  border-radius: 50px;
+  padding: 5px 15px;
+}
 
+  /* Failed button */
+.cap-status--failed {
+  font-size: 16px;
+  font-weight: bold;
+  font-family: "Space Grotesk", sans-serif;
+  align-items: center;
+  background: #fee2e2;
+  color:#ef4444;
+  border-radius: 50px;
+  padding: 5px 15px;
+
+}
 /* --------------------------------------------------------------------------
    Stats
    -------------------------------------------------------------------------- */
 .cap-stats {
   display: grid;
-  grid-template-columns: repeat(3,1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 24px;
-  margin-bottom: 42px;
+  margin-bottom: 15px;
 }
 
 .cap-stat {
   position: relative;
   overflow: hidden;
-  background: white;
+  background: #e2e8f2;
   border: 1px solid #e5e7eb;
   border-radius: 18px;
-  padding: 26px;
+  padding: 15px;
   min-height: 150px;
-  transition: .3s ease;
+  transition: 0.3s ease;
 }
 
-/* Hover */
+/* Card Hover */
 .cap-stat:hover {
   transform: translateY(-4px);
-  box-shadow: 0 18px 35px rgba(0,0,0,.05);
-  background: #137fec;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
 }
-
 
 /* Text */
 .cap-stat__label {
   font-size: 20px;
   font-weight: bold;
   color: #137fec;
-  transition: .3s ease;
+  transition: 0.3s ease;
 }
 
 .cap-stat__value {
@@ -229,42 +248,45 @@ body {
   font-weight: 800;
   margin-top: 8px;
   color: #111827;
-  transition: .3s ease;
+  transition: 0.3s ease;
 }
 
-
-/* Change text color on hover */
-.cap-stat:hover .cap-stat__label,
-.cap-stat:hover .cap-stat__value {
-  color: black;
-}
-
-
-/* Icon position */
+/* Icon */
 .cap-stat__bg-icon {
   position: absolute;
   right: 20px;
   bottom: 18px;
   font-size: 64px;
   color: #d1d5db;
-  transition: .3s ease;
+  transition: 0.3s ease;
 }
 
+/* Icon Hover Colors */
+.cap-stat--available:hover .cap-stat__bg-icon {
+  color: #137fec;
+}
 
-/* Icon hover color */
-.cap-stat:hover .cap-stat__bg-icon {
-  color: rgba(0,0,0,.25);
+.cap-stat--review:hover .cap-stat__bg-icon {
+  color: #f59e0b;
+}
+
+.cap-stat--completed:hover .cap-stat__bg-icon {
+  color: #22c55e;
 }
 
 /* --------------------------------------------------------------------------
    Sections
    -------------------------------------------------------------------------- */
 .cap-section {
-  margin-bottom: 28px;
+  margin-bottom: 20px;
 }
 
 .cap-section__head {
-  margin-bottom: 24px;
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .cap-section__title {
@@ -273,14 +295,17 @@ body {
   color: #111827;
 }
 
+
 .cap-link-btn {
   color: #137fec;
   font-size: 16px;
   font-weight: 700;
+   font-family: "Space Grotesk", sans-serif;
 }
 
 .cap-link-btn:hover {
   color: #1a55d4;
+  cursor: pointer;
 }
 
 /* --------------------------------------------------------------------------
@@ -297,7 +322,7 @@ body {
   background: white;
   border-radius: 18px;
   border: 1px solid #e5e7eb;
-  padding: 24px;
+  padding: 15px;
   box-shadow: 0 18px 35px rgba(0,0,0,.05);
 
   /* Layout */
@@ -305,6 +330,10 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
+}
+
+.cap-card:hover{
+  background: #e2e8f2;
 }
 
 
@@ -361,7 +390,7 @@ body {
 
 .cap-card__icon--secondary {
   background: rgba(34,197,94,.12);
-  color: #16a34a;
+  color: #22c55e;
 }
 
 .cap-card__icon--tertiary {
@@ -424,7 +453,7 @@ body {
 
 .cap-tag--emerald {
   background: rgba(34,197,94,.12);
-  color: #16a34a;
+  color: #22c55e;
 }
 
 
@@ -436,7 +465,7 @@ body {
 
 .cap-tag--rose {
   background: rgba(239,68,68,.12);
-  color: #dc2626;
+  color: #ef4444;
 }
 
 
@@ -463,10 +492,11 @@ body {
     justify-content:space-between;
     align-items:center;
     background:#fff;
-    padding:22px 24px;
+    padding:15px;
     border-radius:18px;
     border:1px solid #e5e7eb;
-      box-shadow: 0 18px 35px rgba(0,0,0,.05);
+    box-shadow: 0 18px 35px rgba(0,0,0,.05);
+    margin-bottom: 20px;
 }
 
 .cap-success-card__lead{
@@ -480,7 +510,7 @@ body {
     height:56px;
     border-radius:50%;
     background:#dcfce7;
-    color:#16a34a;
+    color:#22c55e;
     display:flex;
     justify-content:center;
     align-items:center;
@@ -494,24 +524,20 @@ body {
 .cap-success-card__meta{
     margin-top:6px;
     font-size:16px;
-    color: #16a34a;
+    color: #22c55e;
 }
-.cap-icon-btn {
-  background: #137fec;
-  font-family: "Space Grotesk", sans-serif;
-  border: none;
-  font-weight: bold;
-  font-size: 16px;
-  cursor: pointer;
-  color:white;
-  padding: 10px 15px;
-  border-radius: 8px;
-  transition: 0.2s ease;
+/* Failed card */
+.cap-success-card--failed .cap-success-card__check {
+  background: #fee2e2;
+  color:#ef4444;
 }
-.cap-icon-btn:hover { background: #1a55d4; }
-.cap-icon-btn:active {
-  transform: scale(0.98);
+
+
+.cap-success-card--failed .cap-success-card__meta {
+  color: #ef4444;
 }
+
+
 /* --------------------------------------------------------------------------
    Responsive
    -------------------------------------------------------------------------- */

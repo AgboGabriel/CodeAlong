@@ -5,21 +5,18 @@ import Header from "./Components/Header";
 import "./Assessments.css";
 
 import {
-  MdChevronRight,
   MdFilterList,
   MdTimer,
   MdVisibility,
   MdCheckCircle,
   MdTerminal,
   MdFolder,
-  MdPlayArrow,
-  MdCss,
-  MdStorage,
   MdCheck,
 } from "react-icons/md";
 
 export default function Assessments() {
   const [user, setUser] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -46,16 +43,16 @@ export default function Assessments() {
       <Sidebar />
 
       <main className="main">
-        <Header user={user} />
+        <Header user={user} page="Assessments" />
 
         <div className="content">
           <div className="content-inner">
             {/* Page header */}
             <div className="cap-page-head">
               <div>
-                <h1 className="cap-page-title">Assignments</h1>
+                <h1 className="cap-page-title">Assessments</h1>
                 <p className="cap-page-subtitle">
-                  Track your progress and complete pending labs.
+                  Track your progress and complete additional assessments on the lessons you have taken.
                 </p>
               </div>
               <div className="cap-page-actions">
@@ -68,39 +65,39 @@ export default function Assessments() {
 
             {/* Stats */}
             <div className="cap-stats">
-              <div className="cap-stat cap-stat--primary">
+              <div className="cap-stat cap-stat--available">
                 <div className="cap-stat__content">
-                  <p className="cap-stat__label">Pending</p>
-                  <h3 className="cap-stat__value">4</h3>
+                  <p className="cap-stat__label">Available</p>
+                  <h3 className="cap-stat__value">1</h3>
                 </div>
                 <MdTimer className="cap-stat__bg-icon" />
               </div>
 
-              <div className="cap-stat">
+              <div className="cap-stat cap-stat--review">
                 <div>
                   <p className="cap-stat__label cap-stat__label--muted">
                     In Review
                   </p>
-                  <h3 className="cap-stat__value cap-stat__value--dark">2</h3>
+                  <h3 className="cap-stat__value">0</h3>
                 </div>
-                <MdVisibility className="cap-stat__bg-icon cap-stat__bg-icon--light" />
+                <MdVisibility className="cap-stat__bg-icon" />
               </div>
 
-              <div className="cap-stat">
+              <div className="cap-stat cap-stat--completed">
                 <div>
                   <p className="cap-stat__label cap-stat__label--muted">
                     Completed
                   </p>
-                  <h3 className="cap-stat__value cap-stat__value--dark">12</h3>
+                  <h3 className="cap-stat__value">2</h3>
                 </div>
-                <MdCheckCircle className="cap-stat__bg-icon cap-stat__bg-icon--light" />
+                <MdCheckCircle className="cap-stat__bg-icon" />
               </div>
             </div>
 
             {/* Available Assignments */}
             <section className="cap-section">
               <div className="cap-section__head">
-                <h2 className="cap-section__title">Available Assignments</h2>
+                <h2 className="cap-section__title">Available Assessments</h2>
               </div>
 
               <div className="cap-list">
@@ -112,12 +109,12 @@ export default function Assessments() {
                       </div>
                       <div>
                         <h4 className="cap-card__title">
-                          React State Management Lab
+                          Variables & Data Types
                         </h4>
                         <div className="cap-card__meta">
                           <span className="cap-meta-item">
                             <MdFolder />
-                            Frontend Development
+                            Frontend Development with React
                           </span>
                           <span className="cap-tag cap-tag--amber">
                             Intermediate
@@ -127,8 +124,11 @@ export default function Assessments() {
                     </div>
 
                     <div className="cap-card__actions">
-                      <button className="cap-btn cap-btn--outline">
-                        Start Assignment
+                      <button
+                        className="cap-btn cap-btn--outline"
+                        onClick={() => navigate("/Challenges")}
+                      >
+                        Start
                       </button>
                     </div>
                   </div>
@@ -140,6 +140,12 @@ export default function Assessments() {
             <section className="cap-section cap-section--pad-bottom">
               <div className="cap-section__head cap-section__head--bordered">
                 <h2 className="cap-section__title">Recently Completed</h2>
+                <p
+                  className="cap-link-btn"
+                  onClick={() => navigate("/CompletedAssessments")}
+                >
+                  View all
+                </p>
               </div>
 
               <div className="cap-success-grid">
@@ -157,12 +163,26 @@ export default function Assessments() {
                       </p>
                     </div>
                   </div>
-                  <button
-                    className="cap-icon-btn cap-icon-btn--ghost"
-                    aria-label="Download"
-                  >
-                    Retake
-                  </button>
+                  <p className="cap-status">Passed</p>
+                </div>
+              </div>
+
+              <div className="cap-success-grid">
+                <div className="cap-success-card cap-success-card--failed">
+                  <div className="cap-success-card__lead">
+                    <div className="cap-success-card__check">
+                      <MdCheck />
+                    </div>
+                    <div>
+                      <h5 className="cap-success-card__title">
+                        React State Management
+                      </h5>
+                      <p className="cap-success-card__meta">
+                        Grade: 45/100 • Oct 18
+                      </p>
+                    </div>
+                  </div>
+                  <p className="cap-status--failed">Failed</p>
                 </div>
               </div>
             </section>

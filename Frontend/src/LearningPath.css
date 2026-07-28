@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap");
 
 :root {
   --primary-light: rgba(19, 127, 236, 0.12);
@@ -371,7 +371,7 @@ body {
 }
 
 .clear-btn {
-  background: #ff4d4d;
+  background: #ef4444;
   color: white;
   border: none;
   padding: 8px 14px;
@@ -382,7 +382,10 @@ body {
   font-family: "Space Grotesk", sans-serif;
 }
 .clear-btn:hover {
-  background: #e63939;
+  background: #ce3232;
+}
+.clear-btn:active{
+   transform: scale(0.98);
 }
 .module-dropdown {
   background: #f9fafb;

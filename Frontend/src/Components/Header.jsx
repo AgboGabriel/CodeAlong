@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { MdNotifications, MdSettings, MdChevronRight } from "react-icons/md";
+import { useNavigate } from "react-router-dom";
 import UserProfile, { user as defaultUser, getUserDisplayName } from "./UserProfile";
 import "./Header.css";
 
@@ -20,6 +21,7 @@ const NOTIFICATIONS = [
 
 export default function Header({ user, page, previousPage }) {
   const [showNotifications, setShowNotifications] = useState(false);
+  const navigate = useNavigate();
   const displayUser = user || defaultUser;
   const displayName = getUserDisplayName(displayUser);
 
@@ -68,9 +70,13 @@ export default function Header({ user, page, previousPage }) {
             <div className="user-name">{displayName}</div>
           </div>
 
-          <UserProfile small user={displayUser} />
+          <UserProfile
+            small
+            user={displayUser}
+            onClick={() => navigate("/Settings")}
+          />
 
-          <button className="icon-btn">
+          <button className="icon-btn" onClick={() => navigate("/Settings")}>
             <MdSettings size={30} />
           </button>
         </div>

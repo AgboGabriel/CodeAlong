@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap");
 
 :root {
   --primary: #137fec;
@@ -72,7 +72,7 @@ body {
 
 .welcome {
   margin-bottom: 20px;
-  margin-top: -30px;
+  margin-top: -10px;
 }
 
 .welcome h2 {
@@ -239,7 +239,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 15px;
 }
 
 .section-title {
@@ -251,8 +251,8 @@ body {
 .link-btn {
   background: none;
   border: none;
-  color: var(--primary);
-  font-size: 13px;
+  color:#137fec;
+  font-size: 16px;
   font-weight: 600;
   font-family: "Space Grotesk", sans-serif;
   cursor: pointer;
@@ -261,7 +261,7 @@ body {
 }
 
 .link-btn:hover {
-  opacity: 0.75;
+  color: #1a55d4;
   text-decoration: none;
 }
 
@@ -270,7 +270,7 @@ body {
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+  gap: 15px;
 }
 
 .stat-card {
@@ -285,13 +285,14 @@ body {
 .stat-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
+  background: #e2e8f2;
 }
 
 .stat-card-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 14px;
+  margin-bottom: 15px;
 }
 
 .stat-icon {

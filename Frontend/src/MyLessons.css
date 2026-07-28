@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap");
 
 :root {
   --primary: #137fec;
@@ -76,7 +76,7 @@ body {
   font-weight: 800;
   color:#137fec;
    margin-bottom: 6px;
-  margin-top: -30px;
+  margin-top: -10px;
    letter-spacing: -0.02em;
 }
 
@@ -111,13 +111,11 @@ body {
   border-radius: 22px;
   overflow: hidden;
   border: 1px solid #e5e7eb;
-  transition: 0.3s ease;
-  cursor: pointer;
 }
 
 .curriculum-card:hover {
-  transform: translateY(-6px);
   box-shadow: 0 18px 35px rgba(0,0,0,0.05);
+  background:#e2e8f2;
 }
 
 .curriculum-content {
@@ -149,7 +147,7 @@ body {
 .curriculum-content p {
   color: #6b7280;
   line-height: 1.7;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
   font-size: 16px;
 }
 
@@ -163,6 +161,7 @@ body {
 }
 .duration{
   color:#6b7280 ;
+  font-weight: bold;
 }
 
 .curriculum-btn {
@@ -291,11 +290,10 @@ width:300px;
   display: flex;
   gap: 20px;
   border: 1px solid #e5e7eb;
-  transition: 0.3s ease;
 }
 
 .module-card:hover {
-  transform: translateY(-3px);
+  background: #e2e8f2;
 }
 
 .module-icon {

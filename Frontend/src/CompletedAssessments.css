@@ -1,0 +1,157 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap");
+
+:root {
+  --primary: #137fec;
+  --primary-light: rgba(19, 127, 236, 0.12);
+  --primary-border: rgba(19, 127, 236, 0.25);
+  --bg: #f4f6fb;
+  --surface: #ffffff;
+  --surface-2: #eceff3;
+  --border: #e2e8f2;
+  --text-900: #0f172a;
+  --text-600: #475569;
+  --text-400: #94a3b8;
+  --orange: #f97316;
+  --orange-light: rgba(249, 115, 22, 0.12);
+  --purple: #8b5cf6;
+  --purple-light: rgba(139, 92, 246, 0.12);
+  --green: #22c55e;
+  --red: #ef4444;
+  --sidebar-width: 256px;
+  --header-height: 64px;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+  --shadow-primary: 0 8px 24px rgba(19, 127, 236, 0.22);
+}
+
+.cap-completed-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.completed-cap-section__head {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.completed-back-btn {
+  align-self: flex-start;
+  background: transparent;
+  font-family: "Space Grotesk", sans-serif;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color:white;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: 0.2s ease;
+ background: #137fec;
+  margin-bottom: 15px;
+}
+.completed-back-btn:hover {
+   background:#1a55d4;
+}
+.completed-back-btn:active {
+  transform: scale(0.98);
+}
+.cap-completed-section__title {
+  font-size: 20px;
+  font-weight: bold;
+  color: #111827;
+}
+.cap-completed-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  padding: 15px 5px;
+  border-radius: 18px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 18px 35px rgba(0, 0, 0, 0.05);
+}
+.cap-completed-card:hover{
+  background: #e2e8f2;
+}
+
+.cap-completed-card__lead {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.cap-completed-card__check {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #dcfce7;
+  color: #22c55e;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.cap-completed-card__title {
+  font-size: 20px;
+  font-weight: bold;
+}
+.cap-completed-card__meta {
+  margin-top: 6px;
+  font-size: 16px;
+  color: #16a34a;
+}
+.cap-completed-icon-btn {
+  background:#137fec;
+  height: 45px;
+  padding: 0 22px;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: bold;
+  font-family: "Space Grotesk", sans-serif;
+  color: white;
+  align-items: center;
+  gap: 10px;
+  border: none;
+}
+.cap-completed-icon-btn:hover {
+    cursor: pointer;
+    background:#1a55d4;
+}
+.cap-completed-icon-btn:active  {
+  transform: scale(0.98);
+}
+.cap-completed-card__status {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  background: #dcfce7;
+  color: #22c55e;
+}
+/* Passed */
+.cap-completed-card--passed .cap-completed-card__check {
+  background: #dcfce7;
+  color: #22c55e;
+}
+.cap-completed-card--passed .cap-completed-card__status {
+  background: #dcfce7;
+  color: #22c55e;
+}
+/* Failed */
+.cap-completed-card--failed .cap-completed-card__check {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.cap-completed-card--failed .cap-completed-card__status {
+  background: #fee2e2;
+  color:#ef4444;
+}
+
+.cap-completed-card--failed .cap-completed-card__meta {
+  color:#ef4444;
+}
