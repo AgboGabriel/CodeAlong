@@ -76,7 +76,7 @@ body {
   font-weight: 800;
   color:#137fec;
    margin-bottom: 6px;
-  margin-top: -30px;
+  margin-top: -10px;
    letter-spacing: -0.02em;
 }
 
@@ -163,6 +163,7 @@ body {
 }
 .duration{
   color:#6b7280 ;
+  font-weight: bold;
 }
 
 .curriculum-btn {

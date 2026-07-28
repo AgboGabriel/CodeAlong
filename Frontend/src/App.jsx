@@ -12,6 +12,7 @@ import LearningPath  from "./LearningPath";
 import Videolesson  from "./Videolesson";
 import QuizPage  from "./QuizPage";
 import Topics  from "./Topics";
+import CompletedAssessments  from "./CompletedAssessments";
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
         <Route path="/Videolesson" element={<Videolesson />} />
         <Route path="/QuizPage" element={<QuizPage />} />
         <Route path="/Topics" element={<Topics />} />
+        <Route path="/CompletedAssessments" element={<CompletedAssessments />} />
       </Routes>
     </Router>
   );

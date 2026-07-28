@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MdNotifications, MdSettings,  MdChevronRight } from "react-icons/md";
+import { MdNotifications, MdSettings,  MdChevronRight, } from "react-icons/md";
 import UserProfile, { user } from "./UserProfile";
 import "./Header.css";
 
@@ -27,7 +27,7 @@ export default function Header({ previousPage, page }) {
 
         {page && (
           <nav className="page-breadcrumb">
-            <a href="#">Previous</a>
+            <p>Page</p>
             <MdChevronRight />
             <span className="page-current">
               {page}

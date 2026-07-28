@@ -371,7 +371,7 @@ body {
 }
 
 .clear-btn {
-  background: #ff4d4d;
+  background: #ef4444;
   color: white;
   border: none;
   padding: 8px 14px;
@@ -382,7 +382,10 @@ body {
   font-family: "Space Grotesk", sans-serif;
 }
 .clear-btn:hover {
-  background: #e63939;
+  background: #ce3232;
+}
+.clear-btn:active{
+   transform: scale(0.98);
 }
 .module-dropdown {
   background: #f9fafb;

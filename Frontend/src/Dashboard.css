@@ -72,7 +72,7 @@ body {
 
 .welcome {
   margin-bottom: 20px;
-  margin-top: -30px;
+  margin-top: -10px;
 }
 
 .welcome h2 {
@@ -251,8 +251,8 @@ body {
 .link-btn {
   background: none;
   border: none;
-  color: var(--primary);
-  font-size: 13px;
+  color:#137fec;
+  font-size: 16px;
   font-weight: 600;
   font-family: "Space Grotesk", sans-serif;
   cursor: pointer;
@@ -261,7 +261,7 @@ body {
 }
 
 .link-btn:hover {
-  opacity: 0.75;
+  color: #1a55d4;
   text-decoration: none;
 }
 

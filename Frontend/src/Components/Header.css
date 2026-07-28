@@ -18,7 +18,7 @@
 
 .header {
   height: 64px;
-  background: white;
+  background:white;
   border-bottom: 1px solid #e2e8f2;
   display: flex;
   align-items: center;
@@ -52,7 +52,7 @@
   color: #137fec;
 }
 .page-current {
-  color: #111827;
+  color:#137fec;
   font-weight: 700;
 }
 
