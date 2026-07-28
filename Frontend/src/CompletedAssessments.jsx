@@ -69,25 +69,25 @@ const handleBack = () => {
 
                         <div className="cap-completed-card__lead">
 
-                        <div className="cap-completed-card__check">
-                            <MdCheck />
-                        </div>
+                          <div className="cap-completed-card__check">
+                              <MdCheck />
+                          </div>
 
 
-                        <div>
-                            <h5 className="cap-completed-card__title">
-                            {assessment.title}
-                            </h5>
+                            <div>
+                              <h5 className="cap-completed-card__title">
+                              {assessment.title}
+                              </h5>
 
-                            <p className="cap-completed-card__meta">
-                            Grade: {assessment.grade} • {assessment.date}
-                            </p>
+                              <p className="cap-completed-card__meta">
+                              Grade: {assessment.grade} • {assessment.date}
+                              </p>
 
-                            <span className="cap-completed-card__status">
-                            {assessment.status}
-                            </span>
+                              <span className="cap-completed-card__status">
+                              {assessment.status}
+                              </span>
 
-                        </div>
+                            </div>
 
                         </div>
 

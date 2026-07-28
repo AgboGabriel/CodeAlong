@@ -1,269 +1,458 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import logo from "./assets/Code along_logo-04.png";
-import "./settings.css";
+import "./Settings.css";
 
-export default function Profile() {
-  const navigate = useNavigate();
+import {
+  FiEdit2,
+  FiUser,
+  FiLock,
+  FiMail,
+  FiCheckCircle,
+  FiUpload,
+  FiTrash2,
+} from "react-icons/fi";
 
-  const [activeSection, setActiveSection] = useState("profile");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Profile states
-  const [name, setName] = useState("");
-  const [bio, setBio] = useState("");
-  const [pronouns, setPronouns] = useState("");
-  const [profileImage, setProfileImage] = useState(null);
+function Icon({ name, className = "" }) {
 
-  // Notifications states
-  const [emailNotifications, setEmailNotifications] = useState(false);
-  const [notificationEmail, setNotificationEmail] = useState("");
+  const icons = {
+    edit: <FiEdit2 />,
+    person: <FiUser />,
+    lock: <FiLock />,
+    mail: <FiMail />,
+    verified_user: <FiCheckCircle />,
+    upload: <FiUpload />,
+    delete: <FiTrash2 />,
+  };
 
-  // Password states
-  const [oldPassword, setOldPassword] = useState("");
+
+  return (
+    <span className={`sett-icon ${className}`}>
+      {icons[name]}
+    </span>
+  );
+}
+
+function ActionButton({ label, variant = "primary", onConfirm, className = "" }) {
+  const [status, setStatus] = useState("idle");
+
+  const handleClick = () => {
+    if (status !== "idle") return;
+
+    setStatus("loading");
+
+    setTimeout(() => {
+      setStatus("success");
+
+      if (onConfirm) onConfirm();
+
+      setTimeout(() => setStatus("idle"), 2000);
+    }, 800);
+  };
+
+
+  const text =
+    status === "loading"
+      ? "Updating..."
+      : status === "success"
+      ? "Success!"
+      : label;
+
+
+  return (
+    <button
+      type="button"
+      className={`sett-btn sett-btn--${variant} ${
+        status === "success" ? "sett-btn--success" : ""
+      } ${className}`}
+      onClick={handleClick}
+      disabled={status !== "idle"}
+    >
+      {text}
+    </button>
+  );
+}
+
+
+export default function AccountSettings() {
+
+    const navigate = useNavigate();
+
+  const [username, setUsername] = useState("alexc_dev");
+  const [fullName, setFullName] = useState("Alex Chen");
+  const [email, setEmail] = useState("alex.chen@codealongpro.edu");
+
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) setProfileImage(URL.createObjectURL(file));
-  };
+  const [profileImage, setProfileImage] = useState(null);
+  const fileInputRef = useRef(null);
+
+  const handleImageUpload = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    alert("Please select an image file");
+    return;
+  }
+  const imageURL = URL.createObjectURL(file);
+  setProfileImage(imageURL);
+};
+
+  const handleRemoveImage = () => {
+  setProfileImage(null);
+};
+
+  const handleBack = () => {
+  navigate(-1);
+};
 
   return (
-    <div className="profile-page">
-      {/* Top Bar */}
-      <div className="navbar">
-        <button className="back-btn" onClick={() => navigate("/dashboard")}>
-          ← Back to Dashboard
-        </button>
+    <div className="sett-settings-page">
 
-        {/* Hamburger for small screens */}
-        <div
-          className={`hamburger ${sidebarOpen ? "open" : ""}`}
-          onClick={() => setSidebarOpen(true)}
-        >
-          <span></span>
-          <span></span>
-          <span></span>
+      <div className="sett-page-container">
+
+
+        <div className="sett-page-header">
+            <button className="sett-back-btn " onClick={handleBack}>
+                    ← Back
+                </button>
+
         </div>
 
-        <img src={logo} alt="App Logo" className="logo-img" />
 
-          {/* Centered logo name only on settings page and large screens */}
-  {activeSection && (
-    <h1 className="logo-name settings-logo">Code<span className="along">Along</span></h1>
-  )}
-      </div>
+        <div className="sett-bento-grid">
 
-      <div className="settings-layout">
-        {/* Sidebar */}
-        <aside className={`settings-sidebar ${sidebarOpen ? "show" : ""}`}>
-          {/* Close button only on small screens */}
-          <span className="close-sidebar" onClick={() => setSidebarOpen(false)}>
-            ×
-          </span>
 
-          <h3>Settings</h3>
+          <section className="sett-card sett-profile-card">
 
-          <button
-            className={activeSection === "profile" ? "active" : ""}
-            onClick={() => setActiveSection("profile")}
-          >
-            Edit Profile
-          </button>
+            <div className="sett-avatar-lg-wrap">
 
-          <button
-            className={activeSection === "notifications" ? "active" : ""}
-            onClick={() => setActiveSection("notifications")}
-          >
-            Notifications
-          </button>
+              <div className="sett-avatar-lg">
 
-          <button
-            className={activeSection === "password" ? "active" : ""}
-            onClick={() => setActiveSection("password")}
-          >
-            Change Password
-          </button>
-        </aside>
-
-        {/* Main Content */}
-        <main className="settings-content">
-          {/* ================= PROFILE ================= */}
-          {activeSection === "profile" && (
-            <div className="profile-card">
-              <h2>My Profile</h2>
-
-              <label className="upload-label">
                 {profileImage ? (
-                  <>
-                    <img
-                      src={profileImage}
-                      alt="Profile Preview"
-                      className="profile-preview"
-                    />
-                    <span>Click to change profile image</span>
-                  </>
+
+                  <img
+                    src={profileImage}
+                    alt="Profile"
+                  />
+
                 ) : (
-                  <span>Click to upload profile image</span>
+
+                  <div className="sett-default-avatar">
+                    <FiUser />
+                  </div>
+
                 )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                />
-              </label>
-
-              <label>
-                Edit Name
-                <input
-                  type="text"
-                  placeholder="Enter your name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </label>
-
-              <label>
-                Bio
-                <textarea
-                  placeholder="Tell us about yourself"
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                />
-              </label>
-
-  
-
-              <button className="save-btn">Save Changes</button>
-            </div>
-          )}
-
-          {/* ================= NOTIFICATIONS ================= */}
-          {activeSection === "notifications" && (
-            <div className="profile-card">
-              <h2>Notifications</h2>
-
-              <p
-                style={{
-                  color: "#cbd5e1",
-                  fontSize: "0.95rem",
-                  marginBottom: "16px",
-                }}
-              >
-                Turn on email notifications to receive alerts whenever new
-                courses are uploaded by the admin. You can also specify the
-                email address where you'd like to receive these notifications.
-              </p>
-
-              {/* Toggle switch */}
-              <label className="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={emailNotifications}
-                  onChange={(e) => setEmailNotifications(e.target.checked)}
-                />
-                <span className={`slider ${emailNotifications ? "on" : "off"}`}></span>
-                <span className="switch-label">Enable Email Notifications</span>
-              </label>
-
-              {/* Email input and save button appear only if toggle is on */}
-              {emailNotifications && (
-                <>
-                  <label>
-                    Notification Email
-                    <input
-                      type="email"
-                      placeholder="Enter your email"
-                      value={notificationEmail}
-                      onChange={(e) => setNotificationEmail(e.target.value)}
-                    />
-                  </label>
 
                   <button
-                    className="save-btn"
-                    onClick={() => {
-                      alert(
-                        `Email Notifications: ON\nEmail: ${notificationEmail}`
-                      );
-                    }}
+                    className="sett-avatar-edit-btn"
+                    type="button"
+                    aria-label="Edit profile picture"
+                    onClick={() => fileInputRef.current.click()}
                   >
-                    Save Notification Settings
+                    <Icon name="edit" />
                   </button>
-                </>
-              )}
+
+              </div>
+
+
+          
+
             </div>
-          )}
 
-          {/* ================= PASSWORD ================= */}
-          {activeSection === "password" && (
-            <div className="profile-card">
-              <h2>Change Password</h2>
 
-              <p
-                style={{
-                  color: "#cbd5e1",
-                  fontSize: "0.95rem",
-                  marginBottom: "16px",
-                }}
-              >
-                Use this form to update your account password. Make sure your
-                new password is strong and secure.
+            <div>
+              <h3 className="sett-profile-card__name">
+                Alex Chen
+              </h3>
+
+              <p className="sett-profile-card__role">
+                Senior Student
               </p>
-
-              <label>
-                Old Password
-                <input
-                  type="password"
-                  placeholder="Enter your current password"
-                  value={oldPassword}
-                  onChange={(e) => setOldPassword(e.target.value)}
-                />
-              </label>
-
-              <label>
-                New Password
-                <input
-                  type="password"
-                  placeholder="Enter your new password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                />
-              </label>
-
-              <label>
-                Confirm New Password
-                <input
-                  type="password"
-                  placeholder="Confirm your new password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                />
-              </label>
-
-              <button
-                className="save-btn"
-                onClick={() => {
-                  if (!oldPassword || !newPassword || !confirmPassword) {
-                    alert("Please fill in all fields.");
-                    return;
-                  }
-                  if (newPassword !== confirmPassword) {
-                    alert("New passwords do not match.");
-                    return;
-                  }
-                  alert("Password updated successfully!");
-                  setOldPassword("");
-                  setNewPassword("");
-                  setConfirmPassword("");
-                }}
-              >
-                Save Changes
-              </button>
             </div>
-          )}
-        </main>
+
+
+            <div className="sett-profile-card__actions">
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={handleImageUpload}
+                  />
+
+                  <button
+                className="sett-btn sett-btn--primary"
+                type="button"
+                onClick={() => fileInputRef.current.click()}
+              >
+                <Icon name="upload" />
+                Upload Photo
+              </button>
+
+                <button
+                  className="sett-btn sett-btn--outline"
+                  type="button"
+                  onClick={handleRemoveImage}
+                >
+                  <Icon name="delete" />
+                  Remove
+                </button>
+
+            </div>
+
+
+          </section>
+
+
+
+
+          <section className="sett-card sett-details-card">
+
+
+            <div className="sett-section-heading">
+
+              <div className="sett-section-heading__icon">
+                <Icon name="person" />
+              </div>
+
+              <h3>Personal Details</h3>
+
+            </div>
+
+
+
+            <form
+              className="sett-form"
+              onSubmit={(e)=>e.preventDefault()}
+            >
+
+
+              <div className="sett-form-row">
+
+
+                <div className="sett-field">
+
+                  <label htmlFor="username">
+                    Username
+                  </label>
+
+                  <input
+                    id="username"
+                    type="text"
+                    value={username}
+                    onChange={(e)=>setUsername(e.target.value)}
+                  />
+
+                </div>
+
+
+
+                <div className="sett-field">
+
+                  <label htmlFor="fullName">
+                    Full Name
+                  </label>
+
+                  <input
+                    id="fullName"
+                    type="text"
+                    value={fullName}
+                    onChange={(e)=>setFullName(e.target.value)}
+                  />
+
+                </div>
+
+
+              </div>
+
+
+
+              <div className="sett-field">
+
+                <label htmlFor="email">
+                  Email Address
+                </label>
+
+
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e)=>setEmail(e.target.value)}
+                />
+
+
+              </div>
+
+
+
+              <div className="sett-form-actions">
+
+                <ActionButton
+                  label="Save Changes"
+                  variant="primary"
+                />
+
+              </div>
+
+
+            </form>
+
+
+          </section>
+
+
+        </div>
+
+
+
+
+
+        <section className="sett-card sett-security-section">
+
+
+          <div className="sett-section-heading">
+
+            <div className="sett-section-heading__icon">
+              <Icon name="lock" />
+            </div>
+
+            <h3>
+              Security &amp; Password
+            </h3>
+
+          </div>
+
+
+
+          <div className="sett-security-grid">
+
+
+            <div className="sett-security-info">
+
+
+              <div className="sett-info-box">
+
+                <p>
+                  Keeping your account secure is our priority.
+                  Ensure your password is at least 10 characters
+                  long and contains a mix of numbers and symbols.
+                </p>
+
+              </div>
+
+
+
+            </div>
+
+
+
+
+
+            <div className="sett-security-form-col">
+
+
+              <form
+                className="sett-form"
+                onSubmit={(e)=>e.preventDefault()}
+              >
+
+
+             <div className="sett-form-row">
+
+
+                  <div className="sett-field">
+
+                    <label htmlFor="currentPassword">
+                      Current Password
+                    </label>
+
+                    <input
+                      id="currentPassword"
+                      type="password"
+                      placeholder="••••••••••••"
+                      value={currentPassword}
+                      onChange={(e)=>setCurrentPassword(e.target.value)}
+                    />
+
+                  </div>
+
+
+
+                  <div className="sett-field">
+
+                    <label htmlFor="newPassword">
+                      New Password
+                    </label>
+
+                    <input
+                      id="newPassword"
+                      type="password"
+                      placeholder="••••••••••••"
+                      value={newPassword}
+                      onChange={(e)=>setNewPassword(e.target.value)}
+                    />
+
+                  </div>
+
+
+                </div>
+
+
+
+                <div className="sett-form-row">
+
+
+                  <div className="sett-field">
+
+                    <label htmlFor="confirmPassword">
+                      Confirm New Password
+                    </label>
+
+                    <input
+                      id="confirmPassword"
+                      type="password"
+                      placeholder="••••••••••••"
+                      value={confirmPassword}
+                      onChange={(e)=>setConfirmPassword(e.target.value)}
+                    />
+
+                  </div>
+
+
+
+                  <div className="sett-form-actions">
+
+                    <ActionButton
+                      label="Update Password"
+                      variant="primary"
+                    />
+
+                  </div>
+
+
+                </div>
+
+
+              </form>
+
+
+            </div>
+
+
+          </div>
+
+
+        </section>
+
+
+
       </div>
+
     </div>
   );
 }
