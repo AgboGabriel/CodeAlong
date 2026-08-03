@@ -18,6 +18,7 @@ export default function Assessments() {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
+
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -126,7 +127,7 @@ export default function Assessments() {
                     <div className="cap-card__actions">
                       <button
                         className="cap-btn cap-btn--outline"
-                        onClick={() => navigate("/Challenges")}
+                        onClick={() => navigate("/challenges")}
                       >
                         Start
                       </button>

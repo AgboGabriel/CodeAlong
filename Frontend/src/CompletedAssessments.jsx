@@ -2,10 +2,7 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "./Components/Sidebar";
 import Header from "./Components/Header";
 import "./CompletedAssessments.css";
-
-import {
-  MdCheck,
-} from "react-icons/md";
+import { MdCheck } from "react-icons/md";
 
 
 export default function CompletedAssessments() {
@@ -94,7 +91,7 @@ const handleBack = () => {
 
                         <button
                         className="cap-completed-icon-btn"
-                        onClick={() => navigate("/Challenges")}
+                        onClick={() => navigate("/challenges")}
                         >
                         {assessment.status === "Failed" ? "Retry" : "Generate New"}
                         </button>

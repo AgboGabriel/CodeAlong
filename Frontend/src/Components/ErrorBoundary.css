@@ -1,0 +1,20 @@
+.error-boundary {
+  padding: 48px;
+  max-width: 880px;
+  margin: 40px auto;
+  background: #fff6f6;
+  border: 1px solid #ffd6d6;
+  border-radius: 8px;
+  color: #7f1d1d;
+  font-family: Inter, system-ui, sans-serif;
+}
+.error-boundary__message {
+  background: #fff;
+  padding: 12px;
+  border-radius: 6px;
+  overflow: auto;
+  color: #7f1d1d;
+}
+.error-boundary__stack pre {
+  white-space: pre-wrap;
+}

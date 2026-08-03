@@ -51,7 +51,9 @@ if (serveFrontend) {
 app.use('/', routes);
 
 if (serveFrontend) {
-    app.get('/{*splat}', (req, res) => {
+    // Catch-all route to serve the SPA for any non-API path (e.g. /Assessments)
+    // Use a regex to avoid path-to-regexp parameter parsing issues with '*' patterns
+    app.get(/^\/.*$/, (req, res) => {
         res.sendFile(path.join(frontendDistPath, 'index.html'));
     });
 }

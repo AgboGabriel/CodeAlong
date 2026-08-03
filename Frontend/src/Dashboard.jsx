@@ -260,8 +260,7 @@ export default function Dashboard() {
       <Sidebar />
 
       <main className="main">
-        <Header page="Dashboard" />
-        <Header user={currentUser} />
+        <Header user={currentUser} page="Dashboard" />
 
         <div className="content">
           <div className="content-inner">
