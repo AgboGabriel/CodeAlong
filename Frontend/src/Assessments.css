@@ -94,7 +94,7 @@ body {
    Page Head
    -------------------------------------------------------------------------- */
 
-.cap-page-head {
+.ass-page-head {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -103,7 +103,7 @@ body {
   margin-bottom: 20px;
 }
 
-.cap-breadcrumb {
+.ass-breadcrumb {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -113,17 +113,17 @@ body {
   margin-bottom: 12px;
 }
 
-.cap-breadcrumb svg {
+.ass-breadcrumb svg {
   font-size: 18px;
   color: #137fec;
 }
 
-.cap-breadcrumb__current {
+.ass-breadcrumb__current {
   color: #111827;
   font-weight: bold;
 }
 
-.cap-page-title {
+.ass-page-title {
   font-size: 42px;
   font-weight: bold;
   letter-spacing: -0.02em;
@@ -132,19 +132,15 @@ body {
   margin-top: -10px;
 }
 
-.cap-page-subtitle {
+.ass-page-subtitle {
   font-size: 16px;
   color: #475569;;
 }
 /* --------------------------------------------------------------------------
    Buttons
    -------------------------------------------------------------------------- */
-.cap-page-actions {
-  display: flex;
-  gap: 16px;
-}
 
-.cap-btn {
+.ass-btn {
   height: 45px;
   padding: 0 22px;
   border-radius: 14px;
@@ -157,34 +153,24 @@ body {
   
 }
 
-.cap-btn svg {
+.ass-btn svg {
   font-size: 20px;
 }
 
-.cap-btn--ghost {
-  background: white;
-  border: 2px solid #dbe3ee;
-  color: #111827;
-}
 
-.cap-btn--ghost:hover {
-  border-color: #1a55d4;
-  color:#1a55d4;
-}
-
-.cap-btn--outline {
+.ass-btn--outline {
   background:#137fec;
   color: white;
   border: none;
   cursor: pointer;
 }
-.cap-btn--outline:hover {
+.ass-btn--outline:hover {
   background:#1a55d4;
 }
-.cap-btn--outline:active  {
+.ass-btn--outline:active  {
   transform: scale(0.98);
 }
-.cap-status {
+.ass-status {
   font-size: 16px;
   font-weight: bold;
   font-family: "Space Grotesk", sans-serif;
@@ -196,7 +182,7 @@ body {
 }
 
   /* Failed button */
-.cap-status--failed {
+.ass-status--failed {
   font-size: 16px;
   font-weight: bold;
   font-family: "Space Grotesk", sans-serif;
@@ -210,14 +196,14 @@ body {
 /* --------------------------------------------------------------------------
    Stats
    -------------------------------------------------------------------------- */
-.cap-stats {
+.ass-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
 
-.cap-stat {
+.ass-stat {
   position: relative;
   overflow: hidden;
   background: #e2e8f2;
@@ -229,21 +215,21 @@ body {
 }
 
 /* Card Hover */
-.cap-stat:hover {
+.ass-stat:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-md);
   cursor: pointer;
 }
 
 /* Text */
-.cap-stat__label {
+.ass-stat__label {
   font-size: 20px;
   font-weight: bold;
   color: #137fec;
   transition: 0.3s ease;
 }
 
-.cap-stat__value {
+.ass-stat__value {
   font-size: 42px;
   font-weight: 800;
   margin-top: 8px;
@@ -252,73 +238,174 @@ body {
 }
 
 /* Icon */
-.cap-stat__bg-icon {
+.ass-stat__bg-icon {
   position: absolute;
   right: 20px;
   bottom: 18px;
   font-size: 64px;
-  color: #d1d5db;
   transition: 0.3s ease;
 }
 
 /* Icon Hover Colors */
-.cap-stat--available:hover .cap-stat__bg-icon {
+.ass-stat--available .ass-stat__bg-icon {
   color: #137fec;
 }
 
-.cap-stat--review:hover .cap-stat__bg-icon {
+.ass-stat--review .ass-stat__bg-icon {
   color: #f59e0b;
 }
 
-.cap-stat--completed:hover .cap-stat__bg-icon {
+.ass-stat--completed .ass-stat__bg-icon {
   color: #22c55e;
 }
 
 /* --------------------------------------------------------------------------
    Sections
    -------------------------------------------------------------------------- */
-.cap-section {
+.ass-section {
   margin-bottom: 20px;
 }
 
-.cap-section__head {
-  margin-bottom: 15px;
+.ass-section__head {
+  margin-bottom: 20px;
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
 }
 
-.cap-section__title {
+.ass-section__title {
   font-size: 20px;
   font-weight: bold;
   color: #111827;
 }
 
 
-.cap-link-btn {
+.ass-link-btn {
   color: #137fec;
   font-size: 16px;
   font-weight: 700;
    font-family: "Space Grotesk", sans-serif;
 }
 
-.cap-link-btn:hover {
+.ass-link-btn:hover {
   color: #1a55d4;
   cursor: pointer;
 }
 
 /* --------------------------------------------------------------------------
-  Available Assignments
+  Available Assessments
    -------------------------------------------------------------------------- */
 
-.cap-list {
+.ass-filter-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.ass-filter-icon {
+  position: absolute;
+  left: 14px;
+  color: #137fec;
+  pointer-events: none;
+}
+.ass-lesson-filter {
+  height: 52px;
+  padding: 0 18px 0 46px;
+  border-radius: 14px;
+  border: 1px solid #dbe3ee;
+  background: white;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  cursor: pointer;
+  outline: none;
+  min-width: 190px;
+  font-family: "Space Grotesk", sans-serif;
+  transition: 0.2s ease;
+  appearance: none;
+}
+.ass-lesson-controls {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  margin-top: 20px;
+}
+
+/* Search */
+
+.ass-lesson-search {
+  position: relative;
+  flex: 1;
+  min-width: 280px;
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.ass-lesson-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #137fec;
+}
+
+.ass-lesson-search-input {
+  width: 100%;
+  height: 52px;
+  border: 1px solid #dbe3ee;
+  background: white;
+  border-radius: 14px;
+  padding: 0 18px 0 48px;
+  font-size: 16px;
+  font-family: "Space Grotesk", sans-serif;
+  outline: none;
+  transition: 0.2s ease;
+}
+.ass-lesson-search-input:focus {
+  border-color: #137fec;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+.ass-lesson-filter:focus {
+  border-color: #137fec;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+
+.ass-no-results {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 48px 24px;
+  text-align: center;
+  box-shadow: 0 18px 35px rgba(0, 0, 0, 0.05);
+}
+
+.ass-no-results__icon {
+  color:#137fec;
+  margin-bottom: 12px;
+}
+
+.ass-no-results h3 {
+  margin: 0;
+  font-size: 22px;
+  color: #111827;
+}
+
+.ass-no-results p {
+  margin-top: 8px;
+  color:#475569;
+  font-size: 15px;
+}
+
+
+.ass-list {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
-.cap-card {
+.ass-card {
   background: white;
   border-radius: 18px;
   border: 1px solid #e5e7eb;
@@ -332,19 +419,19 @@ body {
   gap: 24px;
 }
 
-.cap-card:hover{
+.ass-card:hover{
   background: #e2e8f2;
 }
 
 
-.cap-card--accent {
+.ass-card--accent {
   border: 1px solid #e5e7eb;
 }
 
 
 /* Card Row */
 
-.cap-card__row {
+.ass-card__row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -355,7 +442,7 @@ body {
 
 /* Left Section */
 
-.cap-card__lead {
+.ass-card__lead {
   display: flex;
   align-items: center;
   gap: 18px;
@@ -366,7 +453,7 @@ body {
 
 /* Icon */
 
-.cap-card__icon {
+.ass-card__icon {
   width: 58px;
   height: 58px;
   border-radius: 16px;
@@ -378,22 +465,22 @@ body {
   flex-shrink: 0;
 }
 
-.cap-card__icon svg {
+.ass-card__icon svg {
   font-size: 30px;
 }
 
 
-.cap-card__icon--primary {
+.ass-card__icon--primary {
   background: rgba(19,127,236,.12);
   color: #137fec;
 }
 
-.cap-card__icon--secondary {
+.ass-card__icon--secondary {
   background: rgba(34,197,94,.12);
   color: #22c55e;
 }
 
-.cap-card__icon--tertiary {
+.ass-card__icon--tertiary {
   background: rgba(139,92,246,.12);
   color: #8b5cf6;
 }
@@ -401,13 +488,13 @@ body {
 
 /* Content */
 
-.cap-card__content {
+.ass-card__content {
   flex: 1;
   min-width: 0;
 }
 
 
-.cap-card__title {
+.ass-card__title {
   font-size: 20px;
   font-weight: 700;
   color: #111827;
@@ -418,7 +505,7 @@ body {
 
 /* Metadata */
 
-.cap-card__meta {
+.ass-card__meta {
   display: flex;
   align-items: center;
   gap: 14px;
@@ -426,7 +513,7 @@ body {
 }
 
 
-.cap-meta-item {
+.ass-meta-item {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -435,7 +522,7 @@ body {
 }
 
 
-.cap-meta-item svg {
+.ass-meta-item svg {
   color: #137fec;
   font-size: 18px;
 }
@@ -443,7 +530,7 @@ body {
 
 /* Difficulty Tags */
 
-.cap-tag {
+.ass-tag {
   padding: 6px 12px;
   border-radius: 999px;
   font-size: 12px;
@@ -451,19 +538,19 @@ body {
 }
 
 
-.cap-tag--emerald {
+.ass-tag--emerald {
   background: rgba(34,197,94,.12);
   color: #22c55e;
 }
 
 
-.cap-tag--amber {
+.ass-tag--amber {
   background: rgba(249,115,22,.12);
   color: #ea580c;
 }
 
 
-.cap-tag--rose {
+.ass-tag--rose {
   background: rgba(239,68,68,.12);
   color: #ef4444;
 }
@@ -471,7 +558,7 @@ body {
 
 /* Right Button Area */
 
-.cap-card__actions {
+.ass-card__actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -481,13 +568,13 @@ body {
 /* --------------------------------------------------------------------------
    Recently Completed
    -------------------------------------------------------------------------- */
-.cap-success-grid{
+.ass-success-grid{
     display:flex;
     flex-direction:column;
     gap:18px;
 }
 
-.cap-success-card{
+.ass-success-card{
     display:flex;
     justify-content:space-between;
     align-items:center;
@@ -499,13 +586,13 @@ body {
     margin-bottom: 20px;
 }
 
-.cap-success-card__lead{
+.ass-success-card__lead{
     display:flex;
     align-items:center;
     gap:18px;
 }
 
-.cap-success-card__check{
+.ass-success-card__check{
     width:56px;
     height:56px;
     border-radius:50%;
@@ -516,24 +603,24 @@ body {
     align-items:center;
 }
 
-.cap-success-card__title{
+.ass-success-card__title{
     font-size:20px;
     font-weight:bold;
 }
 
-.cap-success-card__meta{
+.ass-success-card__meta{
     margin-top:6px;
     font-size:16px;
     color: #22c55e;
 }
 /* Failed card */
-.cap-success-card--failed .cap-success-card__check {
+.ass-success-card--failed .ass-success-card__check {
   background: #fee2e2;
   color:#ef4444;
 }
 
 
-.cap-success-card--failed .cap-success-card__meta {
+.ass-success-card--failed .ass-success-card__meta {
   color: #ef4444;
 }
 
@@ -543,19 +630,19 @@ body {
    -------------------------------------------------------------------------- */
 
 @media (max-width: 768px) {
-  .cap-stats {
+  .ass-stats {
     grid-template-columns: 1fr;
   }
 
-  .cap-success-grid {
+  .ass-success-grid {
     grid-template-columns: 1fr;
   }
 
-  .cap-card__row {
+  .ass-card__row {
     align-items: flex-start;
   }
 
-  .cap-card__actions {
+  .ass-card__actions {
     width: 100%;
     justify-content: space-between;
   }

@@ -6,6 +6,7 @@ import "./Assessments.css";
 
 import {
   MdFilterList,
+  MdSearch,
   MdTimer,
   MdVisibility,
   MdCheckCircle,
@@ -18,6 +19,28 @@ export default function Assessments() {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filter, setFilter] = useState("All Levels");
+
+  const assessments = [
+    {
+      id: 1,
+      title: "Variables & Data Types",
+      course: "Frontend Development with React",
+      level: "Intermediate",
+    },
+  ];
+
+  const filteredAssessments = assessments.filter((assessment) => {
+    const matchesSearch = assessment.title
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+
+    const matchesFilter =
+      filter === "All Levels" || assessment.level === filter;
+
+    return matchesSearch && matchesFilter;
+  });
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -49,141 +72,175 @@ export default function Assessments() {
         <div className="content">
           <div className="content-inner">
             {/* Page header */}
-            <div className="cap-page-head">
+            <div className="ass-page-head">
               <div>
-                <h1 className="cap-page-title">Assessments</h1>
-                <p className="cap-page-subtitle">
+                <h1 className="ass-page-title">Assessments</h1>
+                <p className="ass-page-subtitle">
                   Track your progress and complete additional assessments on the lessons you have taken.
                 </p>
-              </div>
-              <div className="cap-page-actions">
-                <button className="cap-btn cap-btn--ghost">
-                  <MdFilterList />
-                  Filter
-                </button>
               </div>
             </div>
 
             {/* Stats */}
-            <div className="cap-stats">
-              <div className="cap-stat cap-stat--available">
-                <div className="cap-stat__content">
-                  <p className="cap-stat__label">Available</p>
-                  <h3 className="cap-stat__value">1</h3>
+            <div className="ass-stats">
+              <div className="ass-stat ass-stat--available">
+                <div className="ass-stat__content">
+                  <p className="ass-stat__label">Available</p>
+                  <h3 className="ass-stat__value">1</h3>
                 </div>
-                <MdTimer className="cap-stat__bg-icon" />
+                <MdTimer className="ass-stat__bg-icon" />
               </div>
 
-              <div className="cap-stat cap-stat--review">
+              <div className="ass-stat ass-stat--review">
                 <div>
-                  <p className="cap-stat__label cap-stat__label--muted">
+                  <p className="ass-stat__label ass-stat__label--muted">
                     In Review
                   </p>
-                  <h3 className="cap-stat__value">0</h3>
+                  <h3 className="ass-stat__value">0</h3>
                 </div>
-                <MdVisibility className="cap-stat__bg-icon" />
+                <MdVisibility className="ass-stat__bg-icon" />
               </div>
 
-              <div className="cap-stat cap-stat--completed">
+              <div className="ass-stat ass-stat--completed">
                 <div>
-                  <p className="cap-stat__label cap-stat__label--muted">
+                  <p className="ass-stat__label ass-stat__label--muted">
                     Completed
                   </p>
-                  <h3 className="cap-stat__value">2</h3>
+                  <h3 className="ass-stat__value">2</h3>
                 </div>
-                <MdCheckCircle className="cap-stat__bg-icon" />
+                <MdCheckCircle className="ass-stat__bg-icon" />
               </div>
             </div>
 
-            {/* Available Assignments */}
-            <section className="cap-section">
-              <div className="cap-section__head">
-                <h2 className="cap-section__title">Available Assessments</h2>
+            {/* Available Assessments */}
+            <section className="ass-section">
+              <div>
+                <h2 className="ass-section__title">Available Assessments</h2>
+
+                <div className="ass-lesson-controls">
+                  <div className="ass-lesson-search">
+                    <MdSearch className="ass-lesson-search-icon" size={22} />
+                    <input
+                      type="text"
+                      placeholder="Search available assessments..."
+                      className="ass-lesson-search-input"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="ass-filter-wrap">
+                    <MdFilterList className="ass-filter-icon" size={22} />
+                    <select
+                      className="ass-lesson-filter"
+                      value={filter}
+                      onChange={(e) => setFilter(e.target.value)}
+                    >
+                      <option>All Levels</option>
+                      <option>Beginner</option>
+                      <option>Intermediate</option>
+                      <option>Advanced</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
-              <div className="cap-list">
-                <div className="cap-card cap-card--accent">
-                  <div className="cap-card__row">
-                    <div className="cap-card__lead">
-                      <div className="cap-card__icon cap-card__icon--primary">
-                        <MdTerminal />
-                      </div>
-                      <div>
-                        <h4 className="cap-card__title">
-                          Variables & Data Types
-                        </h4>
-                        <div className="cap-card__meta">
-                          <span className="cap-meta-item">
-                            <MdFolder />
-                            Frontend Development with React
-                          </span>
-                          <span className="cap-tag cap-tag--amber">
-                            Intermediate
-                          </span>
+              <div className="ass-list">
+                {filteredAssessments.length > 0 ? (
+                  filteredAssessments.map((assessment) => (
+                    <div className="ass-card ass-card--accent" key={assessment.id}>
+                      <div className="ass-card__row">
+                        <div className="ass-card__lead">
+                          <div className="ass-card__icon ass-card__icon--primary">
+                            <MdTerminal />
+                          </div>
+
+                          <div>
+                            <h4 className="ass-card__title">
+                              {assessment.title}
+                            </h4>
+
+                            <div className="ass-card__meta">
+                              <span className="ass-meta-item">
+                                <MdFolder />
+                                {assessment.course}
+                              </span>
+
+                              <span className="ass-tag ass-tag--amber">
+                                {assessment.level}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="ass-card__actions">
+                          <button
+                            className="ass-btn ass-btn--outline"
+                            onClick={() => navigate("/Challenges")}
+                          >
+                            Start
+                          </button>
                         </div>
                       </div>
                     </div>
-
-                    <div className="cap-card__actions">
-                      <button
-                        className="cap-btn cap-btn--outline"
-                        onClick={() => navigate("/challenges")}
-                      >
-                        Start
-                      </button>
-                    </div>
+                  ))
+                ) : (
+                  <div className="ass-no-results">
+                    <MdSearch size={48} className="ass-no-results__icon" />
+                    <h3>No results found</h3>
+                    <p>Try searching with a different keyword or change the filter.</p>
                   </div>
-                </div>
+                )}
               </div>
             </section>
 
             {/* Recently Completed */}
-            <section className="cap-section cap-section--pad-bottom">
-              <div className="cap-section__head cap-section__head--bordered">
-                <h2 className="cap-section__title">Recently Completed</h2>
+            <section className="ass-section ass-section--pad-bottom">
+              <div className="ass-section__head ass-section__head--bordered">
+                <h2 className="ass-section__title">Recently Completed</h2>
                 <p
-                  className="cap-link-btn"
+                  className="ass-link-btn"
                   onClick={() => navigate("/CompletedAssessments")}
                 >
                   View all
                 </p>
               </div>
 
-              <div className="cap-success-grid">
-                <div className="cap-success-card">
-                  <div className="cap-success-card__lead">
-                    <div className="cap-success-card__check">
+              <div className="ass-success-grid">
+                <div className="ass-success-card">
+                  <div className="ass-success-card__lead">
+                    <div className="ass-success-card__check">
                       <MdCheck />
                     </div>
                     <div>
-                      <h5 className="cap-success-card__title">
+                      <h5 className="ass-success-card__title">
                         Intro to TypeScript
                       </h5>
-                      <p className="cap-success-card__meta">
+                      <p className="ass-success-card__meta">
                         Grade: 98/100 • Oct 12
                       </p>
                     </div>
                   </div>
-                  <p className="cap-status">Passed</p>
+                  <p className="ass-status">Passed</p>
                 </div>
               </div>
 
-              <div className="cap-success-grid">
-                <div className="cap-success-card cap-success-card--failed">
-                  <div className="cap-success-card__lead">
-                    <div className="cap-success-card__check">
+              <div className="ass-success-grid">
+                <div className="ass-success-card ass-success-card--failed">
+                  <div className="ass-success-card__lead">
+                    <div className="ass-success-card__check">
                       <MdCheck />
                     </div>
                     <div>
-                      <h5 className="cap-success-card__title">
+                      <h5 className="ass-success-card__title">
                         React State Management
                       </h5>
-                      <p className="cap-success-card__meta">
+                      <p className="ass-success-card__meta">
                         Grade: 45/100 • Oct 18
                       </p>
                     </div>
                   </div>
-                  <p className="cap-status--failed">Failed</p>
+                  <p className="ass-status--failed">Failed</p>
                 </div>
               </div>
             </section>

@@ -27,18 +27,18 @@
   --shadow-primary: 0 8px 24px rgba(19, 127, 236, 0.22);
 }
 
-.cap-completed-grid {
+.cass-grid {
   display: flex;
   flex-direction: column;
   gap: 18px;
 }
-.completed-cap-section__head {
-  margin-bottom: 15px;
+.cass-section__head {
+  margin-bottom: 20px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 }
-.completed-back-btn {
+.cass-back-btn {
   align-self: flex-start;
   background: transparent;
   font-family: "Space Grotesk", sans-serif;
@@ -50,40 +50,152 @@
   border-radius: 8px;
   transition: 0.2s ease;
  background: #137fec;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
-.completed-back-btn:hover {
+.cass-back-btn:hover {
    background:#1a55d4;
 }
-.completed-back-btn:active {
+.cass-back-btn:active {
   transform: scale(0.98);
 }
-.cap-completed-section__title {
+.cass-section__title {
   font-size: 20px;
   font-weight: bold;
   color: #111827;
+  margin-bottom: 15px;
 }
-.cap-completed-card {
+
+.cass-filter-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.cass-filter-icon {
+  position: absolute;
+  left: 14px;
+  color: #137fec;
+  pointer-events: none;
+}
+.cass-lesson-filter {
+  height: 52px;
+  padding: 0 18px 0 46px;
+  border-radius: 14px;
+  border: 1px solid #dbe3ee;
+  background: white;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  cursor: pointer;
+  outline: none;
+  min-width: 190px;
+  font-family: "Space Grotesk", sans-serif;
+  transition: 0.2s ease;
+  appearance: none;
+}
+.cass-lesson-controls {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+/* Search */
+
+.cass-lesson-search {
+  position: relative;
+  flex: 1;
+  min-width: 280px;
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.cass-lesson-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #137fec;
+}
+
+.cass-lesson-search-input {
+  width: 100%;
+  height: 52px;
+  border: 1px solid #dbe3ee;
+  background: white;
+  border-radius: 14px;
+  padding: 0 18px 0 48px;
+  font-size: 16px;
+  font-family: "Space Grotesk", sans-serif;
+  outline: none;
+  transition: 0.2s ease;
+}
+.cass-lesson-search-input:focus {
+  border-color: #137fec;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+.cass-lesson-filter:focus {
+  border-color: #137fec;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+
+.cass-difficulty-badge {
+  padding: 6px 12px;
+  border-radius: 999px;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.cass-no-results {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 48px 24px;
+  text-align: center;
+  box-shadow: 0 18px 35px rgba(0, 0, 0, 0.05);
+}
+
+.cass-no-results__icon {
+  color:#137fec;
+  margin-bottom: 12px;
+}
+
+.cass-no-results h3 {
+  margin: 0;
+  font-size: 22px;
+  color: #111827;
+}
+
+.cass-no-results p {
+  margin-top: 8px;
+  color:#475569;
+  font-size: 15px;
+}
+
+.cass-card {
   display: flex;
   justify-content: space-between;
   align-items: center;
   background: #fff;
-  padding: 15px 5px;
+  padding: 15px 15px;
   border-radius: 18px;
   border: 1px solid #e5e7eb;
   box-shadow: 0 18px 35px rgba(0, 0, 0, 0.05);
 }
-.cap-completed-card:hover{
+.cass-card:hover{
   background: #e2e8f2;
 }
 
-.cap-completed-card__lead {
+.cass-card__lead {
   display: flex;
   align-items: center;
   gap: 18px;
 }
 
-.cap-completed-card__check {
+.cass-card__check {
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -93,16 +205,16 @@
   justify-content: center;
   align-items: center;
 }
-.cap-completed-card__title {
+.cass-card__title {
   font-size: 20px;
   font-weight: bold;
 }
-.cap-completed-card__meta {
+.cass-card__meta {
   margin-top: 6px;
   font-size: 16px;
   color: #16a34a;
 }
-.cap-completed-icon-btn {
+.cass-icon-btn {
   background:#137fec;
   height: 45px;
   padding: 0 22px;
@@ -115,14 +227,14 @@
   gap: 10px;
   border: none;
 }
-.cap-completed-icon-btn:hover {
+.cass-icon-btn:hover {
     cursor: pointer;
     background:#1a55d4;
 }
-.cap-completed-icon-btn:active  {
+.cass-icon-btn:active  {
   transform: scale(0.98);
 }
-.cap-completed-card__status {
+.cass-card__status {
   display: inline-block;
   margin-top: 8px;
   padding: 5px 12px;
@@ -133,25 +245,25 @@
   color: #22c55e;
 }
 /* Passed */
-.cap-completed-card--passed .cap-completed-card__check {
+.cass-card--passed .cass-card__check {
   background: #dcfce7;
   color: #22c55e;
 }
-.cap-completed-card--passed .cap-completed-card__status {
+.cass-card--passed .cass-card__status {
   background: #dcfce7;
   color: #22c55e;
 }
 /* Failed */
-.cap-completed-card--failed .cap-completed-card__check {
+.cass-card--failed .cass-card__check {
   background: #fee2e2;
   color: #ef4444;
 }
 
-.cap-completed-card--failed .cap-completed-card__status {
+.cass-card--failed .cass-card__status {
   background: #fee2e2;
   color:#ef4444;
 }
 
-.cap-completed-card--failed .cap-completed-card__meta {
+.cass-card--failed .cass-card__meta {
   color:#ef4444;
 }
