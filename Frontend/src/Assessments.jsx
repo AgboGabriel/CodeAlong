@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "./Components/Sidebar";
 import Header from "./Components/Header";
 import "./Assessments.css";
@@ -17,30 +17,140 @@ import {
 
 export default function Assessments() {
   const [user, setUser] = useState(null);
+  const [assessments, setAssessments] = useState([]);
+  const [loadingAssessments, setLoadingAssessments] = useState(true);
   const navigate = useNavigate();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("All Levels");
 
-  const assessments = [
-    {
-      id: 1,
-      title: "Variables & Data Types",
-      course: "Frontend Development with React",
-      level: "Intermediate",
-    },
-  ];
+  const normalizeDifficulty = (value) => {
+    const level = String(value || "").toLowerCase();
 
-  const filteredAssessments = assessments.filter((assessment) => {
-    const matchesSearch = assessment.title
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
+    if (["easy", "beginner", "basic"].includes(level)) return "Beginner";
+    if (["medium", "intermediate", "moderate"].includes(level)) return "Intermediate";
+    if (["hard", "advanced", "expert", "difficult"].includes(level)) return "Advanced";
 
-    const matchesFilter =
-      filter === "All Levels" || assessment.level === filter;
+    return "Intermediate";
+  };
 
-    return matchesSearch && matchesFilter;
-  });
+  const buildAssessmentList = async () => {
+    try {
+      setLoadingAssessments(true);
+
+      const curriculumResponse = await fetch("/api/curriculum", {
+        credentials: "include",
+      });
+
+      const curriculumData = await curriculumResponse.json();
+
+      if (!curriculumResponse.ok || !curriculumData.success) {
+        throw new Error(curriculumData.error || "Failed to fetch curriculum data");
+      }
+
+      const curriculumItems = Array.isArray(curriculumData.curriculum)
+        ? curriculumData.curriculum
+        : [];
+
+      const completedEntries = [];
+
+      curriculumItems.forEach((curriculum) => {
+        const modules = Array.isArray(curriculum.modules) ? curriculum.modules : [];
+
+        modules.forEach((module) => {
+          const topics = Array.isArray(module.topics) ? module.topics : [];
+
+          topics.forEach((topic) => {
+            const status = String(topic.status || "").toLowerCase();
+
+            if (status === "completed" || status === "complete") {
+              completedEntries.push({
+                topicId: topic.id,
+                moduleId: module.id,
+                curriculumTitle: curriculum.title || "Learning Path",
+                moduleTitle: module.title || "Module",
+                topicTitle: topic.title || "Topic",
+              });
+            }
+          });
+        });
+      });
+
+      if (completedEntries.length === 0) {
+        setAssessments([]);
+        return;
+      }
+
+      const challengeResults = await Promise.allSettled(
+        completedEntries.map(async ({ topicId, moduleId, curriculumTitle, moduleTitle, topicTitle }) => {
+          const challengeResponse = await fetch("/api/assessment/challenge", {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ topicId, moduleId }),
+          });
+
+          const challengeData = await challengeResponse.json();
+
+          if (!challengeResponse.ok || !challengeData.success || !challengeData.challenge) {
+            return null;
+          }
+
+          const challenge = challengeData.challenge;
+
+          return {
+            id: challenge.id || `${topicId}-${moduleId}`,
+            title: challenge.title || topicTitle,
+            course: `${curriculumTitle} • ${moduleTitle}`,
+            level: normalizeDifficulty(challenge.difficulty),
+            rawDifficulty: challenge.difficulty || "medium",
+            topicId,
+            moduleId,
+            topicTitle,
+            moduleTitle,
+            curriculumTitle,
+          };
+        })
+      );
+
+      const generatedAssessments = challengeResults
+        .filter((result) => result.status === "fulfilled" && result.value)
+        .map((result) => result.value);
+
+      setAssessments(generatedAssessments);
+    } catch (error) {
+      console.error("Failed to load generated assessments:", error);
+      setAssessments([]);
+    } finally {
+      setLoadingAssessments(false);
+    }
+  };
+
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+
+  const filteredAssessments = useMemo(() => {
+    return assessments.filter((assessment) => {
+      const searchableText = [
+        assessment.title,
+        assessment.course,
+        assessment.level,
+        assessment.topicTitle,
+        assessment.moduleTitle,
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      const matchesSearch =
+        normalizedSearch.length === 0 || searchableText.includes(normalizedSearch);
+
+      const matchesFilter =
+        filter === "All Levels" || assessment.level === filter;
+
+      return matchesSearch && matchesFilter;
+    });
+  }, [assessments, filter, normalizedSearch]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -60,6 +170,7 @@ export default function Assessments() {
     };
 
     fetchUser();
+    buildAssessmentList();
   }, []);
 
   return (
@@ -86,7 +197,9 @@ export default function Assessments() {
               <div className="ass-stat ass-stat--available">
                 <div className="ass-stat__content">
                   <p className="ass-stat__label">Available</p>
-                  <h3 className="ass-stat__value">1</h3>
+                  <h3 className="ass-stat__value">
+                    {loadingAssessments ? "..." : filteredAssessments.length}
+                  </h3>
                 </div>
                 <MdTimer className="ass-stat__bg-icon" />
               </div>
@@ -146,7 +259,13 @@ export default function Assessments() {
               </div>
 
               <div className="ass-list">
-                {filteredAssessments.length > 0 ? (
+                {loadingAssessments ? (
+                  <div className="ass-no-results">
+                    <MdSearch size={48} className="ass-no-results__icon" />
+                    <h3>Loading AI-generated assessments...</h3>
+                    <p>We are checking your completed topics and generating challenge-based assessments.</p>
+                  </div>
+                ) : filteredAssessments.length > 0 ? (
                   filteredAssessments.map((assessment) => (
                     <div className="ass-card ass-card--accent" key={assessment.id}>
                       <div className="ass-card__row">
@@ -176,7 +295,9 @@ export default function Assessments() {
                         <div className="ass-card__actions">
                           <button
                             className="ass-btn ass-btn--outline"
-                            onClick={() => navigate("/Challenges")}
+                            onClick={() => navigate("/challenges", {
+                              state: { topicId: assessment.topicId, moduleId: assessment.moduleId },
+                            })}
                           >
                             Start
                           </button>
@@ -188,7 +309,11 @@ export default function Assessments() {
                   <div className="ass-no-results">
                     <MdSearch size={48} className="ass-no-results__icon" />
                     <h3>No results found</h3>
-                    <p>Try searching with a different keyword or change the filter.</p>
+                    <p>
+                      {assessments.length === 0
+                        ? "Complete a topic first so we can generate AI assessments for it."
+                        : "Try searching with a different keyword or change the filter."}
+                    </p>
                   </div>
                 )}
               </div>

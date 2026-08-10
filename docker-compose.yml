@@ -1,0 +1,20 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: codealong-app
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./Backend/.env
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      DB_HOST: aws-1-eu-west-2.pooler.supabase.com
+      DB_PORT: 5432
+      DB_NAME: postgres
+      DB_USER: postgres.fjpdbrvusppbkkejdqnn
+      DB_PASS: CodeAlongDatabasePassword
+    restart: unless-stopped
+   

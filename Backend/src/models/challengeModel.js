@@ -80,6 +80,21 @@ class ChallengeModel {
     return result.rows[0];
   }
 
+  async countTopicWeaknesses({ userId, topicId, weaknessType = "challenge_failure" }) {
+    const result = await database.query(
+      `
+        SELECT COUNT(*)::int AS count
+        FROM learner_weaknesses
+        WHERE user_id = $1
+          AND topic_id = $2
+          AND weakness_type = $3
+      `,
+      [userId, topicId, weaknessType]
+    );
+
+    return Number(result.rows[0]?.count || 0);
+  }
+
   async findLatestByTopicId(topicId, userId) {
     const query = `
       SELECT

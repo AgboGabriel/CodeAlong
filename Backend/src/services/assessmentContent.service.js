@@ -13,6 +13,7 @@ import {
 } from "./languageContext.js";
 
 const CHAT_SERVICE = new groqService();
+const REPLACEMENT_VIDEO_FAILURE_THRESHOLD = 5;
 
 const SUPPORTED_LANGUAGES = [
   { id: 63, key: "javascript", name: "JavaScript" },
@@ -477,13 +478,13 @@ Rules:
           },
         ],
         {
-          model: "meta-llama/llama-4-scout-17b-16e-instruct",
+          model: "llama-3.3-70b-versatile",
           temperature: 0.2,
           response_format: { type: "json_object" },
           max_tokens: 2000,
         }
       );
-
+      
       parsed = extractJson(content);
       normalizedQuestions = normalizeQuizQuestions(parsed.questions, {
         topicTitle,
@@ -589,7 +590,7 @@ MANDATORY RULES:
             { role: "user", content: prompt + retryNote },
           ],
           {
-            model: "meta-llama/llama-4-scout-17b-16e-instruct",
+            model: "llama-3.3-70b-versatile",
             temperature: 0.4 + attempt * 0.1,
             response_format: { type: "json_object" },
             max_tokens: 1500,
@@ -626,6 +627,73 @@ MANDATORY RULES:
         video: context.video,
       },
       supportedLanguages: getSupportedLanguages(),
+    };
+  }
+
+  async maybeTriggerSimplerVideoForTopic({ userId, topicId, moduleId, curriculumId }) {
+    if (!userId || !topicId) return null;
+
+    const failureCount = await challengeModel.countTopicWeaknesses({
+      userId,
+      topicId,
+      weaknessType: "challenge_failure",
+    });
+
+    if (failureCount < REPLACEMENT_VIDEO_FAILURE_THRESHOLD) {
+      return null;
+    }
+
+    const topicContext = await curriculumModel.getTopicContext(topicId, userId);
+    if (!topicContext) return null;
+
+    const existingVideo = await youtubeVideoModel.findLatestByTopicId(topicId);
+    if (existingVideo?.is_replacement) {
+      return null;
+    }
+
+    const questionnaire = await questionnaireService.getQuestionnaireByUserId(userId);
+    const careerPath = questionnaire?.career_path || "frontend";
+    const skillLevel = questionnaire?.skill_level || "beginner";
+    const expectedLanguage = youtubeService.inferLanguageFromContext(
+      topicContext.curriculum?.title || "",
+      topicContext.module?.title || "",
+      topicContext.topic?.title || ""
+    );
+
+    const fallbackQuery = `${topicContext.topic.title} beginner friendly ${expectedLanguage?.name || expectedLanguage?.key || "tutorial"} explained simply`;
+    const fallbackSearch = await youtubeService.searchVideos(fallbackQuery, 6);
+
+    const fallbackCandidates = await youtubeService.getVideoDetails(
+      fallbackSearch.map((video) => video.videoId).filter(Boolean)
+    );
+
+    const rankedFallbacks = await youtubeService.rankVideos(fallbackCandidates, topicContext.topic.title, {
+      expectedLanguage,
+      excludedVideoIds: existingVideo ? [existingVideo.video_id || existingVideo.videoId] : [],
+    });
+
+    const fallbackVideo = rankedFallbacks[0];
+    if (!fallbackVideo) return null;
+
+    const savedVideo = await youtubeVideoModel.saveTopicVideo({
+      userId,
+      curriculumId: curriculumId || topicContext.curriculum?.id,
+      moduleId: moduleId || topicContext.module?.id,
+      topicId,
+      video: fallbackVideo,
+      replacement: {
+        isReplacement: true,
+        replacedVideoId: existingVideo?.id || null,
+        reason: "Repeated challenge failure: simpler beginner-friendly explanation recommended",
+      },
+    });
+
+    return {
+      topicId,
+      replacedVideoId: existingVideo?.id || null,
+      replacementVideoId: savedVideo?.id || null,
+      video: savedVideo,
+      reason: "Repeated challenge failure: simpler beginner-friendly explanation recommended",
     };
   }
 
@@ -768,6 +836,7 @@ MANDATORY RULES:
       lastQuizId: mastery.last_quiz_id || null,
     });
 
+    let videoReplacement = null;
     if (evaluation.failed > 0) {
       await challengeModel.recordLearnerWeakness({
         userId,
@@ -775,6 +844,13 @@ MANDATORY RULES:
         weaknessType: "challenge_failure",
         severity: 1.0,
         latestSubmissionId: savedSubmission?.id || null,
+      });
+
+      videoReplacement = await this.maybeTriggerSimplerVideoForTopic({
+        userId,
+        topicId,
+        moduleId,
+        curriculumId,
       });
     }
 
@@ -795,6 +871,7 @@ MANDATORY RULES:
       canProgress,
       progressionThreshold,
       unlockResult,
+      videoReplacement,
     };
   }
 
@@ -902,7 +979,7 @@ ${codeSnippet || "No code provided"}
     ];
 
     return CHAT_SERVICE.generateChatCompletion(messages, {
-      model: "meta-llama/llama-4-scout-17b-16e-instruct",
+      model: "llama-3.3-70b-versatile",
       temperature: 0.4,
     });
   }

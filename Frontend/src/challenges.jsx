@@ -243,6 +243,7 @@ export default function Challenges() {
   // ── Progression banner (mirrors VideoLesson exactly) ──────────────────────
   const [progressionResult, setProgressionResult] = useState(null);
   const [progressionError,  setProgressionError]  = useState("");
+  const [videoReplacement, setVideoReplacement] = useState(null);
 
   /* ================= MONACO ================= */
   const handleEditorBeforeMount = useCallback((monacoInstance) => {
@@ -485,6 +486,7 @@ export default function Challenges() {
     setHintFeedback(null);
     setProgressionResult(null);
     setProgressionError("");
+    setVideoReplacement(null);
 
     try {
       // Evaluate the challenge and run AST analysis in parallel.
@@ -535,6 +537,7 @@ export default function Challenges() {
       const evaluation   = evaluationData.evaluation;
       const canProgress  = evaluationData.canProgress  ?? false;
       const unlockResult = evaluationData.unlockResult ?? null;
+      const replacement  = evaluationData.videoReplacement ?? null;
 
       if (!evaluation) {
         throw new Error("No evaluation data returned from server.");
@@ -568,6 +571,10 @@ export default function Challenges() {
           topicTitle:         topic?.title || "",
         })
       );
+
+      if (replacement?.video?.url || replacement?.video?.video_url) {
+        setVideoReplacement(replacement);
+      }
 
       // If BKT mastery hit ≥ 0.8 the service already marked the current topic
       // "completed" and unlocked the next one in the DB. Clear the MyLessons
@@ -674,6 +681,146 @@ export default function Challenges() {
           >
             ✕
           </button>
+        </div>
+      )}
+
+      {videoReplacement && (
+        <div
+          className="hint-overlay"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setVideoReplacement(null)}
+        >
+          <div className="hint-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="hint-modal-header">
+              <div>
+                <p className="hint-eyebrow">Adaptive Support</p>
+                <h2>Need a simpler explanation?</h2>
+              </div>
+              <button className="hint-close-btn" onClick={() => setVideoReplacement(null)}>✕</button>
+            </div>
+
+            <div className="hint-content">
+              <div className="hint-state" style={{ display: "block", padding: "0" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                  <span className="hint-state-icon">🎥</span>
+                  <span style={{ color: "#cbd5e1", fontWeight: 600 }}>
+                    A simpler beginner-friendly video has been recommended for this topic.
+                  </span>
+                </div>
+
+                <p style={{ margin: 0, color: "#94a3b8", lineHeight: 1.6 }}>
+                  {videoReplacement.reason || "You have struggled with this concept repeatedly, so a clearer explanation is now available."}
+                </p>
+              </div>
+
+              {videoReplacement.video?.title && (
+                <div className="hint-section">
+                  <div className="hint-section-label">
+                    <span className="hint-dot hint-dot--purple" />
+                    Suggested video
+                  </div>
+
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: "92px 1fr",
+                    gap: 14,
+                    background: "rgba(15, 23, 42, 0.9)",
+                    border: "1px solid rgba(148, 163, 184, 0.2)",
+                    borderRadius: 12,
+                    padding: 12,
+                    color: "#e2e8f0",
+                    lineHeight: 1.5,
+                  }}>
+                    {videoReplacement.video.thumbnail && (
+                      <img
+                        src={videoReplacement.video.thumbnail}
+                        alt={videoReplacement.video.title}
+                        style={{
+                          width: "92px",
+                          height: "70px",
+                          objectFit: "cover",
+                          borderRadius: 8,
+                          border: "1px solid rgba(148, 163, 184, 0.2)",
+                          background: "#0f172a",
+                        }}
+                      />
+                    )}
+
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>
+                        {videoReplacement.video.title}
+                      </div>
+                      {(videoReplacement.video.channelTitle || videoReplacement.video.channel_title) && (
+                        <div style={{ color: "#94a3b8", fontSize: 12, marginBottom: 6 }}>
+                          {videoReplacement.video.channelTitle || videoReplacement.video.channel_title}
+                        </div>
+                      )}
+                      {videoReplacement.video.description && (
+                        <div style={{
+                          color: "#cbd5e1",
+                          fontSize: 12,
+                          lineHeight: 1.5,
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                        }}>
+                          {videoReplacement.video.description}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 4 }}>
+                <button
+                  className="hint-close-btn"
+                  onClick={() => setVideoReplacement(null)}
+                >
+                  Close
+                </button>
+                {(videoReplacement.video?.url || videoReplacement.video?.video_url) && (
+                  <button
+                    type="button"
+                    className="primary-btn"
+                    onClick={() => {
+                      setVideoReplacement(null);
+                      navigate("/Videolesson", {
+                        state: {
+                          moduleId,
+                          topic,
+                          video: {
+                            ...videoReplacement.video,
+                            videoId: videoReplacement.video.videoId || videoReplacement.video.video_id,
+                            video_id: videoReplacement.video.video_id || videoReplacement.video.videoId,
+                            title: videoReplacement.video.title,
+                            description: videoReplacement.video.description || "",
+                            channel_title: videoReplacement.video.channelTitle || videoReplacement.video.channel_title || "",
+                            channelTitle: videoReplacement.video.channelTitle || videoReplacement.video.channel_title || "",
+                            thumbnail: videoReplacement.video.thumbnail || "",
+                            url: videoReplacement.video.url || videoReplacement.video.video_url || `https://www.youtube.com/watch?v=${videoReplacement.video.videoId || videoReplacement.video.video_id}`,
+                            duration: videoReplacement.video.duration || "",
+                            view_count: videoReplacement.video.view_count || videoReplacement.video.viewCount || 0,
+                            like_count: videoReplacement.video.like_count || videoReplacement.video.likeCount || 0,
+                          },
+                        },
+                      });
+                    }}
+                    style={{
+                      textDecoration: "none",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    Open video
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

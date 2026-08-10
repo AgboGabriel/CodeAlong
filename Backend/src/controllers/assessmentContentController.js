@@ -78,6 +78,7 @@ class AssessmentContentController {
         mastery:             result.mastery,
         mastered:            result.mastered,
         progressionThreshold: result.progressionThreshold,
+        videoReplacement:    result.videoReplacement,
       });
     } catch (error) {
       console.error("Error evaluating challenge submission:", error);

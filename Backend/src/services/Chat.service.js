@@ -5,6 +5,8 @@ dotenv.config();
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
+const DEFAULT_GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+const FALLBACK_GROQ_MODELS = ["llama-3.1-8b-instant", "llama-3.3-70b-versatile"];
 const EMBEDDED_IDE_LANGUAGE_TERMS = buildEmbeddedIdeLanguageTerms();
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const SETUP_MODULE_PATTERN =
@@ -102,7 +104,7 @@ export class groqService {
 }
 
 async generateChatCompletion(messages, options = {}) {
-    const model = options.model || 'meta-llama/llama-4-scout-17b-16e-instruct';
+    const model = options.model || DEFAULT_GROQ_MODEL;
     const payload = {
         model,
         messages,
@@ -134,6 +136,20 @@ async generateChatCompletion(messages, options = {}) {
         const groqErr = error.response?.data?.error;
         if (groqErr) {
             console.error(`Groq API error [${error.response.status}] on model ${model}:`, JSON.stringify(groqErr));
+        }
+
+        if (error.response?.status === 404 && !options.model) {
+            for (const fallbackModel of FALLBACK_GROQ_MODELS.filter(item => item !== model)) {
+                try {
+                    console.warn(`Groq model ${model} is unavailable. Retrying with ${fallbackModel}.`);
+                    return await doPost({ ...payload, model: fallbackModel });
+                } catch (fallbackError) {
+                    const fallbackErr = fallbackError.response?.data?.error;
+                    if (fallbackErr) {
+                        console.error(`Groq fallback error [${fallbackError.response?.status}] on model ${fallbackModel}:`, JSON.stringify(fallbackErr));
+                    }
+                }
+            }
         }
 
         // If Groq rejects with 400 and response_format was set, retry without it
@@ -233,7 +249,7 @@ ${skipSetupModule ? "- Do not include an installation, setup, environment config
             { role: "user", content: prompt }
         ];
         const completionOptions = {
-            model: options.model || 'meta-llama/llama-4-scout-17b-16e-instruct',
+            model: options.model || DEFAULT_GROQ_MODEL,
             temperature: options.temperature ?? 0.3,
             response_format: { type: "json_object" },
         };

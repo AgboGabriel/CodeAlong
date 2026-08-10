@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Dashboard.css";
-import Sidebar from "./components/Sidebar";
-import Header from "./components/Header";
-import UserProfile, { getUserDisplayName } from "./Components/UserProfile";
-import { useUser } from "./Components/useUser"; // ← shared hook
-
+import Sidebar from "./Components/Sidebar.jsx";
+import Header from "./Components/Header.jsx";
+import UserProfile, { getUserDisplayName } from "./Components/UserProfile.jsx";
+import { useUser } from "./Components/useUser"; 
 
 
 import {

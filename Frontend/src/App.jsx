@@ -13,7 +13,7 @@ import Videolesson  from "./Videolesson";
 import QuizPage  from "./QuizPage";
 import Topics  from "./Topics";
 import CompletedAssessments  from "./CompletedAssessments";
-import Settings from "./Settings";
+import Settings from "./settings";
 
 function App() {
   return (

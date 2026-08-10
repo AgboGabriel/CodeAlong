@@ -102,15 +102,21 @@ async getDashboardRecommendations(req, res) {
       for (const topic of module.topics.slice(0, 5)) {
         const existingVideo = await this.youtubeVideoModel.findLatestByTopicId(topic.id);
 
+        const preferredVideo = existingVideo?.is_replacement
+          ? existingVideo
+          : existingVideo && this.youtubeService.isVideoCompatibleWithLanguage(existingVideo, expectedLanguage)
+            ? existingVideo
+            : null;
+
         if (
-          existingVideo &&
-          !usedVideoIds.has(existingVideo.video_id || existingVideo.videoId) &&
-          this.youtubeService.isVideoCompatibleWithLanguage(existingVideo, expectedLanguage)
+          preferredVideo &&
+          !usedVideoIds.has(preferredVideo.video_id || preferredVideo.videoId) &&
+          this.youtubeService.isVideoCompatibleWithLanguage(preferredVideo, expectedLanguage)
         ) {
-          usedVideoIds.add(existingVideo.video_id || existingVideo.videoId);
+          usedVideoIds.add(preferredVideo.video_id || preferredVideo.videoId);
           videos.push({
             topic,
-            video: existingVideo,
+            video: preferredVideo,
             source: "cache",
           });
           continue;
