@@ -2,6 +2,7 @@ import { useState } from "react";
 import { MdNotifications, MdSettings, MdChevronRight } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import UserProfile, { user as defaultUser, getUserDisplayName } from "./UserProfile";
+import { useUser } from "./useUser";
 import "./Header.css";
 
 const NOTIFICATIONS = [
@@ -22,7 +23,9 @@ const NOTIFICATIONS = [
 export default function Header({ user, page, previousPage }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const navigate = useNavigate();
-  const displayUser = user || defaultUser;
+  const { user: authUser } = useUser();
+  const resolvedUser = user || authUser || defaultUser;
+  const displayUser = resolvedUser;
   const displayName = getUserDisplayName(displayUser);
 
   return (

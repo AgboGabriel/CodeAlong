@@ -34,12 +34,13 @@ export default function UserProfile({ small, onClick, user: userData }) {
   const displayUser = userData || user;
   const displayName = getUserDisplayName(displayUser);
   const initials = getInitials(displayName);
+  const avatarSource = displayUser?.avatar_url || displayUser?.avatar || null;
 
   return (
     <>
       <div className={`avatar ${small ? "avatar-sm" : ""}`} onClick={onClick}>
-        {displayUser.avatar ? (
-          <img src={displayUser.avatar} alt={displayName} />
+        {avatarSource ? (
+          <img src={avatarSource} alt={displayName} />
         ) : (
           <span className="avatar-initials">{initials}</span>
         )}

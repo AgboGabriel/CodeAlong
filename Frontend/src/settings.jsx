@@ -1,5 +1,7 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "./supabaseClient";
+import { updateCachedUser } from "./Components/useUser";
 import "./settings.css";
 
 import {
@@ -41,13 +43,15 @@ function ActionButton({ label, variant = "primary", onConfirm, className = "" })
 
     setStatus("loading");
 
-    setTimeout(() => {
-      setStatus("success");
-
-      if (onConfirm) onConfirm();
-
-      setTimeout(() => setStatus("idle"), 2000);
-    }, 800);
+    Promise.resolve(onConfirm?.())
+      .then(() => {
+        setStatus("success");
+        setTimeout(() => setStatus("idle"), 2000);
+      })
+      .catch(() => {
+        // The save handler displays the useful API error; re-enable the button.
+        setStatus("idle");
+      });
   };
 
 
@@ -78,31 +82,173 @@ export default function AccountSettings() {
 
     const navigate = useNavigate();
 
-  const [username, setUsername] = useState("alexc_dev");
-  const [fullName, setFullName] = useState("Alex Chen");
-  const [email, setEmail] = useState("alex.chen@codealongpro.edu");
+  const [username, setUsername] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const [profileImage, setProfileImage] = useState(null);
+  const [profileImagePath, setProfileImagePath] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  const handleImageUpload = (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
-  if (!file.type.startsWith("image/")) {
-    alert("Please select an image file");
-    return;
-  }
-  const imageURL = URL.createObjectURL(file);
-  setProfileImage(imageURL);
-};
+  const PROFILE_BUCKET = "Profile Image";
+  const PROFILE_IMAGE_FOLDER = "Image";
 
-  const handleRemoveImage = () => {
-  setProfileImage(null);
-};
+  const loadProfile = useCallback(async () => {
+    try {
+      const response = await fetch("/api/profile/me", {
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          navigate("/login");
+          return;
+        }
+        throw new Error("Unable to read profile");
+      }
+
+      const payload = await response.json();
+      const profile = payload.user;
+
+      setUsername(profile.username || "");
+      setFullName(profile.full_name || "");
+      setEmail(profile.email || "");
+      setProfileImage(profile.avatar_url || null);
+      setProfileImagePath(null);
+    } catch (error) {
+      console.error("Failed to load profile", error);
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
+
+  const saveProfileToApi = async (payload) => {
+    try {
+      const response = await fetch("/api/profile/me", {
+        method: "PUT",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorPayload = await response.json().catch(() => ({}));
+        throw new Error(errorPayload.error || "Unable to save profile");
+      }
+
+      const updatedPayload = await response.json();
+      const updatedUser = updatedPayload.user;
+
+      updateCachedUser(updatedUser);
+      return updatedUser;
+    } catch (error) {
+      console.error("Profile update failed", error);
+      throw error;
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      await saveProfileToApi({
+        username,
+        email,
+        full_name: fullName,
+        avatar_url: profileImage,
+      });
+    } catch (error) {
+      alert(error.message || "Unable to save profile");
+      throw error;
+    }
+  };
+
+  const handleImageUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image file");
+      return;
+    }
+
+    const extension = file.name.includes(".")
+      ? file.name.slice(file.name.lastIndexOf(".") + 1)
+      : "jpg";
+
+    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1_000_000)}.${extension}`;
+    const storagePath = `${PROFILE_IMAGE_FOLDER}/${uniqueName}`;
+
+    try {
+      setIsUploading(true);
+
+      const { error: uploadError } = await supabase.storage
+        .from(PROFILE_BUCKET)
+        .upload(storagePath, file, {
+          cacheControl: "3600",
+          upsert: true,
+          contentType: file.type,
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from(PROFILE_BUCKET)
+        .getPublicUrl(storagePath);
+
+      const nextPublicUrl = publicUrlData.publicUrl;
+      setProfileImage(nextPublicUrl);
+      setProfileImagePath(storagePath);
+
+      await saveProfileToApi({
+        avatar_url: nextPublicUrl,
+        username,
+        email,
+        full_name: fullName,
+      });
+    } catch (error) {
+      console.error("Supabase profile image upload failed", error);
+      alert("Unable to upload the profile image to Supabase Storage.");
+    } finally {
+      setIsUploading(false);
+      event.target.value = "";
+    }
+  };
+
+  const handleRemoveImage = async () => {
+    if (profileImagePath) {
+      const { error } = await supabase.storage
+        .from(PROFILE_BUCKET)
+        .remove([profileImagePath]);
+
+      if (error) {
+        console.error("Removing profile image failed", error);
+      }
+    }
+
+    setProfileImage(null);
+    setProfileImagePath(null);
+
+    try {
+      await saveProfileToApi({
+        avatar_url: null,
+        username,
+        email,
+        full_name: fullName,
+      });
+    } catch (error) {
+      alert(error.message || "Unable to remove the profile image");
+    }
+  };
 
   const handleBack = () => {
   navigate(-1);
@@ -165,11 +311,11 @@ export default function AccountSettings() {
 
             <div>
               <h3 className="sett-profile-card__name">
-                Alex Chen
+                {fullName || username || "Your Profile"}
               </h3>
 
               <p className="sett-profile-card__role">
-                Senior Student
+                {username || "Student"}
               </p>
             </div>
 
@@ -188,15 +334,17 @@ export default function AccountSettings() {
                 className="sett-btn sett-btn--primary"
                 type="button"
                 onClick={() => fileInputRef.current.click()}
+                disabled={isUploading}
               >
                 <Icon name="upload" />
-                Upload Photo
+                {isUploading ? "Uploading..." : "Upload Photo"}
               </button>
 
                 <button
                   className="sett-btn sett-btn--outline"
                   type="button"
                   onClick={handleRemoveImage}
+                  disabled={isUploading}
                 >
                   <Icon name="delete" />
                   Remove
@@ -295,6 +443,7 @@ export default function AccountSettings() {
                 <ActionButton
                   label="Save Changes"
                   variant="primary"
+                  onConfirm={handleSaveProfile}
                 />
 
               </div>

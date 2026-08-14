@@ -94,7 +94,7 @@ async findByUsername(username) {
 
   async update(id, updates) {
     try {
-      const allowedFields = ['username', 'email', 'password_hash', 'auth_provider', 'provider_id'];
+      const allowedFields = ['username', 'email', 'password_hash', 'auth_provider', 'provider_id', 'avatar_url', 'full_name'];
       const entries = Object.entries(updates).filter(([key]) => allowedFields.includes(key));
 
       if (entries.length === 0) {
@@ -110,7 +110,7 @@ async findByUsername(username) {
         UPDATE users
         SET ${setValues.join(', ')}, updated_at = NOW()
         WHERE id = $${values.length}
-        RETURNING id, username, email, auth_provider, provider_id, questionnaire_completed, created_at, updated_at, last_login
+        RETURNING id, username, email, auth_provider, provider_id, questionnaire_completed, created_at, updated_at, last_login, avatar_url, full_name
       `;
 
       const result = await database.query(query, values);

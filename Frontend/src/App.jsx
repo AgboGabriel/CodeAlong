@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "./LandingPage";
 import Questionnaire from "./Questionnaire";
 import Dashboard from "./Dashboard";
@@ -14,6 +14,21 @@ import QuizPage  from "./QuizPage";
 import Topics  from "./Topics";
 import CompletedAssessments  from "./CompletedAssessments";
 import Settings from "./settings";
+import { useUser } from "./Components/useUser";
+
+function ProtectedRoute({ children }) {
+  const { user, loading } = useUser();
+
+  if (loading) {
+    return <div className="sett-loading">Loading your profile...</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
 
 function App() {
   return (
@@ -34,7 +49,14 @@ function App() {
         <Route path="/QuizPage" element={<QuizPage />} />
         <Route path="/Topics" element={<Topics />} />
         <Route path="/CompletedAssessments" element={<CompletedAssessments />} />
-        <Route path="/Settings" element={<Settings />} />
+        <Route
+          path="/Settings"
+          element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </Router>
   );

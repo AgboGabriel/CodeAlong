@@ -105,6 +105,77 @@ router.post('/auth/login', (req, res, next) => authController.login(req, res, ne
 router.post('/auth/logout', (req, res, next) => authController.logout(req, res, next));
 router.get('/auth/me', (req, res) => authController.me(req, res));
 
+router.get('/api/profile/me', ensureAuthenticated, async (req, res) => {
+    try {
+        const currentUser = await userModel.findUserByID(req.user.id);
+        if (!currentUser) {
+            return res.status(404).json({ error: 'User record not found' });
+        }
+
+        return res.status(200).json({
+            user: {
+                id: currentUser.id,
+                username: currentUser.username,
+                email: currentUser.email,
+                full_name: currentUser.full_name,
+                avatar_url: currentUser.avatar_url,
+                auth_provider: currentUser.auth_provider,
+                provider_id: currentUser.provider_id,
+                questionnaire_completed: currentUser.questionnaire_completed,
+            }
+        });
+    } catch (error) {
+        console.error('Profile read error:', error);
+        return res.status(500).json({ error: error.message || 'Unable to load profile' });
+    }
+});
+
+router.put('/api/profile/me', ensureAuthenticated, async (req, res) => {
+    try {
+        const allowedUpdates = {};
+        const { username, email, full_name, avatar_url } = req.body;
+
+        if (typeof username === 'string' && username.trim()) {
+            allowedUpdates.username = username.trim();
+        }
+
+        if (typeof email === 'string' && email.trim()) {
+            allowedUpdates.email = email.trim().toLowerCase();
+        }
+
+        if (typeof full_name === 'string') {
+            allowedUpdates.full_name = full_name.trim() || null;
+        }
+
+        if (typeof avatar_url === 'string') {
+            allowedUpdates.avatar_url = avatar_url.trim() || null;
+        }
+
+        if (Object.keys(allowedUpdates).length === 0) {
+            return res.status(400).json({ error: 'No profile fields were supplied' });
+        }
+
+        const updatedUser = await userModel.update(req.user.id, allowedUpdates);
+
+        return res.status(200).json({
+            message: 'Profile updated successfully',
+            user: {
+                id: updatedUser.id,
+                username: updatedUser.username,
+                email: updatedUser.email,
+                full_name: updatedUser.full_name,
+                avatar_url: updatedUser.avatar_url,
+                auth_provider: updatedUser.auth_provider,
+                provider_id: updatedUser.provider_id,
+                questionnaire_completed: updatedUser.questionnaire_completed,
+            }
+        });
+    } catch (error) {
+        console.error('Profile update error:', error);
+        return res.status(400).json({ error: error.message || 'Unable to update profile' });
+    }
+});
+
 //questionnaire routes
 router.post("/api/questionnaire", ensureAuthenticated, (req,res)=>{
     questionnaireController.saveQuestionnaireResponse(req,res);
