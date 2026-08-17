@@ -244,6 +244,8 @@ export default function Challenges() {
   const [progressionResult, setProgressionResult] = useState(null);
   const [progressionError,  setProgressionError]  = useState("");
   const [videoReplacement, setVideoReplacement] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
 
   /* ================= MONACO ================= */
   const handleEditorBeforeMount = useCallback((monacoInstance) => {
@@ -348,6 +350,9 @@ export default function Challenges() {
 
   /* ================= RUN ================= */
   const handleRun = async () => {
+    if (isRunning) return;
+
+    setIsRunning(true);
     setOutput("Executing your code...");
 
     try {
@@ -378,6 +383,8 @@ export default function Challenges() {
     } catch (error) {
       console.error("Execution error:", error);
       setOutput("Unable to connect to the server");
+    } finally {
+      setIsRunning(false);
     }
   };
 
@@ -476,7 +483,9 @@ export default function Challenges() {
 
   /* ================= SUBMIT ================= */
   const handleSubmit = async () => {
-    if (!challenge) return;
+    if (!challenge || isSubmitting) return;
+
+    setIsSubmitting(true);
 
     setOutput("Evaluating your solution...");
     setSubmitSummary(null);
@@ -587,6 +596,8 @@ export default function Challenges() {
     } catch (error) {
       console.error("Challenge submission error:", error);
       setOutput(error.message || "Unable to evaluate challenge");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -1003,8 +1014,8 @@ export default function Challenges() {
             </select>
 
             <div className="editor-actions">
-              <button className="run-btn" onClick={handleRun}>
-                Run
+              <button className="run-btn" onClick={handleRun} disabled={isRunning}>
+                {isRunning ? "Running…" : "Run"}
               </button>
 
               {/* ─── HINT BUTTON ─── */}
@@ -1027,8 +1038,8 @@ export default function Challenges() {
                 )}
               </button>
 
-              <button className="submit-btn" onClick={handleSubmit}>
-                Submit
+              <button className="submit-btn" onClick={handleSubmit} disabled={isSubmitting}>
+                {isSubmitting ? "Evaluating…" : "Submit"}
               </button>
             </div>
 

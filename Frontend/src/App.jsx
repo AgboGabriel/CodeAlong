@@ -14,6 +14,7 @@ import QuizPage  from "./QuizPage";
 import Topics  from "./Topics";
 import CompletedAssessments  from "./CompletedAssessments";
 import Settings from "./settings";
+import Analytics from "./Analytics";
 import { useUser } from "./Components/useUser";
 
 function ProtectedRoute({ children }) {
@@ -41,6 +42,7 @@ function App() {
         <Route path="/reset-password" element={<ForgotPassword />} />
         <Route path="/create-new-password" element={<CreateNewPassword />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/analytics" element={<Analytics />} />
         <Route path="/challenges" element={<Challenges />} />
         <Route path="/Assessments" element={<Assessments />} />
         <Route path="/MyLessons" element={<MyLessons />} />

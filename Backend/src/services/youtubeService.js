@@ -144,6 +144,9 @@ class YoutubeService {
         topic.toLowerCase();
     const expectedLanguage = options.expectedLanguage || null;
     const excludedVideoIds = new Set(options.excludedVideoIds || []);
+    const focusTerms = (options.focusTerms || [])
+        .map((term) => String(term).toLowerCase())
+        .filter(Boolean);
 
     // pull trusted channels from DB
     const trustedChannels =
@@ -203,6 +206,12 @@ class YoutubeService {
                 text.includes("beginner")
             ) {
                 score += 500;
+            }
+
+            // When a learner repeatedly fails, prefer videos that explicitly
+            // teach the type of problem found in their last submission.
+            for (const focusTerm of focusTerms) {
+                if (text.includes(focusTerm)) score += 900;
             }
 
             score = applyQualityPenalty(score, text);

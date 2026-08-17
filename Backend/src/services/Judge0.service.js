@@ -126,6 +126,45 @@ class Judge0Service {
         }
     }
 
+    /** Submit all challenge test cases with one Judge0 request. */
+    static async createSubmissions(submissions) {
+        if (!Array.isArray(submissions) || submissions.length === 0) {
+            throw new Error('At least one submission is required');
+        }
+
+        const options = {
+            method: 'POST',
+            url: `${JUDGE0_API_URL}/batch`,
+            params: { base64_encoded: 'true', fields: '*' },
+            headers: {
+                'content-type': 'application/json',
+                'X-RapidAPI-Host': JUDGE0_API_HOST,
+                'X-RapidAPI-Key': JUDGE0_API_KEY
+            },
+            data: {
+                submissions: submissions.map(({ sourceCode, languageId, stdin = '' }) => ({
+                    source_code: sourceCode ? Buffer.from(sourceCode).toString('base64') : '',
+                    language_id: Number(languageId),
+                    stdin: stdin ? Buffer.from(stdin).toString('base64') : '',
+                    expected_output: '',
+                    cpu_time_limit: 2,
+                    memory_limit: 128000
+                }))
+            }
+        };
+
+        try {
+            const response = await this.requestWithRetry(options);
+            const created = Array.isArray(response.data) ? response.data : response.data?.submissions;
+            if (!Array.isArray(created) || created.length !== submissions.length || created.some((item) => !item?.token)) {
+                throw new Error('Judge0 batch submission did not return a token for every test case');
+            }
+            return created;
+        } catch (error) {
+            throw this.buildJudge0Error(error);
+        }
+    }
+
     /**
      * Get the result of a submission
      * @param {string} token - Submission token from createSubmission
@@ -172,6 +211,39 @@ class Judge0Service {
         }
     }
 
+    static async getSubmissionResults(tokens) {
+        if (!Array.isArray(tokens) || tokens.length === 0 || tokens.some((token) => !token)) {
+            throw new Error('Submission tokens are required to fetch batch results');
+        }
+
+        const options = {
+            method: 'GET',
+            url: `${JUDGE0_API_URL}/batch`,
+            params: { base64_encoded: 'true', fields: '*', tokens: tokens.join(',') },
+            headers: {
+                'X-RapidAPI-Host': JUDGE0_API_HOST,
+                'X-RapidAPI-Key': JUDGE0_API_KEY
+            }
+        };
+
+        try {
+            const response = await this.requestWithRetry(options, 1);
+            const results = Array.isArray(response.data) ? response.data : response.data?.submissions;
+            if (!Array.isArray(results) || results.length !== tokens.length) {
+                throw new Error('Judge0 batch result response was incomplete');
+            }
+
+            return results.map((result) => {
+                for (const field of ['stdout', 'stderr', 'compile_output']) {
+                    if (result[field]) result[field] = Buffer.from(result[field], 'base64').toString();
+                }
+                return result;
+            });
+        } catch (error) {
+            throw this.buildJudge0Error(error);
+        }
+    }
+
     /**
      * Helper: Get submission with polling (for async submissions)
      * @param {string} token - Submission token
@@ -192,6 +264,15 @@ class Judge0Service {
         }
         
         throw new Error(`Submission ${token} timed out after ${maxAttempts} attempts`);
+    }
+
+    static async pollSubmissionResults(tokens, maxAttempts = 8, delayMs = 1000) {
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            const results = await this.getSubmissionResults(tokens);
+            if (results.every((result) => Number(result?.status?.id) > 2)) return results;
+            await new Promise(resolve => setTimeout(resolve, delayMs));
+        }
+        throw new Error(`Judge0 batch submission timed out after ${maxAttempts} attempts`);
     }
 }
 

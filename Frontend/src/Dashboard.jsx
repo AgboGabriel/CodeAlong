@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./Dashboard.css";
 import Sidebar from "./Components/Sidebar.jsx";
 import Header from "./Components/Header.jsx";
@@ -102,7 +102,7 @@ function ProgressSection() {
     <section>
       <div className="section-header">
         <h3 className="section-title">Statistics</h3>
-        <button className="link-btn">Full Analytics</button>
+        <Link className="link-btn" to="/analytics">Full Analytics</Link>
       </div>
 
       <div className="stats-grid">

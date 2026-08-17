@@ -12,6 +12,7 @@ import curriculumController from '../controllers/curriculumController.js';
 import youtubeController from '../controllers/youtubeController.js';
 import bktController from "../controllers/bktController.js";
 import assessmentContentController from "../controllers/assessmentContentController.js";
+import analyticsController from "../controllers/analyticsController.js";
 
 
 const router = express.Router();
@@ -191,6 +192,10 @@ router.get(
       .getDashboardRecommendations(req, res);
   }
 );
+
+router.get("/api/analytics/me", ensureAuthenticated, (req, res) => {
+  analyticsController.getMyAnalytics(req, res);
+});
 //curriculum routes
 router.post("/api/curriculum/confirm", ensureAuthenticated, (req,res)=>{
     curriculumController.confirmCurriculum(req,res);

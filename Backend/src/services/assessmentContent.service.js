@@ -7,6 +7,8 @@ import { groqService } from "./Chat.service.js";
 import questionnaireService from "./questionnaire.service.js";
 import youtubeService from "./youtubeService.js";
 import challengeModel from "../models/challengeModel.js";
+import dotenv from 'dotenv';
+dotenv.config();
 import {
   inferLanguageFromText,
   textMentionsDifferentSupportedLanguage,
@@ -478,7 +480,7 @@ Rules:
           },
         ],
         {
-          model: "llama-3.3-70b-versatile",
+          model: process.env.GROQ_MODEL_ID || "openai/gpt-oss-120b",
           temperature: 0.2,
           response_format: { type: "json_object" },
           max_tokens: 2000,
@@ -590,7 +592,7 @@ MANDATORY RULES:
             { role: "user", content: prompt + retryNote },
           ],
           {
-            model: "llama-3.3-70b-versatile",
+            model: process.env.GROQ_MODEL_ID || "openai/gpt-oss-120b",
             temperature: 0.4 + attempt * 0.1,
             response_format: { type: "json_object" },
             max_tokens: 1500,
@@ -630,7 +632,7 @@ MANDATORY RULES:
     };
   }
 
-  async maybeTriggerSimplerVideoForTopic({ userId, topicId, moduleId, curriculumId }) {
+  async maybeTriggerSimplerVideoForTopic({ userId, topicId, moduleId, curriculumId, evaluation }) {
     if (!userId || !topicId) return null;
 
     const failureCount = await challengeModel.countTopicWeaknesses({
@@ -639,7 +641,11 @@ MANDATORY RULES:
       weaknessType: "challenge_failure",
     });
 
-    if (failureCount < REPLACEMENT_VIDEO_FAILURE_THRESHOLD) {
+    // Recommend again at 5, 10, 15, ... failures, rather than only once.
+    if (
+      failureCount < REPLACEMENT_VIDEO_FAILURE_THRESHOLD ||
+      failureCount % REPLACEMENT_VIDEO_FAILURE_THRESHOLD !== 0
+    ) {
       return null;
     }
 
@@ -647,9 +653,6 @@ MANDATORY RULES:
     if (!topicContext) return null;
 
     const existingVideo = await youtubeVideoModel.findLatestByTopicId(topicId);
-    if (existingVideo?.is_replacement) {
-      return null;
-    }
 
     const questionnaire = await questionnaireService.getQuestionnaireByUserId(userId);
     const careerPath = questionnaire?.career_path || "frontend";
@@ -660,7 +663,8 @@ MANDATORY RULES:
       topicContext.topic?.title || ""
     );
 
-    const fallbackQuery = `${topicContext.topic.title} beginner friendly ${expectedLanguage?.name || expectedLanguage?.key || "tutorial"} explained simply`;
+    const weaknessFocus = this._getVideoWeaknessFocus(evaluation);
+    const fallbackQuery = `${topicContext.topic.title} ${weaknessFocus} beginner friendly ${expectedLanguage?.name || expectedLanguage?.key || "tutorial"} explained simply`;
     const fallbackSearch = await youtubeService.searchVideos(fallbackQuery, 6);
 
     const fallbackCandidates = await youtubeService.getVideoDetails(
@@ -670,6 +674,7 @@ MANDATORY RULES:
     const rankedFallbacks = await youtubeService.rankVideos(fallbackCandidates, topicContext.topic.title, {
       expectedLanguage,
       excludedVideoIds: existingVideo ? [existingVideo.video_id || existingVideo.videoId] : [],
+      focusTerms: this._getVideoWeaknessTerms(evaluation),
     });
 
     const fallbackVideo = rankedFallbacks[0];
@@ -684,7 +689,7 @@ MANDATORY RULES:
       replacement: {
         isReplacement: true,
         replacedVideoId: existingVideo?.id || null,
-        reason: "Repeated challenge failure: simpler beginner-friendly explanation recommended",
+        reason: `Repeated challenge failure (${failureCount} attempts): a simpler video focused on ${weaknessFocus} is recommended`,
       },
     });
 
@@ -693,7 +698,7 @@ MANDATORY RULES:
       replacedVideoId: existingVideo?.id || null,
       replacementVideoId: savedVideo?.id || null,
       video: savedVideo,
-      reason: "Repeated challenge failure: simpler beginner-friendly explanation recommended",
+      reason: `Repeated challenge failure (${failureCount} attempts): a simpler video focused on ${weaknessFocus} is recommended`,
     };
   }
 
@@ -727,20 +732,25 @@ MANDATORY RULES:
       throw new Error("At least one test case is required for evaluation");
     }
 
+    // One batch POST plus shared polling, instead of a POST and many GETs for
+    // every individual test case. This protects the limited Judge0 quota.
+    const submissions = await Judge0Service.createSubmissions(
+      testCases.map((testCase) => ({
+        sourceCode,
+        languageId: Number(languageId),
+        stdin: testCase.input || "",
+      }))
+    );
+    const judgeResults = await Judge0Service.pollSubmissionResults(
+      submissions.map((submission) => submission.token),
+      8,
+      1000
+    );
     const results = [];
 
-    for (const testCase of testCases) {
-      const submission = await Judge0Service.createSubmission(
-        sourceCode,
-        Number(languageId),
-        testCase.input || ""
-      );
-
-      const result = await Judge0Service.pollSubmissionResult(
-        submission.token,
-        10,
-        1500
-      );
+    for (let index = 0; index < testCases.length; index += 1) {
+      const testCase = testCases[index];
+      const result = judgeResults[index];
 
       // Improved decoding that works for all languages
       const stdout = this._decodeOutput(result.stdout);
@@ -851,6 +861,7 @@ MANDATORY RULES:
         topicId,
         moduleId,
         curriculumId,
+        evaluation,
       });
     }
 
@@ -896,6 +907,20 @@ MANDATORY RULES:
     } catch (error) {
       return value;
     }
+  }
+
+  _getVideoWeaknessFocus(evaluation = {}) {
+    const failedResults = (evaluation.results || []).filter((result) => !result.passed);
+    if (failedResults.some((result) => result.compileError)) return "syntax and compiler errors";
+    if (failedResults.some((result) => result.runtimeError || result.executionError)) return "debugging runtime errors";
+    return "solving practice problems and matching expected output";
+  }
+
+  _getVideoWeaknessTerms(evaluation = {}) {
+    const failedResults = (evaluation.results || []).filter((result) => !result.passed);
+    if (failedResults.some((result) => result.compileError)) return ["syntax", "compiler error", "debugging"];
+    if (failedResults.some((result) => result.runtimeError || result.executionError)) return ["runtime error", "debugging", "common mistakes"];
+    return ["practice problems", "expected output", "worked example"];
   }
 
   // Helper method to compare outputs with flexible comparison
@@ -979,7 +1004,7 @@ ${codeSnippet || "No code provided"}
     ];
 
     return CHAT_SERVICE.generateChatCompletion(messages, {
-      model: "llama-3.3-70b-versatile",
+      model: process.env.GROQ_MODEL_ID || "openai/gpt-oss-120b",
       temperature: 0.4,
     });
   }

@@ -5,8 +5,8 @@ dotenv.config();
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
-const DEFAULT_GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
-const FALLBACK_GROQ_MODELS = ["llama-3.1-8b-instant", "llama-3.3-70b-versatile"];
+const DEFAULT_GROQ_MODEL = process.env.GROQ_MODEL_ID || "openai/gpt-oss-120b";
+const FALLBACK_GROQ_MODELS = process.env.GROQ_MODEL_ID || "openai/gpt-oss-120b"
 const EMBEDDED_IDE_LANGUAGE_TERMS = buildEmbeddedIdeLanguageTerms();
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const SETUP_MODULE_PATTERN =
