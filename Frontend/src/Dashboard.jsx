@@ -4,6 +4,7 @@ import "./Dashboard.css";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import UserProfile, { user } from "./Components/UserProfile";
+import Admin from "./Admin";
 
 import {
   MdLocalFireDepartment,
@@ -219,6 +220,19 @@ function getProgressMessage(user) {
 }
 
 export default function Dashboard() {
+  const isAdmin =
+    user?.role === "admin" ||
+    user?.user_metadata?.role === "admin" ||
+    user?.app_metadata?.role === "admin";
+
+  if (isAdmin) {
+    return <Admin />;
+  }
+
+  return <LearnerDashboard user={user} />;
+}
+
+function LearnerDashboard({ user }) {
   const [hasStartedLearning] = useState(false);
 
   const greeting = user?.isNew ? "Welcome" : "Welcome back";
@@ -232,7 +246,6 @@ export default function Dashboard() {
 
         <div className="content">
           <div className="content-inner">
-
             <div className="welcome">
               <h2>
                 {greeting}, {user.name}! 👋
@@ -242,16 +255,12 @@ export default function Dashboard() {
             </div>
 
             <div className="section-stack">
-              {hasStartedLearning
-                ? <LessonHero />
-                : <RecommendedLessons />
-              }
+              {hasStartedLearning ? <LessonHero /> : <RecommendedLessons />}
 
               <ProgressSection />
               <CtaBanner />
               <AssessmentsBanner />
             </div>
-
           </div>
         </div>
       </main>

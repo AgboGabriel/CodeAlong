@@ -164,26 +164,6 @@ a:hover {
   gap: 2rem;
 }
 
-.Lp-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.3rem 0.875rem;
-  border-radius: var(--radius-full);
-  background: var(--primary-10);
-  border: 1px solid var(--primary-20);
-  color: var(--primary);
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  width: fit-content;
-}
-
-.Lp-badge-bolt {
-  font-size: 0.875rem;
-}
-
 .Lp-hero-copy {
   display: flex;
   flex-direction: column;
@@ -209,35 +189,6 @@ a:hover {
   max-width: 32rem;
 }
 
-/* Social proof */
-.Lp-social-proof {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.Lp-avatars {
-  display: flex;
-}
-.Lp-avatar {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-  border: 2px solid var(--bg-light);
-  margin-left: -0.75rem;
-}
-.Lp-avatars .Lp-avatar:first-child {
-  margin-left: 0;
-}
-.Lp-avatar-1 { background: #94a3b8; }
-.Lp-avatar-2 { background: #64748b; }
-.Lp-avatar-3 { background: #475569; }
-
-.Lp-proof-text {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #475569;
-}
 
 /* Video mockup */
 .Lp-video-preview {
