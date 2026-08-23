@@ -677,11 +677,22 @@ export default function MyLessons() {
   };
 
   const getModuleState = (module, index) => {
-    const status =
+    const topics = Array.isArray(module.topics) ? module.topics : [];
+    const topicStatuses = topics.map((topic) => String(topic.status || "").toLowerCase());
+    const hasUnlockedTopic = topicStatuses.some((status) =>
+      ["unlocked", "active", "in_progress", "in-progress"].includes(status)
+    );
+    const allTopicsCompleted = topics.length > 0 && topicStatuses.every((status) =>
+      ["completed", "complete"].includes(status)
+    );
+    const moduleStatus =
       module.status?.toLowerCase() || (index === 0 ? "in-progress" : "locked");
-    const isCompleted = status === "completed" || status === "complete";
-    const isActive = status === "active" || status === "in-progress";
-    const isLocked = status === "locked";
+
+    // Topic progress is the source of truth: an unlocked topic means the
+    // learner can continue, even if a cached module status is stale.
+    const isCompleted = allTopicsCompleted;
+    const isActive = !isCompleted && (hasUnlockedTopic || ["active", "in_progress", "in-progress"].includes(moduleStatus));
+    const isLocked = !isCompleted && !isActive;
     return {
       isCompleted,
       isActive,

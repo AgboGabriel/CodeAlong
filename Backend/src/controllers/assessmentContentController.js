@@ -29,7 +29,7 @@ class AssessmentContentController {
   async generateTopicChallenge(req, res) {
     try {
       const userId = req.user?.id;
-      const { topicId, moduleId } = req.body;
+      const { topicId, moduleId, challengeType = "section" } = req.body;
 
       if (!userId) {
         return res.status(401).json({ success: false, error: "User not authenticated" });
@@ -39,6 +39,7 @@ class AssessmentContentController {
         userId,
         topicId,
         moduleId,
+        challengeType,
       });
 
       return res.status(200).json({ success: true, challenge });
@@ -54,7 +55,7 @@ class AssessmentContentController {
   async evaluateChallengeSubmission(req, res) {
     try {
       const userId = req.user?.id;
-      const { challengeId, topicId, moduleId, curriculumId, source_code, language_id, test_cases } = req.body;
+      const { challengeId, topicId, moduleId, curriculumId, source_code, language_id, test_cases, challengeType = "section" } = req.body;
 
       const result =
         await assessmentContentService.evaluateChallengeSubmission({
@@ -66,6 +67,7 @@ class AssessmentContentController {
           sourceCode: source_code,
           languageId: language_id,
           testCases: test_cases,
+          challengeType,
         });
 
       // Flatten the service result so the frontend can destructure directly:

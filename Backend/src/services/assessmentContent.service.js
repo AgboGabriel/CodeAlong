@@ -518,7 +518,10 @@ Rules:
     };
   }
 
-  async generateTopicChallenge({ userId, topicId, moduleId = null }) {
+  async generateTopicChallenge({ userId, topicId, moduleId = null, challengeType = "section" }) {
+    if (!["section", "assessment"].includes(challengeType)) {
+      throw new Error("Invalid challenge type");
+    }
     const context = await getTopicContext({ userId, topicId, moduleId });
     const topicTitle = context.topic.title;
     const moduleTitle = context.module.title;
@@ -528,7 +531,7 @@ Rules:
 
     // -- Cache lookup: reuse an existing challenge for this topic/user --
     // Skip cache if the stored challenge only has fallback tests (bad generation).
-    const existing = await challengeModel.findLatestByTopicId(context.topic.id, userId);
+    const existing = await challengeModel.findLatestByTopicId(context.topic.id, userId, challengeType);
     const isFallbackOnly = (ch) => {
       const tests = ch?.challenge_data?.publicTests || [];
       return tests.length > 0 && tests.every(t => String(t.explanation || "").startsWith("Fallback test for"));
@@ -549,6 +552,7 @@ Rules:
     if (existing?.challenge_data && !isFallbackOnly(existing) && !hasBrokenStarterCode(existing)) {
       return {
         id: existing.id,
+        challengeType,
         ...existing.challenge_data,
         context: {
           topic: context.topic,
@@ -559,7 +563,8 @@ Rules:
       };
     }
 
-    const prompt = `Generate a coding challenge. Topic: "${topicTitle}". Module: "${moduleTitle}". Language: ${languageName}.
+    const challengeLabel = challengeType === "assessment" ? "coding assessment" : "coding challenge";
+    const prompt = `Generate a ${challengeLabel}. Topic: "${topicTitle}". Module: "${moduleTitle}". Language: ${languageName}.
 
 Return ONLY valid JSON with this exact shape (no markdown, no extra keys):
 {"title":"string","prompt":"string","instructions":["string"],"expectedConcepts":["string"],"difficulty":"easy","starterCodeByLanguage":{"${languageName}":"<complete runnable solution in ${languageName}>"},"publicTests":[{"id":"test1","input":"","expectedOutput":""},{"id":"test2","input":"","expectedOutput":""}],"hiddenTests":[{"id":"test3","input":"","expectedOutput":""},{"id":"test4","input":"","expectedOutput":""},{"id":"test5","input":"","expectedOutput":""}],"structuralExpectations":{"requireFunction":false,"requireConditional":false,"requireLoop":false,"requireBranching":false,"minimumFunctions":0,"minimumConditionals":0,"minimumLoops":0},"source":"ai_generated_topic_aligned"}
@@ -617,11 +622,13 @@ MANDATORY RULES:
       curriculumId: context.module.curriculum_id,
       moduleId: context.module.id,
       topicId: context.topic.id,
+      challengeType,
       challenge: normalized,
     });
 
     return {
       id: savedChallenge.id,
+      challengeType,
       ...normalized,
       context: {
         topic: context.topic,
@@ -641,11 +648,7 @@ MANDATORY RULES:
       weaknessType: "challenge_failure",
     });
 
-    // Recommend again at 5, 10, 15, ... failures, rather than only once.
-    if (
-      failureCount < REPLACEMENT_VIDEO_FAILURE_THRESHOLD ||
-      failureCount % REPLACEMENT_VIDEO_FAILURE_THRESHOLD !== 0
-    ) {
+    if (failureCount < REPLACEMENT_VIDEO_FAILURE_THRESHOLD) {
       return null;
     }
 
@@ -653,6 +656,16 @@ MANDATORY RULES:
     if (!topicContext) return null;
 
     const existingVideo = await youtubeVideoModel.findLatestByTopicId(topicId);
+
+    // Once the threshold has been reached, keep trying on later failed
+    // submissions until a suitable replacement is found. Once one exists,
+    // retain the original 5, 10, 15... cadence for future recommendations.
+    if (
+      existingVideo?.is_replacement &&
+      failureCount % REPLACEMENT_VIDEO_FAILURE_THRESHOLD !== 0
+    ) {
+      return null;
+    }
 
     const questionnaire = await questionnaireService.getQuestionnaireByUserId(userId);
     const careerPath = questionnaire?.career_path || "frontend";
@@ -664,8 +677,12 @@ MANDATORY RULES:
     );
 
     const weaknessFocus = this._getVideoWeaknessFocus(evaluation);
-    const fallbackQuery = `${topicContext.topic.title} ${weaknessFocus} beginner friendly ${expectedLanguage?.name || expectedLanguage?.key || "tutorial"} explained simply`;
-    const fallbackSearch = await youtubeService.searchVideos(fallbackQuery, 6);
+    const focusTerms = this._getVideoWeaknessTerms(evaluation);
+
+    const languageLabel = expectedLanguage?.name || expectedLanguage?.key || "";
+    const fallbackQuery = `${languageLabel} ${topicContext.topic.title} tutorial for beginners explained simply -skit -shorts -meme -reaction`;
+
+    const fallbackSearch = await youtubeService.searchVideos(fallbackQuery, 12);
 
     const fallbackCandidates = await youtubeService.getVideoDetails(
       fallbackSearch.map((video) => video.videoId).filter(Boolean)
@@ -674,7 +691,7 @@ MANDATORY RULES:
     const rankedFallbacks = await youtubeService.rankVideos(fallbackCandidates, topicContext.topic.title, {
       expectedLanguage,
       excludedVideoIds: existingVideo ? [existingVideo.video_id || existingVideo.videoId] : [],
-      focusTerms: this._getVideoWeaknessTerms(evaluation),
+      focusTerms,
     });
 
     const fallbackVideo = rankedFallbacks[0];
@@ -711,6 +728,7 @@ MANDATORY RULES:
     sourceCode,
     languageId,
     testCases = [],
+    challengeType = "section",
   }) {
     if (!userId) {
       throw new Error("User authentication is required");
@@ -802,6 +820,22 @@ MANDATORY RULES:
         languageId,
         evaluation,
       });
+    }
+
+    // Assessments use the same runner and feedback, but they are independent
+    // checks after a topic is complete. They must not change mastery,
+    // progression, or adaptive-support history.
+    if (challengeType === "assessment") {
+      return {
+        evaluation,
+        submission: savedSubmission,
+        mastery: null,
+        mastered: null,
+        canProgress: false,
+        progressionThreshold: null,
+        unlockResult: null,
+        videoReplacement: null,
+      };
     }
 
     const params = await bktModel.getBktParameters(topicId);

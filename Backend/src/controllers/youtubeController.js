@@ -3,12 +3,16 @@ import youtubeVideoModel from "../models/youtubeVideoModel.js";
 import questionnaireService from "../services/questionnaire.service.js";
 import curriculumModel from "../models/curriculumModel.js";
 
+const DASHBOARD_RECOMMENDATION_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+
 class YoutubeController {
   constructor() {
     this.youtubeService = youtubeService;
     this.youtubeVideoModel = youtubeVideoModel;
     this.questionnaireService = questionnaireService;
     this.curriculumModel = curriculumModel;
+    this.dashboardRecommendationCache = new Map();
+    this.dashboardRecommendationRequests = new Map();
   }
 async getDashboardRecommendations(req, res) {
 
@@ -32,21 +36,40 @@ async getDashboardRecommendations(req, res) {
       });
     }
 
-    const recommendations =
-      await this.youtubeService
-        .getRecommendedVideos({
-          careerPath:
-            questionnaire.career_path,
+    const recommendationOptions = {
+      careerPath: questionnaire.career_path,
+      skillLevel: questionnaire.skill_level,
+      knownLanguages: questionnaire.known_languages,
+      learningLanguages: questionnaire.learning_languages,
+    };
+    const cacheKey = JSON.stringify({ userId, ...recommendationOptions });
+    const cached = this.dashboardRecommendationCache.get(cacheKey);
 
-          skillLevel:
-            questionnaire.skill_level,
+    let recommendations;
+    if (cached && Date.now() - cached.createdAt < DASHBOARD_RECOMMENDATION_CACHE_TTL_MS) {
+      recommendations = cached.recommendations;
+    } else {
+      let recommendationRequest = this.dashboardRecommendationRequests.get(cacheKey);
 
-          knownLanguages:
-            questionnaire.known_languages,
+      if (!recommendationRequest) {
+        recommendationRequest = this.youtubeService
+          .getRecommendedVideos(recommendationOptions)
+          .then((generatedRecommendations) => {
+            this.dashboardRecommendationCache.set(cacheKey, {
+              createdAt: Date.now(),
+              recommendations: generatedRecommendations,
+            });
+            return generatedRecommendations;
+          })
+          .finally(() => {
+            this.dashboardRecommendationRequests.delete(cacheKey);
+          });
 
-          learningLanguages:
-            questionnaire.learning_languages,
-        });
+        this.dashboardRecommendationRequests.set(cacheKey, recommendationRequest);
+      }
+
+      recommendations = await recommendationRequest;
+    }
 
     return res.status(200).json({
       success: true,

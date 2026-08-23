@@ -30,8 +30,48 @@ const LOW_QUALITY_VIDEO_KEYWORDS = [
     "vlog",
 ];
 
+const TOPIC_STOP_WORDS = new Set([
+    "a",
+    "an",
+    "and",
+    "for",
+    "from",
+    "in",
+    "of",
+    "the",
+    "to",
+    "using",
+    "with",
+]);
+
 function getVideoText(video) {
     return `${video.title || ""} ${video.description || ""}`.toLowerCase();
+}
+
+function getTopicTerms(topic) {
+    const terms = String(topic || "")
+        .toLowerCase()
+        .split(/[^a-z0-9+#]+/)
+        .filter((term) => term.length > 2 && !TOPIC_STOP_WORDS.has(term));
+
+    // Keep the most specific form of singular/plural duplicates, so
+    // "Functions and Function Parameters" requires both concept areas.
+    return [...new Set(terms)].filter(
+        (term, _index, allTerms) =>
+            !allTerms.some((otherTerm) => otherTerm !== term && term.startsWith(otherTerm))
+    );
+}
+
+function hasTopicMatch(text, normalizedTopic, topicTerms) {
+    if (text.includes(normalizedTopic)) {
+        return true;
+    }
+
+    // Long curriculum titles often do not appear verbatim in a video's
+    // metadata. Requiring two meaningful terms still keeps the video tied to
+    // the topic while allowing natural titles such as "Function Parameters".
+    const requiredMatches = topicTerms.length <= 2 ? topicTerms.length : 2;
+    return topicTerms.filter((term) => text.includes(term)).length >= requiredMatches;
 }
 
 function applyQualityPenalty(score, text) {
@@ -142,8 +182,10 @@ class YoutubeService {
 
     const normalizedTopic =
         topic.toLowerCase();
+    const topicTerms = getTopicTerms(topic);
     const expectedLanguage = options.expectedLanguage || null;
     const excludedVideoIds = new Set(options.excludedVideoIds || []);
+    const requireTopicMatch = options.requireTopicMatch !== false;
     const focusTerms = (options.focusTerms || [])
         .map((term) => String(term).toLowerCase())
         .filter(Boolean);
@@ -154,6 +196,26 @@ class YoutubeService {
 
     return videos
         .filter((video) => !excludedVideoIds.has(video.videoId || video.video_id))
+        .filter((video) => {
+            const text = getVideoText(video);
+
+            if (requireTopicMatch && !hasTopicMatch(text, normalizedTopic, topicTerms)) {
+                return false;
+            }
+
+            if (LOW_QUALITY_VIDEO_KEYWORDS.some((keyword) => text.includes(keyword))) {
+                return false;
+            }
+
+            if (
+                expectedLanguage?.key &&
+                textMentionsDifferentSupportedLanguage(text, expectedLanguage.key)
+            ) {
+                return false;
+            }
+
+            return true;
+        })
         .map((video) => {
 
             const title =

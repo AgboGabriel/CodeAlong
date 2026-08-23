@@ -1,13 +1,13 @@
 import database from "../config/database.js";
 
 class ChallengeModel {
-  async createTopicChallenge({ userId, curriculumId, moduleId, topicId, challenge }) {
+  async createTopicChallenge({ userId, curriculumId, moduleId, topicId, challengeType = "section", challenge }) {
     const query = `
       INSERT INTO topic_challenges
-        (user_id, curriculum_id, module_id, topic_id, title, prompt, instructions, expected_concepts, difficulty, starter_code_by_language, public_tests, hidden_tests, structural_expectations, source)
+        (user_id, curriculum_id, module_id, topic_id, challenge_type, title, prompt, instructions, expected_concepts, difficulty, starter_code_by_language, public_tests, hidden_tests, structural_expectations, source)
       VALUES
-        ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-      ON CONFLICT (user_id, topic_id) DO UPDATE SET
+        ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+      ON CONFLICT (user_id, topic_id, challenge_type) DO UPDATE SET
         title                    = EXCLUDED.title,
         prompt                   = EXCLUDED.prompt,
         instructions             = EXCLUDED.instructions,
@@ -27,6 +27,7 @@ class ChallengeModel {
       curriculumId,
       moduleId,
       topicId,
+      challengeType,
       challenge.title,
       challenge.prompt,
       JSON.stringify(challenge.instructions || []),
@@ -95,7 +96,7 @@ class ChallengeModel {
     return Number(result.rows[0]?.count || 0);
   }
 
-  async findLatestByTopicId(topicId, userId) {
+  async findLatestByTopicId(topicId, userId, challengeType = "section") {
     const query = `
       SELECT
         id,
@@ -108,20 +109,23 @@ class ChallengeModel {
         public_tests,
         hidden_tests,
         structural_expectations,
-        source
+        source,
+        challenge_type
       FROM topic_challenges
       WHERE topic_id = $1
         AND user_id  = $2
+        AND challenge_type = $3
       ORDER BY created_at DESC
       LIMIT 1
     `;
 
-    const result = await database.query(query, [topicId, userId]);
+    const result = await database.query(query, [topicId, userId, challengeType]);
     if (result.rows.length === 0) return null;
 
     const row = result.rows[0];
     return {
       id: row.id,
+      challenge_type: row.challenge_type,
       challenge_data: {
         title:                  row.title,
         prompt:                 row.prompt,

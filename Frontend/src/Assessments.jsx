@@ -81,45 +81,22 @@ export default function Assessments() {
         return;
       }
 
-      const challengeResults = await Promise.allSettled(
-        completedEntries.map(async ({ topicId, moduleId, curriculumTitle, moduleTitle, topicTitle }) => {
-          const challengeResponse = await fetch("/api/assessment/challenge", {
-            method: "POST",
-            credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ topicId, moduleId }),
-          });
-
-          const challengeData = await challengeResponse.json();
-
-          if (!challengeResponse.ok || !challengeData.success || !challengeData.challenge) {
-            return null;
-          }
-
-          const challenge = challengeData.challenge;
-
-          return {
-            id: challenge.id || `${topicId}-${moduleId}`,
-            title: challenge.title || topicTitle,
-            course: `${curriculumTitle} • ${moduleTitle}`,
-            level: normalizeDifficulty(challenge.difficulty),
-            rawDifficulty: challenge.difficulty || "medium",
-            topicId,
-            moduleId,
-            topicTitle,
-            moduleTitle,
-            curriculumTitle,
-          };
-        })
+      // Assessment content is generated only after the learner clicks Start.
+      // This keeps the list fast and avoids unnecessary AI-generation calls.
+      setAssessments(
+        completedEntries.map(({ topicId, moduleId, curriculumTitle, moduleTitle, topicTitle }) => ({
+          id: `assessment-${topicId}`,
+          title: `${topicTitle} Assessment`,
+          course: `${curriculumTitle} • ${moduleTitle}`,
+          level: "Intermediate",
+          rawDifficulty: "medium",
+          topicId,
+          moduleId,
+          topicTitle,
+          moduleTitle,
+          curriculumTitle,
+        }))
       );
-
-      const generatedAssessments = challengeResults
-        .filter((result) => result.status === "fulfilled" && result.value)
-        .map((result) => result.value);
-
-      setAssessments(generatedAssessments);
     } catch (error) {
       console.error("Failed to load generated assessments:", error);
       setAssessments([]);
@@ -296,7 +273,14 @@ export default function Assessments() {
                           <button
                             className="ass-btn ass-btn--outline"
                             onClick={() => navigate("/challenges", {
-                              state: { topicId: assessment.topicId, moduleId: assessment.moduleId },
+                              state: {
+                                moduleId: assessment.moduleId,
+                                challengeType: "assessment",
+                                topic: {
+                                  id: assessment.topicId,
+                                  title: assessment.topicTitle,
+                                },
+                              },
                             })}
                           >
                             Start

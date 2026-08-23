@@ -1283,9 +1283,11 @@ export default function Videolesson() {
 
         setVideos(data.videos || []);
 
-        const firstVideo = data.videos?.find((v) => v.video);
-        if (firstVideo) {
-          setCurrentVideo(firstVideo.video);
+        const topicVideo = data.videos?.find(
+          (entry) => entry.topic?.id === topic?.id && entry.video
+        );
+        if (topicVideo) {
+          setCurrentVideo(topicVideo.video);
         }
       } catch (error) {
         console.error("Failed to fetch videos:", error);
@@ -1295,7 +1297,7 @@ export default function Videolesson() {
     };
 
     fetchVideos();
-  }, [moduleId]);
+  }, [moduleId, topic?.id]);
 
   // Build a video-aware system prompt for the chat whenever the video changes
   useEffect(() => {

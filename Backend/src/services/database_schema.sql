@@ -187,6 +187,7 @@ CREATE TABLE topic_challenges (
   curriculum_id INTEGER NOT NULL REFERENCES user_curriculums(id) ON DELETE CASCADE,
   module_id INTEGER NOT NULL REFERENCES curriculum_modules(id) ON DELETE CASCADE,
   topic_id INTEGER NOT NULL REFERENCES curriculum_topics(id) ON DELETE CASCADE,
+  challenge_type VARCHAR(20) NOT NULL DEFAULT 'section',
   title TEXT NOT NULL,
   prompt TEXT NOT NULL,
   instructions JSONB DEFAULT '[]'::JSONB,
@@ -203,8 +204,8 @@ CREATE TABLE topic_challenges (
 
 -- changes made to topic challenges table
 -- Speed up the findLatestByTopicId lookup
-CREATE INDEX IF NOT EXISTS idx_topic_challenges_user_topic
-ON topic_challenges(user_id, topic_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_topic_challenges_user_topic_type
+ON topic_challenges(user_id, topic_id, challenge_type, created_at DESC);
 
 -- Prevent duplicate challenges being generated for the same user+topic.
 -- Use ON CONFLICT DO NOTHING in createTopicChallenge, or just enforce it here.
@@ -221,7 +222,7 @@ WHERE id NOT IN (
 
 -- Add unique constraint so only one challenge per user per topic can exist
 ALTER TABLE topic_challenges
-ADD CONSTRAINT uq_topic_challenges_user_topic UNIQUE (user_id, topic_id);
+ADD CONSTRAINT uq_topic_challenges_user_topic_type UNIQUE (user_id, topic_id, challenge_type);
 
 
 

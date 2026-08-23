@@ -208,6 +208,7 @@ export default function Challenges() {
 
   const moduleId = location.state?.moduleId;
   const topic    = location.state?.topic;
+  const challengeType = location.state?.challengeType === "assessment" ? "assessment" : "section";
 
   const [output, setOutput] = useState("");
 
@@ -280,7 +281,7 @@ export default function Challenges() {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ topicId: topic.id, moduleId }),
+          body: JSON.stringify({ topicId: topic.id, moduleId, challengeType }),
         });
 
         const data = await response.json();
@@ -516,6 +517,7 @@ export default function Challenges() {
             source_code:  code,
             language_id:  selectedLang.id,
             test_cases:   [...challenge.publicTests, ...challenge.hiddenTests],
+            challengeType,
           }),
         }),
         fetch("/api/ast/parse", {
@@ -852,7 +854,7 @@ export default function Challenges() {
 
               {/* Challenge brief */}
               <div className="challenge-brief">
-                <p className="challenge-eyebrow">Topic Challenge</p>
+                <p className="challenge-eyebrow">{challengeType === "assessment" ? "Topic Assessment" : "Topic Challenge"}</p>
                 <h2>{challenge.title}</h2>
                 <p className="challenge-prompt">{challenge.prompt}</p>
               </div>
