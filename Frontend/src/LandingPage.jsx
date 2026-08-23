@@ -113,10 +113,7 @@ export default function CodeAI() {
           {/* Left */}
           <div className="Lp-hero-left">
 
-            <div className="Lp-badge">
-              <span className="Lp-badge-bolt">⚡</span>
-              Powered by Next-Gen AI
-            </div>
+          
 
             <div className="Lp-hero-copy">
               <h1 className="Lp-headline">
@@ -128,16 +125,6 @@ export default function CodeAI() {
               </p>
             </div>
 
-            <div className="Lp-social-proof">
-              <div className="Lp-avatars">
-                <div className="Lp-avatar Lp-avatar-1" />
-                <div className="Lp-avatar Lp-avatar-2" />
-                <div className="Lp-avatar Lp-avatar-3" />
-              </div>
-              <span className="Lp-proof-text">
-                Joined by 10,000+ developers
-              </span>
-            </div>
 
             {/* Video / Code Mockup */}
             <div className="Lp-video-preview">

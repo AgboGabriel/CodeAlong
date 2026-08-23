@@ -4,9 +4,8 @@ import "./Dashboard.css";
 import Sidebar from "./Components/Sidebar.jsx";
 import Header from "./Components/Header.jsx";
 import UserProfile, { getUserDisplayName } from "./Components/UserProfile.jsx";
-import { useUser } from "./Components/useUser"; 
-
-
+import { useUser } from "./Components/useUser";
+import Admin from "./Admin";
 import {
   MdCode,
   MdLocalFireDepartment,
@@ -223,7 +222,21 @@ function RecommendedLessons({ recommendations, loading, navigate }) {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { user: currentUser } = useUser(); // ← replaces manual fetch + useState
+  const { user: currentUser } = useUser();
+
+  const isAdmin =
+    currentUser?.role === "admin" ||
+    currentUser?.user_metadata?.role === "admin" ||
+    currentUser?.app_metadata?.role === "admin";
+
+  if (isAdmin) {
+    return <Admin />;
+  }
+
+  return <LearnerDashboard user={currentUser} navigate={navigate} />;
+}
+
+function LearnerDashboard({ user, navigate }) {
   const [hasStartedLearning] = useState(false);
   const [recommendedVideos, setRecommendedVideos] = useState([]);
   const [loadingRecommendations, setLoadingRecommendations] = useState(true);
@@ -251,15 +264,15 @@ export default function Dashboard() {
     loadRecommendations();
   }, []);
 
-  const displayName = getUserDisplayName(currentUser);
-  const greeting = currentUser ? "Welcome back" : "Welcome";
+  const displayName = getUserDisplayName(user);
+  const greeting = user ? "Welcome back" : "Welcome";
 
   return (
     <div className="app-shell">
       <Sidebar />
 
       <main className="main">
-        <Header user={currentUser} page="Dashboard" />
+        <Header user={user} page="Dashboard" />
 
         <div className="content">
           <div className="content-inner">
@@ -267,7 +280,7 @@ export default function Dashboard() {
               <h2>
                 {greeting}, {displayName}!
               </h2>
-              <p>{getProgressMessage(currentUser)}</p>
+              <p>{getProgressMessage(user)}</p>
             </div>
 
             <div className="section-stack">
