@@ -15,6 +15,7 @@ import Topics  from "./Topics";
 import CompletedAssessments  from "./CompletedAssessments";
 import Settings from "./settings";
 import Analytics from "./Analytics";
+import Admin from "./Admin";
 import { useUser } from "./Components/useUser";
 
 function ProtectedRoute({ children }) {
@@ -31,6 +32,13 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+function AdminRoute({ children }) {
+  const { user, loading } = useUser();
+  if (loading) return <div className="sett-loading">Loading your profile...</div>;
+  if (!user) return <Navigate to="/login" replace />;
+  return user.role === "admin" ? children : <Navigate to="/dashboard" replace />;
+}
+
 function App() {
   return (
     <Router>
@@ -43,6 +51,7 @@ function App() {
         <Route path="/create-new-password" element={<CreateNewPassword />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/analytics" element={<Analytics />} />
+        <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
         <Route path="/challenges" element={<Challenges />} />
         <Route path="/Assessments" element={<Assessments />} />
         <Route path="/MyLessons" element={<MyLessons />} />

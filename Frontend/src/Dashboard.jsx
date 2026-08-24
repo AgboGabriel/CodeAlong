@@ -5,7 +5,6 @@ import Sidebar from "./Components/Sidebar.jsx";
 import Header from "./Components/Header.jsx";
 import UserProfile, { getUserDisplayName } from "./Components/UserProfile.jsx";
 import { useUser } from "./Components/useUser";
-import Admin from "./Admin";
 import {
   MdCode,
   MdLocalFireDepartment,
@@ -223,16 +222,8 @@ function RecommendedLessons({ recommendations, loading, navigate }) {
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user: currentUser } = useUser();
-
-  const isAdmin =
-    currentUser?.role === "admin" ||
-    currentUser?.user_metadata?.role === "admin" ||
-    currentUser?.app_metadata?.role === "admin";
-
-  if (isAdmin) {
-    return <Admin />;
-  }
-
+  // /dashboard is always the normal learner experience. Administrators use
+  // /admin for the console and may deliberately switch back here.
   return <LearnerDashboard user={currentUser} navigate={navigate} />;
 }
 

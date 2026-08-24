@@ -62,7 +62,10 @@ export function configurePassport() {
                         auth_provider: "google",
                         provider_id: profile.id,
                     });
-                    return done(null, newUser);
+                    // createUser intentionally returns a small public shape. Reload the
+                    // database user so Passport always has role and account-status fields.
+                    const freshUser = await userModel.findUserByID(newUser.id);
+                    return done(null, freshUser || newUser);
                 } catch (error) {
                     return done(error);
                 }

@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./admin.css";
 
 const navItems = [
@@ -548,6 +549,7 @@ function matchesQuery(row, query, keys) {
 }
 
 export default function Admin() {
+  const navigate = useNavigate();
   const [section, setSection] = useState("channels");
   const [channels, setChannels] = useState(initialChannels);
   const [servedVideos, setServedVideos] = useState(initialServedVideos);
@@ -561,6 +563,41 @@ export default function Admin() {
   const [activeCurriculumTab, setActiveCurriculumTab] = useState("curricula");
   const [modal, setModal] = useState(null);
   const [toast, setToast] = useState("");
+
+  async function adminRequest(path, options = {}) {
+    const response = await fetch(`/api/admin${path}`, {
+      credentials: "include",
+      headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+      ...options,
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error?.message || "Admin request failed");
+    return payload;
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [channelResult, videoResult, curriculumResult, challengeResult, quizResult, userResult] = await Promise.all([
+          adminRequest("/channels"), adminRequest("/content/videos"), adminRequest("/curricula"),
+          adminRequest("/assessments?type=challenge"), adminRequest("/assessments?type=quiz"), adminRequest("/users"),
+        ]);
+        if (cancelled) return;
+        setChannels(channelResult.data.map((row) => ({ id: row.id, name: row.channel_name, status: row.status, source: "YouTube", topic: "All", owner: "Admin", trustScore: row.trust_score, youtubeChannelId: row.youtube_channel_id, lastSynced: row.updated_at ? new Date(row.updated_at).toLocaleDateString() : "—", serveRate: `${row.trust_score}%` })));
+        setServedVideos(videoResult.data.map((row) => ({ id: row.video_id, title: row.title, channel: row.channel_title, topic: row.topic_titles?.join(", ") || "—", source: "YouTube", served: row.times_recommended, status: "served", flaggedReason: "" })));
+        setCurricula(curriculumResult.data.map((row) => ({ id: row.id, title: row.title || "Untitled curriculum", careerPath: row.username, level: "—", status: row.status === "active" ? "ready" : row.status, lessons: row.topic_count, updatedAt: new Date(row.updated_at).toLocaleDateString(), generatedBy: row.username })));
+        setAssessments([...challengeResult.data.map((row) => ({ id: row.id, assessmentType: "challenge", title: row.title, careerPath: row.topic_title, level: row.difficulty, status: row.review_status, lessons: 1, updatedAt: new Date(row.created_at).toLocaleDateString(), generatedBy: row.username })), ...quizResult.data.map((row) => ({ id: row.id, assessmentType: "quiz", title: `${row.quiz_type} quiz: ${row.topic_title}`, careerPath: row.topic_title, level: "—", status: row.review_status, lessons: 1, updatedAt: new Date(row.created_at).toLocaleDateString(), generatedBy: row.username }))]);
+        setUsers(userResult.data.map((row) => ({ id: row.id, name: row.full_name || row.username, email: row.email, role: row.role, careerPath: row.career_path || "—", skillLevel: row.skill_level || "—", signupDate: new Date(row.created_at).toLocaleDateString(), status: row.is_active ? "active" : "inactive", progress: `${row.curriculum_count} curricula` })));
+      } catch (error) {
+        if (!cancelled) {
+          setToast(error.message);
+          window.setTimeout(() => setToast(""), 2200);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   function updateFilter(filterSection, key, value) {
     setFilters((current) => ({
@@ -586,51 +623,29 @@ export default function Admin() {
       type: "form",
       title: channel ? "Edit Channel" : "Add Channel",
       submitLabel: channel ? "Save changes" : "Add channel",
-      onSubmit: (values) => {
-        if (channel) {
-          setChannels((current) =>
-            current.map((item) => (item.id === channel.id ? { ...item, ...values } : item)),
-          );
-          flashToast(`${values.name} saved.`);
-        } else {
-          setChannels((current) => [
-            {
-              id: `ch-${Date.now()}`,
-              ...values,
-              lastSynced: "Not synced",
-              serveRate: values.status === "active" ? "New" : "0%",
-            },
-            ...current,
-          ]);
-          flashToast(`${values.name} added.`);
-        }
-        closeModal();
+      onSubmit: async (values) => {
+        try {
+          const saved = await adminRequest(channel ? `/channels/${channel.id}` : "/channels", {
+            method: channel ? "PATCH" : "POST",
+            body: JSON.stringify(channel ? { channel_name: values.name, trust_score: Number(values.trustScore), status: values.status } : { channel_name: values.name, youtube_channel_id: values.youtubeChannelId || null, trust_score: Number(values.trustScore) }),
+          });
+          const mapped = { id: saved.id, name: saved.channel_name, status: saved.status, source: "YouTube", topic: "All", owner: "Admin", trustScore: saved.trust_score, youtubeChannelId: saved.youtube_channel_id, lastSynced: "Just now", serveRate: `${saved.trust_score}%` };
+          setChannels((current) => channel ? current.map((item) => item.id === channel.id ? mapped : item) : [mapped, ...current]);
+          closeModal();
+          flashToast(`${mapped.name} saved.`);
+        } catch (error) { flashToast(error.message); }
       },
       fields: [
         { name: "name", label: "Channel Name", value: channel?.name || "", required: true },
-        {
-          name: "source",
-          label: "Source",
-          type: "select",
-          options: ["YouTube"],
-          value: channel?.source || "YouTube",
-        },
-        {
-          name: "topic",
-          label: "Topic",
-          type: "select",
-          options: ["Data", "Web", "Cloud", "Career", "Security"],
-          value: channel?.topic || "Data",
-        },
+        { name: "youtubeChannelId", label: "YouTube Channel ID", value: channel?.youtubeChannelId || "" },
+        { name: "trustScore", label: "Trust score (0-100)", type: "number", value: channel?.trustScore ?? 100, required: true },
         {
           name: "status",
           label: "Status",
           type: "select",
-          options: ["active", "disabled", "blocked"],
+          options: ["active", "disabled"],
           value: channel?.status || "active",
         },
-        { name: "owner", label: "Owner", value: channel?.owner || "Learning Ops" },
-        { name: "notes", label: "Notes", type: "textarea", value: channel?.notes || "" },
       ],
     });
   }
@@ -646,12 +661,12 @@ export default function Admin() {
           : "This makes the channel available for normal serving again.",
       confirmLabel: nextStatus === "disabled" ? "Disable channel" : "Enable channel",
       danger: nextStatus === "disabled",
-      onConfirm: () => {
-        setChannels((current) =>
-          current.map((item) => (item.id === channel.id ? { ...item, status: nextStatus } : item)),
-        );
-        closeModal();
-        flashToast(`${channel.name} is now ${nextStatus}.`);
+      onConfirm: async () => {
+        try {
+          await adminRequest(`/channels/${channel.id}`, { method: "PATCH", body: JSON.stringify({ status: nextStatus }) });
+          setChannels((current) => current.map((item) => item.id === channel.id ? { ...item, status: nextStatus } : item));
+          closeModal(); flashToast(`${channel.name} is now ${nextStatus}.`);
+        } catch (error) { flashToast(error.message); }
       },
     });
   }
@@ -663,32 +678,22 @@ export default function Admin() {
       body: "This marks the channel as blocked and removes it from normal serving candidates.",
       confirmLabel: "Blacklist channel",
       danger: true,
-      onConfirm: () => {
-        setChannels((current) =>
-          current.map((item) =>
-            item.id === channel.id ? { ...item, status: "blocked", serveRate: "0%" } : item,
-          ),
-        );
-        closeModal();
-        flashToast(`${channel.name} blacklisted.`);
+      onConfirm: async () => {
+        try {
+          await adminRequest(`/channels/${channel.id}`, { method: "PATCH", body: JSON.stringify({ status: "disabled" }) });
+          setChannels((current) => current.map((item) => item.id === channel.id ? { ...item, status: "disabled", serveRate: "0%" } : item));
+          closeModal(); flashToast(`${channel.name} disabled.`);
+        } catch (error) { flashToast(error.message); }
       },
     });
   }
 
-  function toggleVideoFlag(video) {
-    setServedVideos((current) =>
-      current.map((item) =>
-        item.id === video.id
-          ? {
-              ...item,
-              status: item.status === "flagged" ? "served" : "flagged",
-              flaggedReason:
-                item.status === "flagged" ? "" : "Marked for review by admin.",
-            }
-          : item,
-      ),
-    );
-    flashToast(`${video.title} ${video.status === "flagged" ? "unflagged" : "flagged"}.`);
+  async function toggleVideoFlag(video) {
+    try {
+      await adminRequest(`/content/videos/${encodeURIComponent(video.id)}/blacklist`, { method: "POST", body: JSON.stringify({ reason: "Blacklisted from the admin console." }) });
+      setServedVideos((current) => current.filter((item) => item.id !== video.id));
+      flashToast(`${video.title} blacklisted.`);
+    } catch (error) { flashToast(error.message); }
   }
 
   function blockVideoChannel(video) {
@@ -698,16 +703,14 @@ export default function Admin() {
       body: "This marks the source channel as blocked in the admin UI.",
       confirmLabel: "Block channel",
       danger: true,
-      onConfirm: () => {
-        setChannels((current) =>
-          current.map((channel) =>
-            channel.name === video.channel
-              ? { ...channel, status: "blocked", serveRate: "0%" }
-              : channel,
-          ),
-        );
-        closeModal();
-        flashToast(`${video.channel} blocked.`);
+      onConfirm: async () => {
+        const channel = channels.find((item) => item.name === video.channel);
+        if (!channel) return flashToast("This video channel is not in trusted channels.");
+        try {
+          await adminRequest(`/channels/${channel.id}`, { method: "PATCH", body: JSON.stringify({ status: "disabled" }) });
+          setChannels((current) => current.map((item) => item.id === channel.id ? { ...item, status: "disabled", serveRate: "0%" } : item));
+          closeModal(); flashToast(`${video.channel} disabled.`);
+        } catch (error) { flashToast(error.message); }
       },
     });
   }
@@ -717,23 +720,22 @@ export default function Admin() {
     setAssessments((current) => current.map((item) => (item.id === itemId ? updater(item) : item)));
   }
 
-  function toggleGeneratedFlag(item) {
-    updateGeneratedItem(item.id, (current) => ({
-      ...current,
-      status: current.status === "flagged" ? "ready" : "flagged",
-    }));
-    flashToast(
-      `${item.title} ${item.status === "flagged" ? "returned to ready" : "flagged for review"}.`,
-    );
+  async function toggleGeneratedFlag(item) {
+    if (!item.assessmentType) return flashToast("Curriculum review state is not stored in the current schema.");
+    try {
+      const review_status = item.status === "flagged" ? "ok" : "flagged";
+      await adminRequest(`/assessments/${item.assessmentType === "challenge" ? "challenges" : "quizzes"}/${item.id}`, { method: "PATCH", body: JSON.stringify({ review_status }) });
+      updateGeneratedItem(item.id, (current) => ({ ...current, status: review_status }));
+      flashToast(`${item.title} updated.`);
+    } catch (error) { flashToast(error.message); }
   }
 
-  function regenerateGeneratedItem(item) {
-    updateGeneratedItem(item.id, (current) => ({
-      ...current,
-      status: "regenerating",
-      updatedAt: "Queued just now",
-    }));
-    flashToast(`${item.title} queued for regeneration.`);
+  async function regenerateGeneratedItem(item) {
+    if (!item.assessmentType || item.assessmentType !== "challenge") return flashToast("Only topic challenges can be regenerated with the current generator.");
+    try {
+      await adminRequest(`/assessments/challenges/${item.id}/regenerate`, { method: "POST" });
+      flashToast(`${item.title} regenerated.`);
+    } catch (error) { flashToast(error.message); }
   }
 
   function confirmUserStatus(user) {
@@ -747,12 +749,12 @@ export default function Admin() {
           : "This restores normal access for the account.",
       confirmLabel: nextStatus === "inactive" ? "Deactivate account" : "Reactivate account",
       danger: nextStatus === "inactive",
-      onConfirm: () => {
-        setUsers((current) =>
-          current.map((item) => (item.id === user.id ? { ...item, status: nextStatus } : item)),
-        );
-        closeModal();
-        flashToast(`${user.name} is now ${nextStatus}.`);
+      onConfirm: async () => {
+        try {
+          await adminRequest(`/users/${user.id}/status`, { method: "PATCH", body: JSON.stringify({ is_active: nextStatus === "active" }) });
+          setUsers((current) => current.map((item) => item.id === user.id ? { ...item, status: nextStatus } : item));
+          closeModal(); flashToast(`${user.name} is now ${nextStatus}.`);
+        } catch (error) { flashToast(error.message); }
       },
     });
   }
@@ -863,6 +865,9 @@ export default function Admin() {
             </button>
           ))}
         </nav>
+        <button className="admin-learner-view" type="button" onClick={() => navigate("/dashboard")}>
+          Switch to learner view
+        </button>
       </aside>
 
       <main className="admin-main">
@@ -1031,8 +1036,8 @@ export default function Admin() {
                   },
                   {
                     id: "flag",
-                    label: (row) => (row.status === "flagged" ? "Unflag" : "Flag"),
-                    danger: (row) => row.status !== "flagged",
+                    label: "Blacklist",
+                    danger: true,
                     onClick: toggleVideoFlag,
                   },
                   {
@@ -1196,15 +1201,13 @@ export default function Admin() {
                   {
                     id: "role",
                     label: (row) => (row.role === "admin" ? "Make learner" : "Make admin"),
-                    onClick: (row) => {
-                      setUsers((current) =>
-                        current.map((user) =>
-                          user.id === row.id
-                            ? { ...user, role: user.role === "admin" ? "learner" : "admin" }
-                            : user,
-                        ),
-                      );
-                      flashToast(`${row.name} role updated.`);
+                    onClick: async (row) => {
+                      try {
+                        const role = row.role === "admin" ? "student" : "admin";
+                        await adminRequest(`/users/${row.id}/role`, { method: "PATCH", body: JSON.stringify({ role }) });
+                        setUsers((current) => current.map((user) => user.id === row.id ? { ...user, role } : user));
+                        flashToast(`${row.name} role updated.`);
+                      } catch (error) { flashToast(error.message); }
                     },
                   },
                   {

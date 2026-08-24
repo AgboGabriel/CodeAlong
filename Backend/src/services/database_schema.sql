@@ -1,29 +1,6 @@
 -- Drop existing table if needed (careful with production data!)
 -- DROP TABLE IF EXISTS users CASCADE;
-codeAlong_Database_local -db name
-
-CREATE TABLE password_reset_tokens (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    token_hash TEXT NOT NULL,
-    expires_at TIMESTAMP NOT NULL,
-    used BOOLEAN DEFAULT false,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-CREATE TABLE user_questionnaires (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    career_path VARCHAR(50) NOT NULL,
-    known_languages TEXT[], -- Array of languages
-    learning_languages TEXT[], -- Array of languages
-    skill_level VARCHAR(20) NOT NULL CHECK (skill_level IN ('beginner', 'intermediate', 'advanced')),
-    goal VARCHAR(50) NOT NULL,
-    completed BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW(),
-    UNIQUE(user_id) -- One questionnaire per user (or remove this if you want multiple attempts)
-);
-CREATE INDEX idx_user_questionnaires_user ON user_questionnaires(user_id);
+-- Database name used locally: codeAlong_Database_local
 CREATE TABLE users(
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
@@ -58,6 +35,30 @@ CREATE TABLE users(
 );
 ALTER TABLE users
 ADD COLUMN questionnaire_completed BOOLEAN DEFAULT false;
+
+CREATE TABLE password_reset_tokens (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    used BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE user_questionnaires (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    career_path VARCHAR(50) NOT NULL,
+    known_languages TEXT[],
+    learning_languages TEXT[],
+    skill_level VARCHAR(20) NOT NULL CHECK (skill_level IN ('beginner', 'intermediate', 'advanced')),
+    goal VARCHAR(50) NOT NULL,
+    completed BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(user_id)
+);
+CREATE INDEX idx_user_questionnaires_user ON user_questionnaires(user_id);
 
 -- Add a partial unique index for provider-specific accounts
 CREATE UNIQUE INDEX idx_users_provider ON users(provider_id) 

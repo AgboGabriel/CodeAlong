@@ -95,6 +95,23 @@ font-family: "Space Grotesk", sans-serif;
   color: #ffffff;
 }
 
+.admin-learner-view {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 8px !important;
+  background: transparent;
+  color: #ffffff;
+  font-weight: 720;
+  text-align: left;
+  padding: 0 12px;
+}
+
+.admin-learner-view:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
 .admin-main {
   min-width: 0;
   padding: 26px clamp(16px, 2.5vw, 34px) 40px;

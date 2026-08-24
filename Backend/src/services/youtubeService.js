@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import axios from "axios";
 import trustedChannelModel
 from "../models/trustedChannelModel.js";
+import database from "../config/database.js";
 import {
     inferLanguageFromText,
     isGenericTopicTitle,
@@ -184,7 +185,8 @@ class YoutubeService {
         topic.toLowerCase();
     const topicTerms = getTopicTerms(topic);
     const expectedLanguage = options.expectedLanguage || null;
-    const excludedVideoIds = new Set(options.excludedVideoIds || []);
+    const blacklist = await database.query("SELECT video_id FROM blacklisted_videos");
+    const excludedVideoIds = new Set([...(options.excludedVideoIds || []), ...blacklist.rows.map((row) => row.video_id)]);
     const requireTopicMatch = options.requireTopicMatch !== false;
     const focusTerms = (options.focusTerms || [])
         .map((term) => String(term).toLowerCase())

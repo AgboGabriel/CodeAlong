@@ -13,6 +13,7 @@ import youtubeController from '../controllers/youtubeController.js';
 import bktController from "../controllers/bktController.js";
 import assessmentContentController from "../controllers/assessmentContentController.js";
 import analyticsController from "../controllers/analyticsController.js";
+import adminController from "../controllers/adminController.js";
 
 
 const router = express.Router();
@@ -24,6 +25,16 @@ function ensureAuthenticated(req, res, next) {
         return next();
     }
     return res.status(401).json({ error: 'Not authenticated' });
+}
+
+function ensureAdmin(req, res, next) {
+    if (!req.isAuthenticated || !req.isAuthenticated()) {
+        return res.status(401).json({ error: { message: "Authentication required", code: "UNAUTHENTICATED" } });
+    }
+    if (req.user?.role !== "admin") {
+        return res.status(403).json({ error: { message: "Administrator access required", code: "FORBIDDEN" } });
+    }
+    return next();
 }
 
 function getUserID(req) {
@@ -85,6 +96,12 @@ router.get(
     const backendUrl =
       process.env.FRONTEND_URL ||
       `http://localhost:${process.env.PORT || 3000}`;
+
+    // Administrators can access the console even if their learner questionnaire
+    // was never completed. `req.user` is refreshed from the database by Passport.
+    if (req.user?.role === "admin") {
+      return res.redirect(`${backendUrl}/admin`);
+    }
 
     // check if questionnaire exists
     if (!req.user.questionnaire_completed) {
@@ -196,6 +213,34 @@ router.get(
 router.get("/api/analytics/me", ensureAuthenticated, (req, res) => {
   analyticsController.getMyAnalytics(req, res);
 });
+
+// Admin routes. Every endpoint is protected by the existing Passport session
+// and a database-backed user role check.
+router.use('/api/admin', ensureAdmin);
+router.get('/api/admin/channels', (req, res) => adminController.channels(req, res));
+router.post('/api/admin/channels', (req, res) => adminController.createChannel(req, res));
+router.patch('/api/admin/channels/:id', (req, res) => adminController.updateChannel(req, res));
+router.delete('/api/admin/channels/:id', (req, res) => adminController.deleteChannel(req, res));
+router.get('/api/admin/content/videos', (req, res) => adminController.videos(req, res));
+router.post('/api/admin/content/videos/:videoId/blacklist', (req, res) => adminController.blacklistVideo(req, res));
+router.get('/api/admin/content/flags', (req, res) => adminController.flags(req, res));
+router.patch('/api/admin/content/flags/:id', (req, res) => adminController.updateFlag(req, res));
+router.post('/api/admin/content/flags/:id/blacklist', (req, res) => adminController.blacklistFlag(req, res));
+router.get('/api/admin/curricula', (req, res) => adminController.curricula(req, res));
+router.get('/api/admin/curricula/:id', (req, res) => adminController.curriculumDetail(req, res));
+router.post('/api/admin/curricula/:id/regenerate', (req, res) => adminController.regenerateCurriculum(req, res));
+router.get('/api/admin/assessments', (req, res) => adminController.assessments(req, res));
+router.get('/api/admin/assessments/challenges/:id', (req, res) => adminController.challengeDetail(req, res));
+router.get('/api/admin/assessments/quizzes/:id', (req, res) => adminController.quizDetail(req, res));
+router.post('/api/admin/assessments/challenges/:id/regenerate', (req, res) => adminController.regenerateChallenge(req, res));
+router.patch('/api/admin/assessments/:type/:id', (req, res) => adminController.updateAssessment(req, res));
+router.get('/api/admin/users', (req, res) => adminController.users(req, res));
+router.get('/api/admin/users/:id', (req, res) => adminController.userDetail(req, res));
+router.patch('/api/admin/users/:id/role', (req, res) => adminController.updateUser(req, res));
+router.patch('/api/admin/users/:id/status', (req, res) => adminController.updateUser(req, res));
+router.get('/api/admin/dashboard/summary', (req, res) => adminController.dashboard(req, res));
+router.get('/api/admin/dashboard/top-channels', (req, res) => adminController.topChannels(req, res));
+router.get('/api/admin/dashboard/assessment-stats', (req, res) => adminController.assessmentStats(req, res));
 //curriculum routes
 router.post("/api/curriculum/confirm", ensureAuthenticated, (req,res)=>{
     curriculumController.confirmCurriculum(req,res);

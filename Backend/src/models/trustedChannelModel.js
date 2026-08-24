@@ -9,6 +9,7 @@ class TrustedChannelModel {
         channel_name,
         trust_score
       FROM trusted_channels
+      WHERE status = 'active'
     `;
 
     const result =

@@ -27,7 +27,7 @@ export default function Login() {
       console.log("Login response:", data);
 
       if (response.ok) {
-        navigate("/dashboard");
+        navigate(data.user?.role === "admin" ? "/admin" : "/dashboard");
       } else {
         setLoginMessage(data.error || "Login failed");
       }
