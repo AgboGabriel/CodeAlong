@@ -1,6 +1,23 @@
 import passport from "passport";
 import authService from "../services/authService.js";
 
+function toPublicUser(user) {
+    if (!user) return null;
+    return {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        full_name: user.full_name ?? null,
+        avatar_url: user.avatar_url ?? null,
+        role: user.role,
+        is_active: user.is_active,
+        auth_provider: user.auth_provider,
+        questionnaire_completed: user.questionnaire_completed,
+        created_at: user.created_at,
+        last_login: user.last_login,
+    };
+}
+
 class AuthController {
     constructor() {
         this.authService = authService;
@@ -23,7 +40,7 @@ class AuthController {
 
                 return res.status(201).json({
                     message: "User registered and logged in successfully",
-                    user: newUser,
+                    user: toPublicUser(newUser),
                 });
             });
         } catch (error) {
@@ -89,7 +106,7 @@ class AuthController {
 
                 return res.status(200).json({
                     message: "Login successful",
-                    user,
+                    user: toPublicUser(user),
                 });
             });
         })(req, res, next);
@@ -119,7 +136,7 @@ class AuthController {
             return res.status(401).json({ error: "Not authenticated" });
         }
 
-        return res.status(200).json({ user: req.user });
+        return res.status(200).json({ user: toPublicUser(req.user) });
     }
 }
 

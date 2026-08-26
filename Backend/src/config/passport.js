@@ -6,6 +6,16 @@ import userModel from "../models/userModel.js";
 import GoogleStrategy from "passport-google-oauth2";
 dotenv.config();
 
+const googleCallbackUrl =
+    process.env.GOOGLE_CALLBACK_URL ||
+    (process.env.NODE_ENV !== "production"
+        ? "http://localhost:3000/auth/google/callback"
+        : null);
+
+if (!googleCallbackUrl) {
+    throw new Error("GOOGLE_CALLBACK_URL must be set when NODE_ENV is production");
+}
+
 export function configurePassport() {
     passport.use(
         new LocalStrategy(
@@ -30,9 +40,7 @@ export function configurePassport() {
             {
                 clientID: process.env.GoogleClientID,
                 clientSecret: process.env.GoogleClientSecret,
-                callbackURL:
-                    process.env.GOOGLE_CALLBACK_URL ||
-                    "http://localhost:3000/auth/google/callback",
+                callbackURL: googleCallbackUrl,
                 userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo",
             },
             async (accessToken, refreshToken, profile, done) => {

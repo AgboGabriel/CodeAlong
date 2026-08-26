@@ -138,7 +138,6 @@ router.get('/api/profile/me', ensureAuthenticated, async (req, res) => {
                 full_name: currentUser.full_name,
                 avatar_url: currentUser.avatar_url,
                 auth_provider: currentUser.auth_provider,
-                provider_id: currentUser.provider_id,
                 questionnaire_completed: currentUser.questionnaire_completed,
             }
         });
@@ -184,7 +183,6 @@ router.put('/api/profile/me', ensureAuthenticated, async (req, res) => {
                 full_name: updatedUser.full_name,
                 avatar_url: updatedUser.avatar_url,
                 auth_provider: updatedUser.auth_provider,
-                provider_id: updatedUser.provider_id,
                 questionnaire_completed: updatedUser.questionnaire_completed,
             }
         });
