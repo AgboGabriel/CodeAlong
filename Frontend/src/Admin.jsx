@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./admin.css";
+import "./Admin.css";
 
 const navItems = [
   { id: "dashboard", label: "Dashboard" },
