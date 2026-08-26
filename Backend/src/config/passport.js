@@ -1,4 +1,4 @@
-import dotenv from dotenv;
+import dotenv from "dotenv";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import authService from "../services/authService.js";
