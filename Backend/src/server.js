@@ -19,6 +19,12 @@ const frontendDistPath = path.resolve(__dirname, '../../Frontend/dist');
 const serveFrontend = fs.existsSync(frontendDistPath);
 configurePassport();
 
+// Render terminates HTTPS at its proxy. Trust it so secure session cookies and
+// request protocol detection work correctly in production.
+if (process.env.NODE_ENV === "production") {
+    app.set("trust proxy", 1);
+}
+
 // CORS configuration
 app.use(cors({
     origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5173', 'http://127.0.0.1:5173'],
@@ -35,7 +41,7 @@ app.use(session({
     saveUninitialized: false,
     cookie: {
         httpOnly: true,
-        secure: false,
+        secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         maxAge: 1000 * 60 * 60 * 24,
     },

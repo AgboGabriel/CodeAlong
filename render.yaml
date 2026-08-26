@@ -1,0 +1,46 @@
+services:
+  - type: web
+    name: codealong
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        sync: false
+      - key: GOOGLE_CALLBACK_URL
+        sync: false
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_NAME
+        value: postgres
+      - key: DB_USER
+        sync: false
+      - key: DB_PASS
+        sync: false
+      - key: GoogleClientID
+        sync: false
+      - key: GoogleClientSecret
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL_ID
+        value: openai/gpt-oss-120b
+      - key: YOUTUBE_API_KEY
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: JUDGE0_API_KEY
+        sync: false
+      - key: Google_email
+        sync: false
+      - key: Google_app_password
+        sync: false
