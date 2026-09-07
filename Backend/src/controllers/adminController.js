@@ -168,8 +168,23 @@ class AdminController {
   async userDetail(req, res) {
     try { const user = await database.query(`SELECT u.id, u.username, u.email, u.full_name, u.avatar_url, u.role, u.is_active, u.created_at, u.last_login, q.career_path, q.skill_level, q.known_languages, q.learning_languages, (SELECT COUNT(*)::int FROM user_curriculums uc WHERE uc.user_id = u.id) AS curriculum_count, (SELECT COUNT(*)::int FROM curriculum_topics ct JOIN curriculum_modules cm ON cm.id = ct.module_id JOIN user_curriculums uc ON uc.id = cm.curriculum_id WHERE uc.user_id = u.id AND ct.status = 'completed') AS completed_topics FROM users u LEFT JOIN user_questionnaires q ON q.user_id = u.id WHERE u.id = $1`, [req.params.id]); if (!user.rows[0]) return res.status(404).json({ error: { message: "User not found", code: "NOT_FOUND" } }); return res.json(user.rows[0]); } catch (error) { return fail(res, error); }
   }
-  async updateUser(req, res) {
-    try { const field = req.params.field === 'role' ? 'role' : 'is_active'; const value = req.body[field]; if ((field === 'role' && !['student','instructor','admin'].includes(value)) || (field === 'is_active' && typeof value !== 'boolean')) return res.status(400).json({ error: { message: "Invalid user update", code: "VALIDATION_ERROR" } }); const result = await database.query(`UPDATE users SET ${field} = $1, updated_at = NOW() WHERE id = $2 RETURNING id, username, email, role, is_active`, [value, req.params.id]); if (!result.rows[0]) return res.status(404).json({ error: { message: "User not found", code: "NOT_FOUND" } }); return res.json(result.rows[0]); } catch (error) { return fail(res, error); }
+  async updateUser(req, res, field) {
+    try {
+      const value = req.body[field];
+      const validRole = typeof value === 'string' && ['student', 'instructor', 'admin'].includes(value);
+      const validStatus = typeof value === 'boolean';
+
+      if ((field === 'role' && !validRole) || (field === 'is_active' && !validStatus)) {
+        return res.status(400).json({ error: { message: "Invalid user update", code: "VALIDATION_ERROR" } });
+      }
+
+      const result = await database.query(
+        `UPDATE users SET ${field} = $1, updated_at = NOW() WHERE id = $2 RETURNING id, username, email, role, is_active`,
+        [value, req.params.id],
+      );
+      if (!result.rows[0]) return res.status(404).json({ error: { message: "User not found", code: "NOT_FOUND" } });
+      return res.json(result.rows[0]);
+    } catch (error) { return fail(res, error); }
   }
 
   async dashboard(req, res) {

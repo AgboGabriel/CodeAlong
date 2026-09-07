@@ -542,6 +542,71 @@ function DetailList({ rows }) {
   );
 }
 
+function formatProfileDate(value, fallback = "Not available") {
+  if (!value) return fallback;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? fallback : date.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+}
+
+function profileLanguages(value) {
+  if (Array.isArray(value)) return value;
+  if (typeof value !== "string" || !value.trim()) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [value];
+  } catch {
+    return value.split(",").map((language) => language.trim()).filter(Boolean);
+  }
+}
+
+function UserProfileDetails({ user }) {
+  const name = user.full_name || user.username || "Learner";
+  const initials = name.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+  const languages = [...profileLanguages(user.known_languages), ...profileLanguages(user.learning_languages)];
+
+  return (
+    <div className="admin-user-profile">
+      <section className="admin-user-profile__hero">
+        <div className="admin-user-avatar">
+          {user.avatar_url ? <img alt="" src={user.avatar_url} /> : initials}
+        </div>
+        <div>
+          <p className="admin-eyebrow">Learner profile</p>
+          <h3>{name}</h3>
+          <p className="admin-user-profile__email">{user.email}</p>
+          <div className="admin-user-profile__badges">
+            <StatusBadge status={user.role} />
+            <StatusBadge status={user.is_active ? "active" : "inactive"} />
+          </div>
+        </div>
+      </section>
+
+      <section className="admin-user-stat-grid" aria-label="Learning activity">
+        <div><strong>{user.curriculum_count ?? 0}</strong><span>Curricula</span></div>
+        <div><strong>{user.completed_topics ?? 0}</strong><span>Topics completed</span></div>
+        <div><strong>{user.skill_level || "—"}</strong><span>Skill level</span></div>
+      </section>
+
+      <section className="admin-user-profile__section">
+        <h3>Account information</h3>
+        <DetailList rows={[
+          ["Username", user.username || "—"],
+          ["Joined", formatProfileDate(user.created_at)],
+          ["Last active", formatProfileDate(user.last_login, "No recorded sign-in")],
+        ]} />
+      </section>
+
+      <section className="admin-user-profile__section">
+        <h3>Learning preferences</h3>
+        <DetailList rows={[["Career path", user.career_path || "Not selected"]]} />
+        {languages.length ? (
+          <div className="admin-language-list">{languages.map((language, index) => <span key={`${language}-${index}`}>{language}</span>)}</div>
+        ) : <p className="admin-user-profile__empty">No languages have been added yet.</p>}
+      </section>
+    </div>
+  );
+}
+
 function matchesQuery(row, query, keys) {
   if (!query) return true;
   const needle = query.toLowerCase();
@@ -1156,7 +1221,7 @@ export default function Admin() {
                     label: "Role",
                     options: [
                       { value: "all", label: "All roles" },
-                      { value: "learner", label: "Learner" },
+                      { value: "student", label: "Student" },
                       { value: "admin", label: "Admin" },
                     ],
                   },
@@ -1179,24 +1244,20 @@ export default function Admin() {
                   {
                     id: "profile",
                     label: "View profile",
-                    onClick: (row) =>
-                      setModal({
-                        type: "details",
-                        title: row.name,
-                        children: (
-                          <DetailList
-                            rows={[
-                              ["Email", row.email],
-                              ["Role", <StatusBadge status={row.role} />],
-                              ["Career Path", row.careerPath],
-                              ["Skill Level", row.skillLevel],
-                              ["Signup Date", row.signupDate],
-                              ["Status", <StatusBadge status={row.status} />],
-                              ["Progress", row.progress],
-                            ]}
-                          />
-                        ),
-                      }),
+                    onClick: async (row) => {
+                      setModal({ type: "details", title: "Learner profile", children: <p className="admin-profile-loading">Loading profile…</p> });
+                      try {
+                        const user = await adminRequest(`/users/${row.id}`);
+                        setModal({
+                          type: "details",
+                          title: "Learner profile",
+                          children: <UserProfileDetails user={user} />,
+                        });
+                      } catch (error) {
+                        closeModal();
+                        flashToast(error.message);
+                      }
+                    },
                   },
                   {
                     id: "role",
@@ -1218,7 +1279,7 @@ export default function Admin() {
                   },
                 ]}
                 columns={[
-                  { label: "Name", render: (row) => row.name },
+                  { label: "Name", render: (row) => <PrimaryCell title={row.name} subtitle={row.progress} /> },
                   { label: "Email", render: (row) => row.email },
                   { label: "Role", render: (row) => <StatusBadge status={row.role} /> },
                   { label: "Career Path", render: (row) => row.careerPath },
