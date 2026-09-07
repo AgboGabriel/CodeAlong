@@ -116,8 +116,8 @@ function CtaBanner() {
   return (
     <div className="cta-banner">
       <div>
-        <h3>Tailor Your Path</h3>
-        <p>Interact with AI to create your own learning path.</p>
+        <h3>Design Your Own Course</h3>
+        <p>Talk to our AI assistant to create a step-by-step roadmap for any topic you want to master.</p>
       </div>
 
       <button className="btn btn-white" onClick={() => window.location.assign("/LearningPath")}>
