@@ -7,7 +7,7 @@ import GoogleStrategy from "passport-google-oauth2";
 dotenv.config();
 
 const googleCallbackUrl =
-    process.env.GOOGLE_CALLBACK_URL ||
+    process.env.GOOGLE_CALLBACK_URL || "http://localhost:3000/auth/google/callback";
     (process.env.NODE_ENV !== "production"
         ? "http://localhost:3000/auth/google/callback"
         : null);

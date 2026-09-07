@@ -140,10 +140,10 @@ function LpBody() {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          message: userMessage,
-          options: { model: "llama-3.1-8b-instant" },
+          message: userMessage
         }),
       });
+      
       const responseData = await response.json();
 
       if (!response.ok || !responseData.success) {
