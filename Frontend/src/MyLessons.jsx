@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "./MyLessons.css";
-import Sidebar from "./Components/Sidebar";
-import Header from "./Components/Header";
-import UserProfile, { user } from "./Components/UserProfile";
+import Sidebar from "./components/Sidebar";
+import Header from "./components/Header";
+import UserProfile, { user } from "./components/UserProfile";
 import Topics from "./Topics";
 
 import {
   MdSearch,
-  MdDelete,
   MdFilterList,
 } from "react-icons/md";
 
@@ -194,7 +193,7 @@ const modules = [
 
                             <span>•</span>
 
-                            <span className="duration">⏱ {path.hours} Hours</span>
+                            <span className="duration">⏱ {path.hours} Hrs</span>
 
                             <span>•</span>
 
@@ -257,7 +256,7 @@ const modules = [
               </div>
 
               <div className="time-left">
-                ⏱ {selectedPath.hours} hours
+                ⏱ {selectedPath.hours} Hrs
               </div>
             </div>
           </div>

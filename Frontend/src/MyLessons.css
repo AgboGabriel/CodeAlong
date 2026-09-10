@@ -558,3 +558,155 @@ width:300px;
   background: rgba(239, 68, 68, 0.12);
   color: #dc2626;
 }
+/* ================= RESPONSIVE ================= */
+
+@media (max-width: 768px) {
+  .header {
+    padding: 0 16px;
+    height: 56px;
+  }
+
+  .page-breadcrumb {
+    font-size: 14px;
+  }
+
+  .header-right {
+    gap: 8px;
+  }
+
+  .divider-v {
+    display: none;
+  }
+
+  .header-user-text {
+    display: none;
+  }
+
+  .notification-dropdown {
+    width: 280px;
+    right: -8px;
+  }
+
+  .content-inner {
+    padding: 0 16px 24px;
+  }
+
+  .lessons-header h1 {
+    font-size: 26px;
+  }
+
+  .lesson-subtitle {
+    font-size: 14px;
+  }
+
+  .lesson-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .lesson-search {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .lesson-filter {
+    width: 100%;
+  }
+
+  .curriculum-content {
+    padding: 18px;
+  }
+
+  .curriculum-content h3 {
+    font-size: 18px;
+  }
+
+  .learning-header {
+    padding: 18px;
+    margin-bottom: 24px;
+  }
+
+  .learning-header h1 {
+    font-size: 22px;
+  }
+
+  .overall-progress {
+    width: 100%;
+  }
+
+  .progress-bar {
+    width: 100px;
+  }
+
+  .module-card {
+    flex-direction: column;
+    padding: 18px;
+    gap: 14px;
+  }
+
+  .module-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .module-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .module-top h3,
+  .locked-module h3 {
+    font-size: 17px;
+  }
+
+  .module-actions {
+    flex-direction: column;
+  }
+
+  .primary-btn,
+  .locked-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .locked-tooltip {
+    white-space: normal;
+    max-width: 200px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .lessons-header h1 {
+    font-size: 22px;
+  }
+
+  .learning-header h1 {
+    font-size: 19px;
+  }
+
+  .curriculum-card {
+    border-radius: 16px;
+  }
+
+  .curriculum-content {
+    padding: 14px;
+  }
+
+  .curriculum-btn {
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  .module-card {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .avatar {
+    width: 32px;
+    height: 32px;
+  }
+}

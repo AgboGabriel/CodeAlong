@@ -41,13 +41,21 @@ body {
   background: var(--bg);
   color: var(--text-900);
   -webkit-font-smoothing: antialiased;
-  height: 100vh;
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* MAIN */
 
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
 .main {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -58,13 +66,17 @@ body {
 
 .content {
   flex: 1;
+  min-width: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 40px 32px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .content-inner {
   max-width: 1150px;
   width: 100%;
+  min-width: 0;
   margin: 0 auto;
 }
 
@@ -100,6 +112,7 @@ body {
 
 .lesson-hero {
   position: relative;
+  min-width: 0;
   overflow: hidden;
   border-radius: var(--radius-lg);
   background: #0f172a;
@@ -543,25 +556,6 @@ body {
   font-size: 11px;
 }
 
-/* RESPONSIVE */
-
-@media (max-width: 1000px) {
-  .video-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 20px;
-  }
-}
-
-@media (max-width: 640px) {
-  .video-grid {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-
-  .video-thumbnail {
-    height: 210px;
-  }
-}
 /* SCROLLBAR */
 
 .content::-webkit-scrollbar {
@@ -583,25 +577,161 @@ body {
 
 /* RESPONSIVE */
 
-@media (max-width: 640px) {
+@media (max-width: 1024px) {
+  .content {
+    padding: 32px 24px;
+  }
+
+  .video-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .content {
+    padding: 24px 16px;
+  }
+
+  .welcome h2 {
+    font-size: 32px;
+    line-height: 1.15;
+    letter-spacing: 0;
+  }
+
+  .welcome p {
+    font-size: 14px;
+  }
+
+  .lesson-hero {
+    padding: 24px 20px;
+  }
+
+  .lesson-hero-bg-icon {
+    font-size: 100px;
+  }
+
+  .lesson-hero h3 {
+    font-size: 22px;
+    line-height: 1.25;
+    letter-spacing: 0;
+  }
+
+  .lesson-hero p {
+    max-width: 100%;
+    font-size: 13px;
+  }
+
+  .lesson-hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .lesson-hero-actions .btn {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .section-header {
+    gap: 12px;
+  }
+
+  .section-title {
+    font-size: 18px;
+  }
 
   .stats-grid {
     grid-template-columns: 1fr;
   }
 
-  .video-grid {
-    grid-template-columns: 1fr;
+  .cta-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px 24px;
+    text-align: left;
   }
 
+  .cta-banner .btn-white {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .video-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 480px) {
   .content {
-    padding: 24px 16px;
+    padding: 20px 12px;
+  }
+
+  .welcome {
+    margin-top: 0;
+    margin-bottom: 16px;
+  }
+
+  .welcome h2 {
+    font-size: 28px;
   }
 
   .lesson-hero {
-    padding: 24px;
+    padding: 20px 16px;
+  }
+
+  .lesson-hero h3 {
+    font-size: 20px;
+  }
+
+  .btn {
+    padding: 10px 18px;
+    font-size: 13px;
+    min-height: 44px;
+  }
+
+  .stat-card {
+    padding: 16px;
+  }
+
+  .stat-value {
+    font-size: 22px;
   }
 
   .cta-banner {
-    padding: 24px;
+    padding: 20px 16px;
+    gap: 16px;
+  }
+
+  .cta-banner h3 {
+    font-size: 20px;
+    letter-spacing: 0;
+  }
+
+  .video-info {
+    padding: 12px 14px 14px;
+  }
+
+  .video-info h4 {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 360px) {
+  .content {
+    padding-inline: 10px;
+  }
+
+  .welcome h2 {
+    font-size: 25px;
+  }
+
+  .section-header {
+    align-items: flex-start;
+  }
+
+  .link-btn {
+    font-size: 14px;
+    flex-shrink: 0;
   }
 }

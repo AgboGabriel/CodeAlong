@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import Sidebar from "./Components/Sidebar";
-import Header from "./Components/Header";
+import Sidebar from "./components/Sidebar";
+import Header from "./components/Header";
 import "./CompletedAssessments.css";
 
 import {
@@ -138,7 +138,7 @@ const filteredAssessments = completedAssessments.filter((assessment) => {
                           className="cass-icon-btn"
                           onClick={() => navigate("/Challenges")}
                         >
-                          {assessment.status === "Failed" ? "Retry" : "Generate New"}
+                          {assessment.status === "Failed" ? "Retry" : "Genegrate New"}
                         </button>
                       </div>
                     ))

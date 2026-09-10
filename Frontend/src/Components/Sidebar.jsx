@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "../assets/Code along_logo-03.png";
 import "./Sidebar.css";
@@ -8,6 +9,8 @@ import {
   MdAccountTree,
   MdFolderOpen,
   MdLogout,
+  MdMenu,
+  MdClose,
 } from "react-icons/md";
 
 const NAV_ITEMS = [
@@ -20,64 +23,80 @@ const NAV_ITEMS = [
 export default function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [isOpen, setIsOpen] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/");
   };
-  
+
+  const closeSidebar = () => setIsOpen(false);
 
   return (
-    <aside className="sidebar">
+    <>
+           {!isOpen && (
+        <button
+          className="sidebar-toggle"
+          onClick={() => setIsOpen(true)}
+          aria-label="Open menu"
+        >
+          <MdMenu size={26} />
+        </button>
+      )}
 
       <div
-        className="sidebar-logo"
-        onClick={() => navigate("/dashboard")}
-        style={{ cursor: "pointer" }}
-      >
-        <div className="logo-icon">
-          <img className="logo-img" src={logo} alt="Logo" />
-        </div>
+         className={`sidebar-overlay ${isOpen ? "open" : ""}`}
+        onClick={closeSidebar}
+      />
 
-        <span className="logo-text">
-          CodeAlong
-        </span>
-      </div>
-
-      <nav className="sidebar-nav">
-
-        {NAV_ITEMS.map(({ icon, label, path }) => {
-          const Icon = icon;
-
-          return (
-            <Link
-              key={label}
-              to={path}
-              className={`nav-item ${
-                location.pathname === path
-                  ? "active"
-                  : ""
-              }`}
-            >
-              <Icon  className="nav-icon" size={30} />
-              {label}
-            </Link>
-          );
-        })}
-
-      </nav>
-
-      <div className="sidebar-footer">
-
+      <aside className={`sidebar ${isOpen ? "open" : ""}`}>
         <button
-          className="logout-btn"
-          onClick={handleLogout}
+          className="sidebar-close"
+          onClick={closeSidebar}
+          aria-label="Close menu"
         >
-          <MdLogout className="logout-icon" size={30} />
-          <span>Logout</span>
+          <MdClose size={24} />
         </button>
 
-      </div>
-    </aside>
+        <div
+          className="sidebar-logo"
+          onClick={() => navigate("/dashboard")}
+          style={{ cursor: "pointer" }}
+        >
+          <div className="logo-icon">
+            <img className="logo-img" src={logo} alt="Logo" />
+          </div>
+
+          <span className="logo-text">CodeAlong</span>
+        </div>
+
+        <nav className="sidebar-nav">
+          {NAV_ITEMS.map(({ icon, label, path }) => {
+            const Icon = icon;
+
+            return (
+              <Link
+                key={label}
+                to={path}
+                                className={`nav-item ${
+                  location.pathname === path ? "active" : ""
+                }`}
+                onClick={closeSidebar}
+              >
+                <Icon className="nav-icon" size={30} />
+                {label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="sidebar-footer">
+          <button className="logout-btn" onClick={handleLogout}>
+            <MdLogout className="logout-icon" size={30} />
+            <span>Logout</span>
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }

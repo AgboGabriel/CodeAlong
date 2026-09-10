@@ -1,4 +1,4 @@
-import "./UserProfile.css";
+import "./Userprofile.css";
 
 export const user = {
   name: "Alex Rivera",
@@ -8,7 +8,7 @@ export const user = {
   progress: 0,
 };
 
-export default function UserProfile({ small, onClick }) {
+export default function Userprofile({ small, onClick }) {
   return (
     <>
       <div className={`avatar ${small ? "avatar-sm" : ""}`} onClick={onClick}>

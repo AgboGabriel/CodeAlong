@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import Sidebar from "./Components/Sidebar";
-import Header from "./Components/Header";
-import UserProfile, { user } from "./Components/UserProfile";
+import Sidebar from "./components/Sidebar";
+import Header from "./components/Header";
+import UserProfile, { user } from "./components/UserProfile";
 import "./Assessments.css";
-import Challenges from "./Challenges";
+import challenges from "./challenges";
 import CompletedAssessments from "./CompletedAssessments";
 
 import {
@@ -170,7 +170,7 @@ export default function Assessments() {
                           <div className="ass-card__actions">
                             <button
                               className="ass-btn ass-btn--outline"
-                              onClick={() => navigate("/Challenges")}
+                              onClick={() => navigate("/challenges")}
                             >
                               Start
                             </button>

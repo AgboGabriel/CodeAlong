@@ -28,6 +28,7 @@
   top: 0;
   z-index: 10;
   flex-shrink: 0;
+  min-width: 0;
 }
 .header-left {
   display: flex;
@@ -226,4 +227,54 @@
 
 .icon-btn:active {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 0 20px;
+  }
+
+  .header-right {
+    gap: 12px;
+  }
+
+  .page-breadcrumb {
+    font-size: 15px;
+  }
+
+  .notification-dropdown {
+    width: min(320px, calc(100vw - 96px));
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    height: 60px;
+    padding: 0 12px;
+  }
+
+  .page-breadcrumb p,
+  .page-breadcrumb svg,
+  .header-user-text,
+  .divider-v {
+    display: none;
+  }
+
+  .header-right {
+    gap: 8px;
+  }
+
+  .header-user {
+    gap: 6px;
+  }
+
+  .notif-btn,
+  .icon-btn {
+    padding: 6px;
+  }
+
+  .notification-dropdown {
+    top: 52px;
+    width: min(320px, calc(100vw - 80px));
+  }
 }
