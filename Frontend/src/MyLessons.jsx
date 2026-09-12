@@ -572,7 +572,7 @@ export default function MyLessons() {
             return;
           }
         }
-      } catch (_) {
+      } catch {
         // Corrupt cache — fall through to fetch
       }
     }

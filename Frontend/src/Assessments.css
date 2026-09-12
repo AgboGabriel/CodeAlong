@@ -639,11 +639,153 @@ body {
   }
 
   .ass-card__row {
-    align-items: flex-start;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
   }
 
   .ass-card__actions {
     width: 100%;
-    justify-content: space-between;
+    justify-content: stretch;
+  }
+
+  .ass-card__actions .ass-btn,
+  .ass-card__actions .ass-status,
+  .ass-card__actions .ass-status--failed {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .content-inner {
+    padding: 24px 16px 48px;
+  }
+
+  .ass-page-title {
+    font-size: 28px;
+  }
+
+  .ass-page-subtitle {
+    font-size: 14px;
+  }
+
+  .ass-page-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ass-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .ass-stat {
+    min-height: 120px;
+    padding: 14px;
+  }
+
+  .ass-stat__label {
+    font-size: 16px;
+  }
+
+  .ass-stat__value {
+    font-size: 32px;
+  }
+
+  .ass-stat__bg-icon {
+    font-size: 48px;
+    right: 14px;
+    bottom: 12px;
+  }
+
+  .ass-section__head {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .ass-lesson-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ass-lesson-search {
+    min-width: 0;
+  }
+
+  .ass-lesson-filter {
+    width: 100%;
+  }
+
+  .ass-card {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px;
+  }
+
+  .ass-card__lead {
+    width: 100%;
+  }
+
+  .ass-card__icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .ass-card__icon svg {
+    font-size: 24px;
+  }
+
+  .ass-card__title {
+    font-size: 17px;
+    margin-bottom: 8px;
+  }
+
+  .ass-card__meta {
+    gap: 10px;
+  }
+
+  .ass-meta-item {
+    font-size: 14px;
+  }
+
+  .ass-success-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .ass-success-card__title {
+    font-size: 17px;
+  }
+
+  .ass-success-card__meta {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .ass-page-title {
+    font-size: 24px;
+  }
+
+  .ass-breadcrumb {
+    font-size: 14px;
+  }
+
+  .ass-stat__value {
+    font-size: 26px;
+  }
+
+  .ass-card__icon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .ass-no-results {
+    padding: 32px 16px;
+  }
+
+  .ass-no-results h3 {
+    font-size: 18px;
   }
 }

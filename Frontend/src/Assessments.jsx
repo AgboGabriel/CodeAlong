@@ -24,16 +24,6 @@ export default function Assessments() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("All Levels");
 
-  const normalizeDifficulty = (value) => {
-    const level = String(value || "").toLowerCase();
-
-    if (["easy", "beginner", "basic"].includes(level)) return "Beginner";
-    if (["medium", "intermediate", "moderate"].includes(level)) return "Intermediate";
-    if (["hard", "advanced", "expert", "difficult"].includes(level)) return "Advanced";
-
-    return "Intermediate";
-  };
-
   const buildAssessmentList = async () => {
     try {
       setLoadingAssessments(true);

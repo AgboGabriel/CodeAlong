@@ -3,7 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import "./Dashboard.css";
 import Sidebar from "./Components/Sidebar.jsx";
 import Header from "./Components/Header.jsx";
-import UserProfile, { getUserDisplayName } from "./Components/UserProfile.jsx";
+import UserProfile from "./Components/UserProfile.jsx";
+import { getUserDisplayName } from "./Components/userData.js";
 import { useUser } from "./Components/useUser";
 import {
   MdCode,
@@ -128,6 +129,8 @@ function CtaBanner() {
 }
 
 function AssessmentsBanner() {
+  const navigate = useNavigate();
+
   return (
     <div className="cta-banner">
       <div>
@@ -135,7 +138,7 @@ function AssessmentsBanner() {
         <p>Test your skills with daily programming challenges.</p>
       </div>
 
-      <button className="btn btn-white" onClick={() => window.location.assign("/challenges")}>
+      <button className="btn btn-white" onClick={() => navigate("/Assessments")}>
         Start challenge
       </button>
     </div>

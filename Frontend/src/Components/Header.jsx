@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { MdNotifications, MdSettings, MdChevronRight } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
-import UserProfile, { user as defaultUser, getUserDisplayName } from "./UserProfile";
+import UserProfile from "./UserProfile";
+import { defaultUser, getUserDisplayName } from "./userData";
 import { useUser } from "./useUser";
 import "./Header.css";
 
