@@ -254,6 +254,146 @@
   height: 6px;
   transition: background 0.2s ease;
 }
+/* ================= RESPONSIVE ================= */
+
+@media (max-width: 768px) {
+  .challenge-container {
+    height: auto;
+    min-height: 100vh;
+    overflow: auto;
+  }
+
+  .challenge-layout {
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+    overflow: auto;
+  }
+
+  .challenge-layout > div {
+    overflow: visible;
+  }
+
+  .Split {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .Split > div {
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  .gutter.gutter-horizontal {
+    display: none;
+  }
+
+  .question-panel {
+    min-width: 100%;
+    max-width: 100%;
+    height: auto;
+    max-height: 45vh;
+    font-size: 15px;
+    order: 1;
+  }
+
+  .question-placeholder {
+    height: 200px;
+  }
+
+  .editor-panel {
+    height: auto;
+    min-height: 55vh;
+    order: 2;
+    font-size: 14px;
+  }
+
+  .editor-header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .editor-header > select,
+  .editor-actions {
+    flex-shrink: 0;
+  }
+
+  .tab-wrapper {
+    order: 3;
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  .editor-tabs {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .editor-tabs {
+    overflow-x: auto;
+  }
+
+  .editor-wrapper {
+    height: 200px;
+  }
+
+  .output-panel {
+    height: 220px;
+  }
+
+  .run-btn,
+  .submit-btn {
+    padding: 6px 10px;
+    font-size: 14px;
+  }
+
+  .editor-header select {
+    font-size: 14px;
+    padding: 5px 8px;
+  }
+    .editor-panel,
+  .editor-wrapper,
+  .editor-terminal-split {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .editor-wrapper > div,
+  .editor-terminal-split > div {
+    width: 100% !important;
+  }
+
+  /* Monaco */
+  .monaco-editor,
+  .monaco-editor .overflow-guard {
+    width: 100% !important;
+  }
+
+  /* CodeMirror */
+  .CodeMirror {
+    width: 100% !important;
+  }
+}
+
+
+@media (max-width: 480px) {
+  .question-panel {
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  .tab-btn {
+    padding: 5px 6px;
+    height: 26px;
+  }
+
+  .add-tab-btn {
+    width: 24px;
+    height: 24px;
+    font-size: 15px;
+  }
+}
 
 
 

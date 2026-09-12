@@ -471,3 +471,179 @@
 .video-back-btn:hover {
  background: #1a55d4;
 }
+/* ================================================================
+   RESPONSIVE / MOBILE — video top, editor middle, chat bottom
+   ================================================================ */
+
+/* Tablet: keep the row layout but let panels breathe */
+@media (max-width: 1024px) {
+  .video-panel,
+  .chat-panel {
+    max-width: 45%;
+  }
+}
+
+/* Mobile: stack panels vertically, kill fixed widths */
+@media (max-width: 900px) {
+  .Videolesson-container {
+    height: 100%;
+  }
+
+  .Videolesson-layout,
+  .workspace-panel,
+  .Split {
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* react-split adds inline widths/heights via JS; override so panels
+     stack full-width instead of staying side-by-side */
+  .Videolesson-layout > div,
+  .Split > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: none !important;
+  }
+
+  .video-panel {
+    order: 1;
+    height: 40%;
+    min-height: 180px;
+  }
+
+  .editor-panel {
+    order: 2;
+    height: 30%;
+    min-height: 260px;
+    border-right: none;
+    border-bottom: 1px solid rgba(43,124,238,0.25);
+  }
+
+  .chat-panel {
+    order: 3;
+    height: 30%;
+    min-height: 200px;
+  }
+
+  /* resize gutters don't work well with touch on a stacked layout */
+  .Split .gutter,
+  .gutter.gutter-vertical {
+    display: none;
+  }
+
+  .editor-header {
+    padding: 10px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .editor-header select {
+    font-size: 14px;
+    padding: 6px 8px;
+    flex: 1;
+    min-width: 100px;
+  }
+
+  .editor-actions {
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .run-btn {
+    padding: 8px 12px;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .tab-btn {
+    height: 34px;
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  .add-tab-btn {
+    flex-shrink: 0;
+  }
+
+  .output-panel {
+    height: 90px;
+    font-size: 13px;
+    padding: 10px;
+  }
+
+  .chat-messages {
+    padding: 10px;
+  }
+
+  .user-message,
+  .ai-message {
+    max-width: 85%;
+    font-size: 14px;
+  }
+
+  .chat-input-area {
+    padding: 12px;
+  }
+
+  .chat-input-area input {
+    padding: 12px;
+    font-size: 15px;
+  }
+
+  .chat-send-btn {
+    padding: 10px 14px;
+    flex-shrink: 0;
+  }
+
+  .history-panel {
+    width: 85%;
+    max-width: 320px;
+  }
+}
+
+/* Small phones */
+@media (max-width: 480px) {
+  .video-panel {
+    height: 25vh;
+    min-height: 150px;
+  }
+
+  .editor-panel {
+    height: 42vh;
+    min-height: 240px;
+  }
+
+  .chat-panel {
+    height: 33vh;
+    min-height: 190px;
+  }
+
+  .tab-wrapper {
+    width: 100%;
+  }
+
+  .editor-tabs {
+    flex: 1;
+  }
+
+  .add-tab-btn {
+    width: 24px;
+    height: 24px;
+    font-size: 15px;
+  }
+
+  .chat-header {
+    padding: 10px;
+  }
+
+  .Ca-logo {
+    width: 32px;
+    height: 32px;
+  }
+
+  .video-back-btn {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+}
