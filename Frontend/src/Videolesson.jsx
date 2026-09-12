@@ -1460,7 +1460,7 @@ export default function Videolesson() {
       >
         {/* VIDEO PANEL */}
         <div className="video-panel">
-          <button className="video-back-btn" onClick={() => navigate("/Topics")}>
+          <button className="video-back-btn" onClick={() => navigate(-1)}>
             ← Back to Topics
           </button>
 

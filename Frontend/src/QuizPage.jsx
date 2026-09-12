@@ -272,7 +272,7 @@ export default function QuizPage() {
                   </button>
 
                   <button
-                    onClick={() => navigate(-1)}
+                    onClick={() => navigate("/Topics")}
                     className="confirm-btn"
                   >
                     Yes
