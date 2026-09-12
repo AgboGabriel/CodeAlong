@@ -7,30 +7,12 @@ import UserProfile from "./Components/UserProfile.jsx";
 import { getUserDisplayName } from "./Components/userData.js";
 import { useUser } from "./Components/useUser";
 import {
+  MdAssessment,
   MdCode,
-  MdLocalFireDepartment,
   MdPlayCircle,
-  MdVerifiedUser,
+  MdQuiz,
+  MdTrendingUp,
 } from "react-icons/md";
-
-const STATS = [
-  {
-    icon: MdLocalFireDepartment,
-    iconClass: "orange",
-    label: "Coding Streak",
-    value: "0 Days",
-    badgeText: "Today",
-    badgeClass: "muted",
-  },
-  {
-    icon: MdVerifiedUser,
-    iconClass: "purple",
-    label: "Badges",
-    value: "0",
-    badgeText: "Earned",
-    badgeClass: "muted",
-  },
-];
 
 function getProgressMessage(currentUser) {
   if (currentUser?.isNew) {
@@ -77,36 +59,49 @@ function LessonHero() {
   );
 }
 
-function StatCard({ icon, iconClass, label, value, badgeText, badgeClass }) {
+function ProgressCard({ icon, tone, label, value, helper }) {
   const Icon = icon;
 
   return (
-    <div className="stat-card">
-      <div className="stat-card-top">
-        <div className={`stat-icon ${iconClass}`}>
-          <Icon size={22} />
-        </div>
-
-        <span className={`stat-badge ${badgeClass}`}>{badgeText}</span>
+    <article className="progress-card">
+      <div className={`progress-icon ${tone}`}><Icon size={22} /></div>
+      <div>
+        <p className="progress-label">{label}</p>
+        <strong className="progress-value">{value}</strong>
+        <span className="progress-helper">{helper}</span>
       </div>
-
-      <div className="stat-label">{label}</div>
-      <div className="stat-value">{value}</div>
-    </div>
+    </article>
   );
 }
 
-function ProgressSection() {
+function ProgressSection({ analytics, loading }) {
+  const topics = analytics.topics || [];
+  const quizzes = analytics.quizzes || [];
+  const challenges = analytics.challenges || [];
+  const completedTopics = topics.filter((topic) => topic.topic_status === "completed").length;
+  const attemptedTopics = topics.filter((topic) => Number(topic.attempts) > 0);
+  const averageMastery = attemptedTopics.length
+    ? Math.round((attemptedTopics.reduce((sum, topic) => sum + Number(topic.mastery_probability || 0), 0) / attemptedTopics.length) * 100)
+    : 0;
+  const passedQuizzes = quizzes.filter((quiz) => quiz.passed).length;
+  const passedChallenges = challenges.filter((challenge) => Number(challenge.passed_submission_count) > 0).length;
+  const summary = [
+    { icon: MdAssessment, tone: "blue", label: "Curriculum progress", value: topics.length ? `${completedTopics}/${topics.length}` : "—", helper: topics.length ? `${Math.round((completedTopics / topics.length) * 100)}% topics completed` : "Create a learning path to begin" },
+    { icon: MdTrendingUp, tone: "purple", label: "Average mastery", value: attemptedTopics.length ? `${averageMastery}%` : "—", helper: attemptedTopics.length ? `Across ${attemptedTopics.length} attempted topic${attemptedTopics.length === 1 ? "" : "s"}` : "Complete a quiz to measure mastery" },
+    { icon: MdQuiz, tone: "orange", label: "Quiz outcomes", value: `${passedQuizzes}/${quizzes.length}`, helper: "Passed assessments" },
+    { icon: MdCode, tone: "green", label: "Challenges solved", value: `${passedChallenges}/${challenges.length}`, helper: "Topics with a passing submission" },
+  ];
+
   return (
     <section>
       <div className="section-header">
-        <h3 className="section-title">Statistics</h3>
+        <h3 className="section-title">Learning Progress</h3>
         <Link className="link-btn" to="/analytics">Full Analytics</Link>
       </div>
 
-      <div className="stats-grid">
-        {STATS.map((stat) => (
-          <StatCard key={stat.label} {...stat} />
+      <div className="progress-summary-grid" aria-busy={loading}>
+        {summary.map((metric) => (
+          <ProgressCard key={metric.label} {...metric} />
         ))}
       </div>
     </section>
@@ -234,6 +229,8 @@ function LearnerDashboard({ user, navigate }) {
   const [hasStartedLearning] = useState(false);
   const [recommendedVideos, setRecommendedVideos] = useState([]);
   const [loadingRecommendations, setLoadingRecommendations] = useState(true);
+  const [analytics, setAnalytics] = useState({ topics: [], quizzes: [], challenges: [] });
+  const [loadingAnalytics, setLoadingAnalytics] = useState(true);
 
   useEffect(() => {
     async function loadRecommendations() {
@@ -256,6 +253,22 @@ function LearnerDashboard({ user, navigate }) {
     }
 
     loadRecommendations();
+  }, []);
+
+  useEffect(() => {
+    async function loadAnalytics() {
+      try {
+        const response = await fetch("/api/analytics/me", { credentials: "include" });
+        if (!response.ok) throw new Error("Failed to fetch analytics");
+        setAnalytics(await response.json());
+      } catch (error) {
+        console.error("Error loading analytics:", error);
+      } finally {
+        setLoadingAnalytics(false);
+      }
+    }
+
+    loadAnalytics();
   }, []);
 
   const displayName = getUserDisplayName(user);
@@ -288,7 +301,7 @@ function LearnerDashboard({ user, navigate }) {
                 />
               )}
 
-              <ProgressSection />
+              <ProgressSection analytics={analytics} loading={loadingAnalytics} />
               <CtaBanner />
               <AssessmentsBanner />
             </div>
