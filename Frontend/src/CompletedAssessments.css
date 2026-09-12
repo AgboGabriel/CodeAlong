@@ -267,3 +267,79 @@
 .cass-card--failed .cass-card__meta {
   color:#ef4444;
 }
+/* --------------------------------------------------------------------------
+   Responsive
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 768px) {
+  .cass-section__title {
+    font-size: 18px;
+  }
+
+  .cass-back-btn {
+    text-align: center;
+  }
+
+  .cass-lesson-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cass-lesson-search {
+    min-width: 0;
+  }
+
+  .cass-lesson-filter {
+    width: 100%;
+  }
+
+  .cass-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .cass-card__lead {
+    width: 100%;
+  }
+
+  .cass-card__check {
+    width: 48px;
+    height: 48px;
+  }
+
+  .cass-card__title {
+    font-size: 17px;
+  }
+
+  .cass-card__meta {
+    font-size: 14px;
+  }
+
+  .cass-icon-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .cass-no-results {
+    padding: 32px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .cass-no-results h3 {
+    font-size: 18px;
+  }
+
+  .cass-card__check {
+    width: 42px;
+    height: 42px;
+  }
+
+  .cass-icon-btn {
+    height: 42px;
+    padding: 0 16px;
+    font-size: 14px;
+  }
+}
