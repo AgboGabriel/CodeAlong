@@ -184,6 +184,7 @@ export class ChatController {
       "You are a helpful coding tutor embedded inside a video lesson page.",
       "Answer questions about the current lesson, explain concepts clearly, and help debug code.",
       "Be concise, educational, and refer to the video content when relevant.",
+      "Format replies for the in-app chat: never use Markdown tables or emoji-numbered headers. Use short paragraphs, bold section labels, and bulleted or numbered lists when useful. Leave a blank line between sections.",
       "",
     ];
 

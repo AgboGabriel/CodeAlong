@@ -729,6 +729,86 @@ import "./Videolesson.css";
 import logo from "./assets/Code along_logo-04.png";
 import { buildLearnerFeedback } from "./learnerFeedback";
 
+function renderInlineMarkdown(text) {
+  return String(text)
+    .split(/(\*\*[^*]+\*\*|`[^`]+`)/g)
+    .filter(Boolean)
+    .map((part, index) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return <strong key={index}>{part.slice(2, -2)}</strong>;
+      }
+
+      if (part.startsWith("`") && part.endsWith("`")) {
+        return <code key={index}>{part.slice(1, -1)}</code>;
+      }
+
+      return part;
+    });
+}
+
+function ChatMessageContent({ content }) {
+  const blocks = [];
+  let paragraph = [];
+  let list = [];
+  let listType = null;
+
+  const flushParagraph = () => {
+    if (!paragraph.length) return;
+    blocks.push(
+      <p key={`paragraph-${blocks.length}`}>
+        {paragraph.map((line, index) => (
+          <span key={index}>
+            {index > 0 && <br />}
+            {renderInlineMarkdown(line)}
+          </span>
+        ))}
+      </p>
+    );
+    paragraph = [];
+  };
+
+  const flushList = () => {
+    if (!list.length) return;
+    const List = listType === "ordered" ? "ol" : "ul";
+    blocks.push(
+      <List key={`list-${blocks.length}`}>
+        {list.map((item, index) => <li key={index}>{renderInlineMarkdown(item)}</li>)}
+      </List>
+    );
+    list = [];
+    listType = null;
+  };
+
+  String(content || "").split(/\r?\n/).forEach((line) => {
+    const heading = line.match(/^#{1,3}\s+(.+)$/);
+    const unorderedItem = line.match(/^[-*+]\s+(.+)$/);
+    const orderedItem = line.match(/^\d+[.)]\s+(.+)$/);
+
+    if (!line.trim()) {
+      flushParagraph();
+      flushList();
+    } else if (heading) {
+      flushParagraph();
+      flushList();
+      blocks.push(<p className="chat-message-heading" key={`heading-${blocks.length}`}><strong>{renderInlineMarkdown(heading[1])}</strong></p>);
+    } else if (unorderedItem || orderedItem) {
+      const nextListType = orderedItem ? "ordered" : "unordered";
+      if (list.length && listType !== nextListType) flushList();
+      flushParagraph();
+      listType = nextListType;
+      list.push((unorderedItem || orderedItem)[1]);
+    } else {
+      flushList();
+      paragraph.push(line);
+    }
+  });
+
+  flushParagraph();
+  flushList();
+
+  return <div className="chat-message-content">{blocks}</div>;
+}
+
 /* ================= LANGUAGES ================= */
 const LANGUAGES = [
   { id: 63, name: "JavaScript", monaco: "javascript" },
@@ -1111,8 +1191,8 @@ export default function Videolesson() {
     try {
       const systemPrompt = chatSystemPrompt ||
         (topic?.title
-          ? `You are a helpful coding tutor assisting a student learning "${topic.title}". Answer questions about the lesson, explain concepts clearly, and help debug code. Be concise and educational.`
-          : "You are a helpful coding tutor. Answer questions about programming concepts and help debug code. Be concise and educational.");
+          ? `You are a helpful coding tutor assisting a student learning "${topic.title}". Answer questions about the lesson, explain concepts clearly, and help debug code. Be concise and educational. Format responses for an in-app chat: do not use Markdown tables or emoji-numbered headers. Use short paragraphs, **bold section labels**, and bulleted or numbered lists when useful. Leave a blank line between sections.`
+          : "You are a helpful coding tutor. Answer questions about programming concepts and help debug code. Be concise and educational. Format responses for an in-app chat: do not use Markdown tables or emoji-numbered headers. Use short paragraphs, **bold section labels**, and bulleted or numbered lists when useful. Leave a blank line between sections.");
 
       const response = await fetch("/chat", {
         method: "POST",
@@ -1645,7 +1725,7 @@ export default function Videolesson() {
                 key={i}
                 className={msg.role === "ai" ? "ai-message" : "user-message"}
               >
-                {msg.content}
+                <ChatMessageContent content={msg.content} />
               </div>
             ))}
             <div ref={messagesEndRef} />

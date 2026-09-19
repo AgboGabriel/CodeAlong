@@ -1018,7 +1018,7 @@ MANDATORY RULES:
     const messages = [
       {
         role: "system",
-        content: `You are CodeAlong's lesson assistant. Help the learner with the current topic, the current lesson video, and their code. Be concise, practical, and educational.
+        content: `You are CodeAlong's lesson assistant. Help the learner with the current topic, the current lesson video, and their code. Be concise, practical, and educational. Format replies for the in-app chat: never use Markdown tables or emoji-numbered headers. Use short paragraphs, bold section labels, and bulleted or numbered lists when useful. Leave a blank line between sections.
 
 Current lesson context:
 - module: ${moduleTitle || "Unknown module"}
