@@ -418,3 +418,127 @@ a:hover { text-decoration: underline; }
 .Qn-save-btn:active {
   transform: scale(0.98);
 }
+/* ========== Responsive ========== */
+
+@media (max-width: 1024px) {
+  .Qn-career-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .Qn-skill-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .Qn-goal-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .Qn-main {
+    padding: 1.75rem 1rem;
+  }
+
+  .Qn-content {
+    gap: 2rem;
+  }
+
+  .Qn-progress-header {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .Qn-pct {
+    text-align: left;
+    min-width: 0;
+  }
+
+  .Qn-section {
+    padding: 16px;
+    gap: 1.25rem;
+  }
+
+  .Qn-career-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .Qn-skill-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .Qn-skill-card {
+    padding: 1rem;
+  }
+
+  .Qn-goal-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .Qn-goal-card {
+    padding: 1.5rem 1rem;
+  }
+
+  .Qn-pills {
+    gap: 0.5rem;
+  }
+
+  .Qn-pill {
+    padding: 0.5rem 1.125rem;
+    font-size: 0.85rem;
+  }
+
+  .Qn-actions {
+    flex-direction: column-reverse;
+    gap: 12px;
+    padding-top: 1.75rem;
+  }
+
+  .Qn-back-btn,
+  .Qn-save-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .Qn-save-btn {
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .Qn-career-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .Qn-career-card {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .Qn-career-thumb {
+    width: 64px;
+    aspect-ratio: auto;
+    height: 64px;
+    flex-shrink: 0;
+  }
+
+  .Qn-career-emoji {
+    font-size: 1.75rem;
+  }
+
+  .Qn-section {
+    border-radius: 14px;
+    padding: 14px;
+  }
+
+  .Qn-goal-icon-wrap {
+    width: 3.25rem;
+    height: 3.25rem;
+  }
+
+  .Qn-goal-emoji {
+    font-size: 1.4rem;
+  }
+}

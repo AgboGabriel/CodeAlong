@@ -47,6 +47,7 @@ export default function CodeAI() {
       [name]: type === "checkbox" ? checked : value,
     }));
   };
+  
   const handleRegister = async (e)=>{
     e.preventDefault();
     if(!form.terms){

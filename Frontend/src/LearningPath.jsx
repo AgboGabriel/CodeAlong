@@ -10,17 +10,15 @@ import {
   MdDashboard,
   MdFolderOpen,
   MdMenuBook,
-  MdAttachFile,
 } from "react-icons/md";
 
-import { FaMicrophone, FaPaperPlane, FaRobot } from "react-icons/fa";
+import { FaPaperPlane, FaRobot } from "react-icons/fa";
 
 function LpBody() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [confirmError, setConfirmError] = useState("");
-  const [attachments, setAttachments] = useState([]);
   const [messages, setMessages] = useState([
     {
       role: "ai",
@@ -30,16 +28,10 @@ function LpBody() {
     },
   ]);
   const [activeModuleIndex, setActiveModuleIndex] = useState(null);
-  const [isRecording, setIsRecording] = useState(false);
 
   const chatContainerRef = useRef(null);
   const bottomRef = useRef(null);
-  const fileInputRef = useRef(null);
   const navigate = useNavigate();
-
-  const removeAttachment = (index) => {
-    setAttachments((prev) => prev.filter((_, i) => i !== index));
-  };
 
   const handleModuleClick = (module, index) => {
     if (module.placeholder) return;
@@ -57,7 +49,6 @@ function LpBody() {
     ]);
     setInput("");
     setLoading(false);
-    setAttachments([]);
     setConfirmError("");
     setActiveModuleIndex(null);
   };
@@ -103,14 +94,6 @@ function LpBody() {
     }
   };
 
-  const openFilePicker = () => fileInputRef.current?.click();
-
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    if (!files.length) return;
-    setAttachments((prev) => [...prev, ...files]);
-  };
-
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
@@ -126,13 +109,11 @@ function LpBody() {
         role: "user",
         type: "text",
         content: userMessage,
-        attachments: attachments.length ? attachments.map((f) => f.name) : [],
       },
     ]);
 
     setInput("");
     setLoading(true);
-    setAttachments([]);
 
     try {
       const response = await fetch("/chat/curriculum", {
@@ -185,13 +166,6 @@ function LpBody() {
               <div className="user-message-wrapper">
                 <div className="user-message">
                   <p>{msg.content}</p>
-                  {msg.attachments?.length > 0 && (
-                    <div className="attachment-preview">
-                      {msg.attachments.map((file, i) => (
-                        <div key={i}>📎 {file}</div>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </div>
             )}
@@ -289,16 +263,6 @@ function LpBody() {
       </div>
 
       <div className="chat-input">
-        <button className="icon-btn" onClick={openFilePicker}>
-          <MdAttachFile size={24} />
-        </button>
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          multiple
-          style={{ display: "none" }}
-        />
         <input
           className="input"
           type="text"
@@ -308,31 +272,11 @@ function LpBody() {
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
         />
         <div className="input-actions">
-          <button
-            className={`mic-btn icon-btn ${isRecording ? "recording" : ""}`}
-            onClick={() => setIsRecording((prev) => !prev)}
-            aria-label="Record voice"
-          >
-            <FaMicrophone size={24} />
-          </button>
           <button className="send-btn" onClick={handleSend} aria-label="Send message">
             <FaPaperPlane size={18} />
           </button>
         </div>
       </div>
-
-      {attachments.length > 0 && (
-        <div className="attachment-preview-global">
-          {attachments.map((file, index) => (
-            <div key={index} className="attachment-item">
-              <span>📎 {file.name}</span>
-              <button className="remove-file-btn" onClick={() => removeAttachment(index)}>
-                ✕
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

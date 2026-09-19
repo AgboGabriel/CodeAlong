@@ -154,7 +154,7 @@ export default function Assessments() {
               <div>
                 <h1 className="ass-page-title">Assessments</h1>
                 <p className="ass-page-subtitle">
-                  Track your progress and complete additional assessments on the lessons you have taken.
+                  Test your understanding on topics you have completed with additional assessments
                 </p>
               </div>
             </div>
@@ -171,15 +171,7 @@ export default function Assessments() {
                 <MdTimer className="ass-stat__bg-icon" />
               </div>
 
-              <div className="ass-stat ass-stat--review">
-                <div>
-                  <p className="ass-stat__label ass-stat__label--muted">
-                    In Review
-                  </p>
-                  <h3 className="ass-stat__value">0</h3>
-                </div>
-                <MdVisibility className="ass-stat__bg-icon" />
-              </div>
+              
 
               <div className="ass-stat ass-stat--completed">
                 <div>

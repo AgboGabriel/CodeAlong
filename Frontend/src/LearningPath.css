@@ -460,3 +460,94 @@ body {
   color: #dc2626;
   border: 1px solid rgba(239, 68, 68, 0.2);
 }
+/* ================= RESPONSIVE ================= */
+
+@media (max-width: 768px) {
+  .container {
+    height: 100vh;
+    height: 100dvh;
+    border-radius: 0;
+    padding: 10px;
+  }
+
+  .user-message {
+    max-width: 90%;
+  }
+
+  .ai-card {
+    padding: 18px;
+  }
+
+  .modules-grid {
+    grid-template-columns: 1fr;
+    padding: 30px 16px;
+    gap: 10px;
+  }
+
+  .module {
+    padding: 12px;
+  }
+
+  .chat-input input {
+    padding-left: 12px;
+    font-size: 15px;
+  }
+
+  .send-btn {
+    width: auto;
+    padding: 10px 14px;
+  }
+
+  .input-actions {
+    gap: 8px;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .primary-btn,
+  .secondary-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .chat-top-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 8px;
+  }
+
+  .user-message {
+    max-width: 95%;
+    padding: 12px 14px;
+  }
+
+  .ai-card {
+    padding: 14px;
+  }
+
+  .modules-grid {
+    padding: 20px 12px;
+  }
+
+  .ai-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .chips button {
+    padding: 5px 8px;
+    font-size: 12px;
+  }
+
+  .difficulty {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+}

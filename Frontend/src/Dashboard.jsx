@@ -113,7 +113,7 @@ function CtaBanner() {
     <div className="cta-banner">
       <div>
         <h3>Design Your Own Course</h3>
-        <p>Talk to our AI assistant to create a step-by-step roadmap for any topic you want to master.</p>
+        <p>Interact our AI assistant to create a step-by-step roadmap for any topic you want to master.</p>
       </div>
 
       <button className="btn btn-white" onClick={() => window.location.assign("/LearningPath")}>
@@ -129,12 +129,12 @@ function AssessmentsBanner() {
   return (
     <div className="cta-banner">
       <div>
-        <h3>Challenge of the day</h3>
-        <p>Test your skills with daily programming challenges.</p>
+        <h3>Additional Resources</h3>
+        <p>Test your understanding on topics you have completed with additional assessments.</p>
       </div>
 
       <button className="btn btn-white" onClick={() => navigate("/Assessments")}>
-        Start challenge
+       Go to Assessments
       </button>
     </div>
   );

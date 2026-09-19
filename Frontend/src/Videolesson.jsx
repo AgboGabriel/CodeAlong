@@ -1434,7 +1434,7 @@ export default function Videolesson() {
               : "You've completed this module!"}
           </div>
           <button
-            onClick={() => { setProgressionResult(null); navigate("/MyLessons"); }}
+            onClick={() => { setProgressionResult(null); navigate("/Topics"); }}
             style={{
               background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 6,
               color: "#fff", padding: "6px 14px", cursor: "pointer", fontWeight: 600

@@ -102,7 +102,7 @@ export default function ForgotPassword() {
         ) : null}
 
         <p className="back-login">
-          Remembered your password? <a href="/login">Login</a>
+          Remembered your password? <a href="/login">Go back to Login</a>
         </p>
       </div>
     </div>
