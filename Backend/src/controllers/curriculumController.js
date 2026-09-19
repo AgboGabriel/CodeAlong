@@ -75,6 +75,36 @@ class CurriculumController {
       });
     }
   }
+
+  async deleteCurriculum(req, res) {
+    try {
+      const userId = req.user?.id;
+      const { curriculumId } = req.params;
+
+      if (!userId) {
+        return res.status(401).json({ error: "User not authenticated" });
+      }
+
+      const deletedCurriculum = await curriculumModel.deleteCurriculum(
+        curriculumId,
+        userId
+      );
+
+      if (!deletedCurriculum) {
+        return res.status(404).json({ error: "Curriculum not found" });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Learning path deleted successfully",
+      });
+    } catch (error) {
+      console.error("Error deleting curriculum:", error);
+      return res.status(500).json({
+        error: error.message || "Failed to delete curriculum",
+      });
+    }
+  }
 }
 
 export default new CurriculumController();

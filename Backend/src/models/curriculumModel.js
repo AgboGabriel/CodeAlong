@@ -182,6 +182,17 @@ class CurriculumModel {
     return curriculums;
   }
 
+  async deleteCurriculum(curriculumId, userId) {
+    const result = await database.query(
+      `DELETE FROM user_curriculums
+       WHERE id = $1 AND user_id = $2
+       RETURNING id`,
+      [curriculumId, userId]
+    );
+
+    return result.rows[0] || null;
+  }
+
   async getModuleWithTopics(moduleId, userId) {
     const moduleResult = await database.query(
       `

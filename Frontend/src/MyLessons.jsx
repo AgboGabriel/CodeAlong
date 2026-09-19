@@ -511,6 +511,7 @@ import {
   MdCode,
   MdLock,
   MdFolderOpen,
+  MdDeleteOutline,
 } from "react-icons/md";
 
 const CACHE_KEY = "myLessons_cache";
@@ -538,6 +539,9 @@ export default function MyLessons() {
 
   const [learningPaths, setLearningPaths] = useState([]);
   const [loadingPaths, setLoadingPaths] = useState(true);
+  const [deletingPathId, setDeletingPathId] = useState(null);
+  const [pathPendingDeletion, setPathPendingDeletion] = useState(null);
+  const [deleteError, setDeleteError] = useState("");
 
   const [selectedPath, setSelectedPath] = useState(null);
   const [filter, setFilter] = useState("All Paths");
@@ -661,6 +665,41 @@ export default function MyLessons() {
   const handleCancelQuiz = () => {
     setShowQuizPopup(false);
     setSelectedTopic(null);
+  };
+
+  const handleDeletePath = async () => {
+    if (!pathPendingDeletion) return;
+
+    const path = pathPendingDeletion;
+    setDeleteError("");
+    setDeletingPathId(path.id);
+
+    try {
+      const response = await fetch(`/api/curriculum/${path.id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Unable to delete this learning path");
+      }
+
+      setLearningPaths((paths) => paths.filter(({ id }) => id !== path.id));
+      sessionStorage.removeItem(CACHE_KEY);
+      setPathPendingDeletion(null);
+
+      if (selectedPath?.id === path.id) {
+        setSelectedPath(null);
+        setSelectedModule(null);
+        setView("modules");
+      }
+    } catch (error) {
+      console.error("Failed to delete learning path:", error);
+      setDeleteError(error.message || "Unable to delete this learning path. Please try again.");
+    } finally {
+      setDeletingPathId(null);
+    }
   };
 
   const openModuleTopics = (module, index) => {
@@ -792,6 +831,7 @@ export default function MyLessons() {
                 <div className="empty-state">Ooops! There's nothing here</div>
               ) : (
                 <div className="curriculum-grid">
+                  {deleteError && <p className="delete-path-error" role="alert">{deleteError}</p>}
                   {filteredPaths.map((path) => (
                     <div className="curriculum-card" key={path.id}>
                       <div className="curriculum-content">
@@ -806,15 +846,59 @@ export default function MyLessons() {
                             {path.level}
                           </span>
                         </div>
-                        <button
-                          className="curriculum-btn"
-                          onClick={() => setSelectedPath(path)}
-                        >
-                          Go to Path
-                        </button>
+                        <div className="curriculum-actions">
+                          <button
+                            className="curriculum-btn"
+                            onClick={() => setSelectedPath(path)}
+                          >
+                            Go to Path
+                          </button>
+                          <button
+                            className="delete-path-btn"
+                            onClick={() => setPathPendingDeletion(path)}
+                            disabled={deletingPathId === path.id}
+                            aria-label={`Delete ${path.title}`}
+                          >
+                            <MdDeleteOutline size={19} aria-hidden="true" />
+                            {deletingPathId === path.id ? "Deleting…" : "Delete Path"}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+              {pathPendingDeletion && (
+                <div className="delete-dialog-overlay" role="presentation">
+                  <section
+                    className="delete-dialog"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="delete-path-title"
+                  >
+                    <div className="delete-dialog-icon"><MdDeleteOutline size={28} /></div>
+                    <h2 id="delete-path-title">Delete learning path?</h2>
+                    <p>
+                      Delete “{pathPendingDeletion.title}”? This will permanently remove
+                      the path and its progress.
+                    </p>
+                    <div className="delete-dialog-actions">
+                      <button
+                        className="delete-dialog-cancel"
+                        onClick={() => setPathPendingDeletion(null)}
+                        disabled={deletingPathId === pathPendingDeletion.id}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className="delete-dialog-confirm"
+                        onClick={handleDeletePath}
+                        disabled={deletingPathId === pathPendingDeletion.id}
+                      >
+                        {deletingPathId === pathPendingDeletion.id ? "Deleting…" : "Delete Path"}
+                      </button>
+                    </div>
+                  </section>
                 </div>
               )}
             </div>

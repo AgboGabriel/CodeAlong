@@ -256,6 +256,10 @@ router.get("/api/curriculum/:curriculumId", ensureAuthenticated, (req,res)=>{
     curriculumController.getCurriculum(req,res);
 });
 
+router.delete("/api/curriculum/:curriculumId", ensureAuthenticated, (req,res)=>{
+    curriculumController.deleteCurriculum(req,res);
+});
+
 
 //youtube video routes
 router.get("/api/videos/module/:moduleId", ensureAuthenticated, (req,res)=>{
