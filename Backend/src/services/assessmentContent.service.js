@@ -689,19 +689,36 @@ MANDATORY RULES:
     // Put the concrete weakness in the query, not merely in ranking. This
     // makes later attempts seek a different explanation of the same topic.
     const weaknessQuery = focusTerms.slice(0, 3).join(" ");
-    const fallbackQuery = `${languageLabel} ${topicContext.topic.title} ${weaknessQuery} beginner tutorial worked examples -skit -shorts -meme -reaction`;
+    const baseQuery = `${languageLabel} ${topicContext.topic.title}`.trim();
+    // A single narrow query can be exhausted after a learner rejects one
+    // video. Search complementary explanations of the same topic, then
+    // remove every video already offered to this learner.
+    const searchQueries = [
+      `${baseQuery} ${weaknessQuery} beginner tutorial worked examples -skit -shorts -meme -reaction`,
+      `${baseQuery} explained simply for beginners examples -skit -shorts -meme -reaction`,
+      `${baseQuery} common mistakes ${weaknessQuery} tutorial -skit -shorts -meme -reaction`,
+    ];
+    const searchGroups = await Promise.all(searchQueries.map((query) => youtubeService.searchVideos(query, 20)));
+    const uniqueVideoIds = [...new Set(searchGroups.flat().map((video) => video.videoId).filter(Boolean))];
+    const fallbackCandidates = await youtubeService.getVideoDetails(uniqueVideoIds);
 
-    const fallbackSearch = await youtubeService.searchVideos(fallbackQuery, 25);
-
-    const fallbackCandidates = await youtubeService.getVideoDetails(
-      fallbackSearch.map((video) => video.videoId).filter(Boolean)
-    );
-
-    const rankedFallbacks = await youtubeService.rankVideos(fallbackCandidates, topicContext.topic.title, {
+    let rankedFallbacks = await youtubeService.rankVideos(fallbackCandidates, topicContext.topic.title, {
       expectedLanguage,
       excludedVideoIds,
       focusTerms,
     });
+
+    // Some quality tutorials use a different phrase from the curriculum's
+    // topic title. The query still anchors them to the topic; this second pass
+    // prevents an exact-title mismatch from leaving the learner stranded.
+    if (rankedFallbacks.length === 0) {
+      rankedFallbacks = await youtubeService.rankVideos(fallbackCandidates, topicContext.topic.title, {
+        expectedLanguage,
+        excludedVideoIds,
+        focusTerms,
+        requireTopicMatch: false,
+      });
+    }
 
     const fallbackVideo = rankedFallbacks[0];
     if (!fallbackVideo) return null;
@@ -726,9 +743,10 @@ MANDATORY RULES:
       replacedVideoId: existingVideo?.id || null,
       replacementVideoId: savedVideo?.id || null,
       video: savedVideo,
+      focus: weaknessFocus,
       reason: force
-        ? `Adaptive help requested: a simpler video focused on ${weaknessFocus} is recommended`
-        : `Repeated challenge failure (${failureCount} attempts): a simpler video focused on ${weaknessFocus} is recommended`,
+        ? `This option was selected to help with ${weaknessFocus} while you learn ${topicContext.topic.title}.`
+        : `After repeated challenge failures, this option was selected to help with ${weaknessFocus} while you learn ${topicContext.topic.title}.`,
     };
   }
 

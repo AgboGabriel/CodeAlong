@@ -775,6 +775,19 @@
   padding: 12px 14px;
 }
 
+.adaptive-video-explainer {
+  margin-top: 1rem;
+  padding: .8rem .9rem;
+  border-left: 3px solid #a78bfa;
+  border-radius: 0 .5rem .5rem 0;
+  background: rgba(124, 58, 237, .12);
+  color: #ddd6fe;
+  line-height: 1.55;
+}
+.adaptive-video-explainer strong { color: #ede9fe; }
+.adaptive-video-explainer p { margin: .35rem 0 0; color: #d8d4fe; font-size: .88rem; }
+.adaptive-another-btn:disabled { cursor: not-allowed; opacity: .65; }
+
 .adaptive-help-btn {
   display: inline-flex;
   align-items: center;

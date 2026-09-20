@@ -629,6 +629,7 @@ export default function Challenges() {
       }
 
       setAdaptiveHelpConfirm(false);
+      setAdaptiveHelpError("");
       setVideoReplacement(data.videoReplacement);
     } catch (error) {
       setAdaptiveHelpError(error.message || "Unable to prepare adaptive help. Please try again.");
@@ -825,6 +826,15 @@ export default function Challenges() {
                 </div>
               )}
 
+              <div className="adaptive-video-explainer">
+                <strong>How this can help</strong>
+                <p>
+                  This is a beginner-focused explanation of <strong>{topic?.title}</strong>{videoReplacement.focus ? `, selected to help with ${videoReplacement.focus}` : ""}. Review the title and description above before deciding whether to open it.
+                </p>
+              </div>
+
+              {adaptiveHelpError && <p className="adaptive-help-error">{adaptiveHelpError}</p>}
+
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 4 }}>
                 <button
                   className="hint-close-btn"
@@ -869,6 +879,14 @@ export default function Challenges() {
                     Open video
                   </button>
                 )}
+                <button
+                  type="button"
+                  className="hint-close-btn adaptive-another-btn"
+                  onClick={requestAdaptiveHelp}
+                  disabled={isRequestingAdaptiveHelp}
+                >
+                  {isRequestingAdaptiveHelp ? "Finding another option..." : "Show another option"}
+                </button>
               </div>
             </div>
           </div>
@@ -992,7 +1010,7 @@ export default function Challenges() {
                   <p className="challenge-results-summary">
                     Passed {submitSummary.passed} of {submitSummary.total} tests.
                   </p>
-                  {submitSummary.results.map((result, idx) => (
+                  {submitSummary.results.map((result) => (
                     <div key={result.id} className="challenge-test-card" style={{
                       borderColor: result.passed
                         ? "rgba(34, 197, 94, 0.3)"
