@@ -245,6 +245,9 @@ export default function Challenges() {
   const [progressionResult, setProgressionResult] = useState(null);
   const [progressionError,  setProgressionError]  = useState("");
   const [videoReplacement, setVideoReplacement] = useState(null);
+  const [adaptiveHelpConfirm, setAdaptiveHelpConfirm] = useState(false);
+  const [adaptiveHelpError, setAdaptiveHelpError] = useState("");
+  const [isRequestingAdaptiveHelp, setIsRequestingAdaptiveHelp] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
 
@@ -603,6 +606,36 @@ export default function Challenges() {
     }
   };
 
+  const requestAdaptiveHelp = async () => {
+    if (!topic?.id || isRequestingAdaptiveHelp) return;
+
+    setIsRequestingAdaptiveHelp(true);
+    setAdaptiveHelpError("");
+    try {
+      const response = await fetch("/api/assessment/adaptive-help", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topicId: topic.id,
+          moduleId,
+          curriculumId: topic.curriculumId || null,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.success || !data.videoReplacement?.video) {
+        throw new Error(data.error || "Unable to prepare adaptive help");
+      }
+
+      setAdaptiveHelpConfirm(false);
+      setVideoReplacement(data.videoReplacement);
+    } catch (error) {
+      setAdaptiveHelpError(error.message || "Unable to prepare adaptive help. Please try again.");
+    } finally {
+      setIsRequestingAdaptiveHelp(false);
+    }
+  };
+
   /* ================= TABS ================= */
   const handleAddTab = () => {
     const newTab = {
@@ -837,6 +870,32 @@ export default function Challenges() {
         </div>
       )}
 
+      {adaptiveHelpConfirm && (
+        <div className="hint-overlay" role="dialog" aria-modal="true" aria-labelledby="adaptive-help-title">
+          <div className="hint-modal adaptive-help-modal">
+            <div className="hint-modal-header">
+              <div>
+                <p className="hint-eyebrow">Adaptive Support</p>
+                <h2 id="adaptive-help-title">Try a simpler explanation?</h2>
+              </div>
+              <button className="hint-close-btn" onClick={() => setAdaptiveHelpConfirm(false)} aria-label="Close">✕</button>
+            </div>
+            <div className="hint-content">
+              <p className="adaptive-help-copy">
+                We can switch your lesson to a simpler, beginner-friendly video for <strong>{topic?.title}</strong>. Your challenge progress will stay here.
+              </p>
+              {adaptiveHelpError && <p className="adaptive-help-error">{adaptiveHelpError}</p>}
+              <div className="adaptive-help-actions">
+                <button className="hint-close-btn" onClick={() => setAdaptiveHelpConfirm(false)} disabled={isRequestingAdaptiveHelp}>Keep trying</button>
+                <button className="primary-btn" onClick={requestAdaptiveHelp} disabled={isRequestingAdaptiveHelp}>
+                  {isRequestingAdaptiveHelp ? "Finding a simpler video..." : "Get adaptive help"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Split className="challenge-layout" sizes={[35, 65]} minSize={120} gutterSize={6}>
 
         {/* LEFT: Question Panel */}
@@ -1039,6 +1098,17 @@ export default function Challenges() {
                   </>
                 )}
               </button>
+
+              {submitSummary?.failed > 0 && challengeType === "section" && (
+                <button
+                  className="adaptive-help-btn"
+                  onClick={() => { setAdaptiveHelpError(""); setAdaptiveHelpConfirm(true); }}
+                  title="Choose a simpler video explanation for this topic"
+                >
+                  <span aria-hidden="true">🛟</span>
+                  Get adaptive help
+                </button>
+              )}
 
               <button className="submit-btn" onClick={handleSubmit} disabled={isSubmitting}>
                 {isSubmitting ? "Evaluating…" : "Submit"}

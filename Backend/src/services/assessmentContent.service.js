@@ -639,7 +639,7 @@ MANDATORY RULES:
     };
   }
 
-  async maybeTriggerSimplerVideoForTopic({ userId, topicId, moduleId, curriculumId, evaluation }) {
+  async maybeTriggerSimplerVideoForTopic({ userId, topicId, moduleId, curriculumId, evaluation = {}, force = false }) {
     if (!userId || !topicId) return null;
 
     const failureCount = await challengeModel.countTopicWeaknesses({
@@ -648,7 +648,7 @@ MANDATORY RULES:
       weaknessType: "challenge_failure",
     });
 
-    if (failureCount < REPLACEMENT_VIDEO_FAILURE_THRESHOLD) {
+    if (!force && failureCount < REPLACEMENT_VIDEO_FAILURE_THRESHOLD) {
       return null;
     }
 
@@ -657,11 +657,23 @@ MANDATORY RULES:
 
     const existingVideo = await youtubeVideoModel.findLatestByTopicId(topicId);
 
+    // A learner who explicitly asks for support should be able to reopen an
+    // already-selected simpler video instead of generating duplicates.
+    if (force && existingVideo?.is_replacement) {
+      return {
+        topicId,
+        replacedVideoId: existingVideo.replaced_video_id || null,
+        replacementVideoId: existingVideo.id,
+        video: existingVideo,
+        reason: "A simpler video is ready to help you review this topic.",
+      };
+    }
+
     // Once the threshold has been reached, keep trying on later failed
     // submissions until a suitable replacement is found. Once one exists,
     // retain the original 5, 10, 15... cadence for future recommendations.
     if (
-      existingVideo?.is_replacement &&
+      !force && existingVideo?.is_replacement &&
       failureCount % REPLACEMENT_VIDEO_FAILURE_THRESHOLD !== 0
     ) {
       return null;
@@ -706,7 +718,9 @@ MANDATORY RULES:
       replacement: {
         isReplacement: true,
         replacedVideoId: existingVideo?.id || null,
-        reason: `Repeated challenge failure (${failureCount} attempts): a simpler video focused on ${weaknessFocus} is recommended`,
+        reason: force
+          ? `Adaptive help requested: a simpler video focused on ${weaknessFocus} is recommended`
+          : `Repeated challenge failure (${failureCount} attempts): a simpler video focused on ${weaknessFocus} is recommended`,
       },
     });
 
@@ -715,8 +729,24 @@ MANDATORY RULES:
       replacedVideoId: existingVideo?.id || null,
       replacementVideoId: savedVideo?.id || null,
       video: savedVideo,
-      reason: `Repeated challenge failure (${failureCount} attempts): a simpler video focused on ${weaknessFocus} is recommended`,
+      reason: force
+        ? `Adaptive help requested: a simpler video focused on ${weaknessFocus} is recommended`
+        : `Repeated challenge failure (${failureCount} attempts): a simpler video focused on ${weaknessFocus} is recommended`,
     };
+  }
+
+  async requestSimplerVideoForTopic({ userId, topicId, moduleId, curriculumId }) {
+    if (!userId || !topicId) {
+      throw new Error("A signed-in learner and topic are required for adaptive help");
+    }
+
+    return this.maybeTriggerSimplerVideoForTopic({
+      userId,
+      topicId,
+      moduleId,
+      curriculumId,
+      force: true,
+    });
   }
 
   async evaluateChallengeSubmission({

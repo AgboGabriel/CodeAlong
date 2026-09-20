@@ -404,6 +404,12 @@ router.post(
   (req, res) => assessmentContentController.evaluateChallengeSubmission(req, res)
 );
 
+router.post(
+  "/api/assessment/adaptive-help",
+  ensureAuthenticated,
+  (req, res) => assessmentContentController.requestAdaptiveHelp(req, res)
+);
+
 // AST routes kept separate from Judge0 execution for review
 router.get("/api/ast/languages", (req, res) => {
     astController.getSupportedLanguages(req, res);

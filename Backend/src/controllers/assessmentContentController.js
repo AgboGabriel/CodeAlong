@@ -90,6 +90,42 @@ class AssessmentContentController {
       });
     }
   }
+
+  async requestAdaptiveHelp(req, res) {
+    try {
+      const userId = req.user?.id;
+      const { topicId, moduleId, curriculumId } = req.body;
+
+      if (!userId) {
+        return res.status(401).json({ success: false, error: "User not authenticated" });
+      }
+      if (!topicId) {
+        return res.status(400).json({ success: false, error: "Topic context is required for adaptive help" });
+      }
+
+      const videoReplacement = await assessmentContentService.requestSimplerVideoForTopic({
+        userId,
+        topicId,
+        moduleId,
+        curriculumId,
+      });
+
+      if (!videoReplacement?.video) {
+        return res.status(404).json({
+          success: false,
+          error: "We could not find a simpler video for this topic right now. Please try again shortly.",
+        });
+      }
+
+      return res.status(200).json({ success: true, videoReplacement });
+    } catch (error) {
+      console.error("Error requesting adaptive help:", error);
+      return res.status(500).json({
+        success: false,
+        error: error.message || "Unable to prepare adaptive help",
+      });
+    }
+  }
 }
 
 export default new AssessmentContentController();
