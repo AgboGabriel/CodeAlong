@@ -698,8 +698,19 @@ MANDATORY RULES:
       `${baseQuery} explained simply for beginners examples -skit -shorts -meme -reaction`,
       `${baseQuery} common mistakes ${weaknessQuery} tutorial -skit -shorts -meme -reaction`,
     ];
-    const searchGroups = await Promise.all(searchQueries.map((query) => youtubeService.searchVideos(query, 20)));
-    const uniqueVideoIds = [...new Set(searchGroups.flat().map((video) => video.videoId).filter(Boolean))];
+    const searchResults = await Promise.allSettled(
+      searchQueries.map((query) => youtubeService.searchVideos(query, 20))
+    );
+    const searchGroups = searchResults
+      .filter((result) => result.status === "fulfilled")
+      .map((result) => result.value);
+    // YouTube's videos.list API accepts at most 50 IDs in a request. More
+    // than that produces the HTTP 400 seen after asking for another option.
+    const uniqueVideoIds = [...new Set(searchGroups.flat().map((video) => video.videoId).filter(Boolean))]
+      .slice(0, 50);
+    if (uniqueVideoIds.length === 0) {
+      throw new Error("No video results were returned for this topic. Please try again shortly.");
+    }
     const fallbackCandidates = await youtubeService.getVideoDetails(uniqueVideoIds);
 
     let rankedFallbacks = await youtubeService.rankVideos(fallbackCandidates, topicContext.topic.title, {
