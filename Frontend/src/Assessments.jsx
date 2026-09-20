@@ -24,6 +24,58 @@ export default function Assessments() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("All Levels");
 
+  const inferAssessmentDifficulty = (topicTitle = "", moduleTitle = "", curriculumTitle = "") => {
+    const combinedText = `${topicTitle} ${moduleTitle} ${curriculumTitle}`.toLowerCase();
+
+    const beginnerPatterns = [
+      "intro",
+      "introduction",
+      "beginner",
+      "basic",
+      "basics",
+      "fundamentals",
+      "variables",
+      "functions",
+      "loops",
+      "conditionals",
+      "arrays",
+      "objects",
+      "strings",
+      "operators",
+      "syntax",
+      "data types",
+      "getting started",
+    ];
+
+    const advancedPatterns = [
+      "advanced",
+      "architecture",
+      "performance",
+      "security",
+      "concurrency",
+      "microservices",
+      "distributed",
+      "optimization",
+      "scaling",
+      "system design",
+      "deployment",
+      "refactor",
+      "testing",
+      "debugging",
+      "production",
+    ];
+
+    if (beginnerPatterns.some((pattern) => combinedText.includes(pattern))) {
+      return { level: "Beginner", rawDifficulty: "easy" };
+    }
+
+    if (advancedPatterns.some((pattern) => combinedText.includes(pattern))) {
+      return { level: "Advanced", rawDifficulty: "hard" };
+    }
+
+    return { level: "Intermediate", rawDifficulty: "medium" };
+  };
+
   const buildAssessmentList = async () => {
     try {
       setLoadingAssessments(true);
@@ -74,18 +126,26 @@ export default function Assessments() {
       // Assessment content is generated only after the learner clicks Start.
       // This keeps the list fast and avoids unnecessary AI-generation calls.
       setAssessments(
-        completedEntries.map(({ topicId, moduleId, curriculumTitle, moduleTitle, topicTitle }) => ({
-          id: `assessment-${topicId}`,
-          title: `${topicTitle} Assessment`,
-          course: `${curriculumTitle} • ${moduleTitle}`,
-          level: "Intermediate",
-          rawDifficulty: "medium",
-          topicId,
-          moduleId,
-          topicTitle,
-          moduleTitle,
-          curriculumTitle,
-        }))
+        completedEntries.map(({ topicId, moduleId, curriculumTitle, moduleTitle, topicTitle }) => {
+          const { level, rawDifficulty } = inferAssessmentDifficulty(
+            topicTitle,
+            moduleTitle,
+            curriculumTitle
+          );
+
+          return {
+            id: `assessment-${topicId}`,
+            title: `${topicTitle} Assessment`,
+            course: `${curriculumTitle} • ${moduleTitle}`,
+            level,
+            rawDifficulty,
+            topicId,
+            moduleId,
+            topicTitle,
+            moduleTitle,
+            curriculumTitle,
+          };
+        })
       );
     } catch (error) {
       console.error("Failed to load generated assessments:", error);
@@ -178,7 +238,7 @@ export default function Assessments() {
                   <p className="ass-stat__label ass-stat__label--muted">
                     Completed
                   </p>
-                  <h3 className="ass-stat__value">2</h3>
+                  <h3 className="ass-stat__value">0</h3>
                 </div>
                 <MdCheckCircle className="ass-stat__bg-icon" />
               </div>
@@ -286,55 +346,27 @@ export default function Assessments() {
             </section>
 
             {/* Recently Completed */}
-            <section className="ass-section ass-section--pad-bottom">
-              <div className="ass-section__head ass-section__head--bordered">
-                <h2 className="ass-section__title">Recently Completed</h2>
-                <p
-                  className="ass-link-btn"
-                  onClick={() => navigate("/CompletedAssessments")}
-                >
-                  View all
-                </p>
-              </div>
-
-              <div className="ass-success-grid">
-                <div className="ass-success-card">
-                  <div className="ass-success-card__lead">
-                    <div className="ass-success-card__check">
-                      <MdCheck />
-                    </div>
-                    <div>
-                      <h5 className="ass-success-card__title">
-                        Intro to TypeScript
-                      </h5>
-                      <p className="ass-success-card__meta">
-                        Grade: 98/100 • Oct 12
-                      </p>
-                    </div>
-                  </div>
-                  <p className="ass-status">Passed</p>
+            {assessments.length > 0 && (
+              <section className="ass-section ass-section--pad-bottom">
+                <div className="ass-section__head ass-section__head--bordered">
+                  <h2 className="ass-section__title">Recently Completed</h2>
+                  <p
+                    className="ass-link-btn"
+                    onClick={() => navigate("/CompletedAssessments")}
+                  >
+                    View all
+                  </p>
                 </div>
-              </div>
 
-              <div className="ass-success-grid">
-                <div className="ass-success-card ass-success-card--failed">
-                  <div className="ass-success-card__lead">
-                    <div className="ass-success-card__check">
-                      <MdCheck />
-                    </div>
-                    <div>
-                      <h5 className="ass-success-card__title">
-                        React State Management
-                      </h5>
-                      <p className="ass-success-card__meta">
-                        Grade: 45/100 • Oct 18
-                      </p>
-                    </div>
+                <div className="ass-success-grid">
+                  <div className="ass-no-results">
+                    <MdSearch size={36} className="ass-no-results__icon" />
+                    <h3>No completed assessments yet</h3>
+                    <p>Once you finish an assessment, it will appear here.</p>
                   </div>
-                  <p className="ass-status--failed">Failed</p>
                 </div>
-              </div>
-            </section>
+              </section>
+            )}
           </div>
         </div>
       </main>

@@ -19,22 +19,7 @@ export default function CompletedAssessments() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("All Assessments");
 
-  const completedAssessments = [
-  {
-    id: 1,
-    title: "Intro to TypeScript",
-    grade: "98/100",
-    date: "Oct 12",
-    status: "Passed",
-  },
-  {
-    id: 2,
-    title: "React State Management",
-    grade: "45/100",
-    date: "Oct 18",
-    status: "Failed",
-  }
-];
+  const completedAssessments = [];
 
 const handleBack = () => {
   navigate(-1);
