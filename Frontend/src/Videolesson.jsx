@@ -995,6 +995,7 @@ export default function Videolesson() {
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
   const historyRef = useRef(null);
+  const chatAbortRef = useRef(null);
 
   /* ================= STATE ================= */
   const [output, setOutput] = useState("");
@@ -1027,7 +1028,7 @@ export default function Videolesson() {
   const [activeTab, setActiveTab] = useState(1);
 
   const [conversations, setConversations] = useState(() => {
-    const title = topic?.title || video?.title || "New Chat";
+    const title = `${topic?.title || video?.title || "New Chat"} — Lesson chat`;
     return [
       {
         id: 1,
@@ -1175,18 +1176,27 @@ export default function Videolesson() {
   const handleSendMessage = async () => {
     const trimmed = chatInput.trim();
     if (!trimmed || chatLoading) return;
+    const conversationId = activeConversationId;
 
     const userMsg = { role: "user", content: trimmed };
 
     setConversations((prev) =>
       prev.map((conv) =>
-        conv.id === activeConversationId
-          ? { ...conv, messages: [...conv.messages, userMsg] }
+        conv.id === conversationId
+          ? {
+              ...conv,
+              title: conv.messages.some((message) => message.role === "user")
+                ? conv.title
+                : getChatTitle(trimmed, conv.id),
+              messages: [...conv.messages, userMsg],
+            }
           : conv
       )
     );
     setChatInput("");
     setChatLoading(true);
+    const controller = new AbortController();
+    chatAbortRef.current = controller;
 
     try {
       const systemPrompt = chatSystemPrompt ||
@@ -1199,6 +1209,7 @@ export default function Videolesson() {
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: trimmed, options: { systemPrompt } }),
+        signal: controller.signal,
       });
 
       const data = await response.json();
@@ -1207,28 +1218,44 @@ export default function Videolesson() {
       const aiMsg = { role: "ai", content: data.message };
       setConversations((prev) =>
         prev.map((conv) =>
-          conv.id === activeConversationId
+          conv.id === conversationId
             ? { ...conv, messages: [...conv.messages, aiMsg] }
             : conv
         )
       );
     } catch (error) {
+      if (error.name === "AbortError") {
+        setConversations((prev) =>
+          prev.map((conv) =>
+            conv.id === conversationId
+              ? { ...conv, messages: [...conv.messages, { role: "ai", content: "Response stopped. You can ask another question whenever you're ready." }] }
+              : conv
+          )
+        );
+        return;
+      }
       console.error("Chat error:", error);
       setConversations((prev) =>
         prev.map((conv) =>
-          conv.id === activeConversationId
+          conv.id === conversationId
             ? { ...conv, messages: [...conv.messages, { role: "ai", content: "Sorry, I couldn't get a response. Please try again." }] }
             : conv
         )
       );
     } finally {
-      setChatLoading(false);
+      if (chatAbortRef.current === controller) {
+        chatAbortRef.current = null;
+        setChatLoading(false);
+      }
     }
   };
 
   /* ================= CHAT HELPERS ================= */
-  const getChatTitle = () => {
-    return topic?.title || video?.title || "New Chat";
+  const getChatTitle = (firstMessage = "", id = Date.now()) => {
+    const context = topic?.title || video?.title || "New Chat";
+    const question = firstMessage.replace(/\s+/g, " ").trim().slice(0, 36);
+    const time = new Date(Number(id)).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return question ? `${context}: ${question} · ${time}` : `${context} · ${time}`;
   };
 
   const handleNewChat = () => {
@@ -1244,6 +1271,14 @@ export default function Videolesson() {
     setActiveConversationId(newChat.id);
     setShowHistory(false);
   };
+
+  const handleStopChat = () => {
+    if (chatAbortRef.current) {
+      chatAbortRef.current.abort();
+    }
+  };
+
+  useEffect(() => () => chatAbortRef.current?.abort(), []);
 
   const handleRename = (id) => {
     const name = prompt("Rename chat:");
@@ -1540,7 +1575,7 @@ export default function Videolesson() {
       >
         {/* VIDEO PANEL */}
         <div className="video-panel">
-          <button className="video-back-btn" onClick={() => navigate(-1)}>
+          <button className="video-back-btn" onClick={() => navigate("/Topics")}>
             ← Back to Topics
           </button>
 
@@ -1739,9 +1774,15 @@ export default function Videolesson() {
               onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
               disabled={chatLoading}
             />
-            <button className="chat-send-btn" onClick={handleSendMessage} disabled={chatLoading}>
-              {chatLoading ? "..." : "Send"}
-            </button>
+            {chatLoading ? (
+              <button className="chat-stop-btn" onClick={handleStopChat}>
+                Stop
+              </button>
+            ) : (
+              <button className="chat-send-btn" onClick={handleSendMessage}>
+                Send
+              </button>
+            )}
           </div>
         </div>
       </Split>
