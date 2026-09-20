@@ -24,6 +24,24 @@ export default function Assessments() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("All Levels");
 
+  const normalizeDifficultyValue = (value) => {
+    const normalized = String(value || "").trim().toLowerCase();
+
+    if (["beginner", "easy"].includes(normalized)) {
+      return { level: "Beginner", rawDifficulty: "easy" };
+    }
+
+    if (["advanced", "hard", "expert"].includes(normalized)) {
+      return { level: "Advanced", rawDifficulty: "hard" };
+    }
+
+    if (["intermediate", "medium"].includes(normalized)) {
+      return { level: "Intermediate", rawDifficulty: "medium" };
+    }
+
+    return null;
+  };
+
   const inferAssessmentDifficulty = (topicTitle = "", moduleTitle = "", curriculumTitle = "") => {
     const combinedText = `${topicTitle} ${moduleTitle} ${curriculumTitle}`.toLowerCase();
 
@@ -125,28 +143,67 @@ export default function Assessments() {
 
       // Assessment content is generated only after the learner clicks Start.
       // This keeps the list fast and avoids unnecessary AI-generation calls.
-      setAssessments(
-        completedEntries.map(({ topicId, moduleId, curriculumTitle, moduleTitle, topicTitle }) => {
-          const { level, rawDifficulty } = inferAssessmentDifficulty(
+      const resolvedAssessments = await Promise.allSettled(
+        completedEntries.map(async ({ topicId, moduleId, curriculumTitle, moduleTitle, topicTitle }) => {
+          const fallbackDifficulty = inferAssessmentDifficulty(
             topicTitle,
             moduleTitle,
             curriculumTitle
           );
 
-          return {
-            id: `assessment-${topicId}`,
-            title: `${topicTitle} Assessment`,
-            course: `${curriculumTitle} • ${moduleTitle}`,
-            level,
-            rawDifficulty,
-            topicId,
-            moduleId,
-            topicTitle,
-            moduleTitle,
-            curriculumTitle,
-          };
+          try {
+            const response = await fetch("/api/assessment/challenge", {
+              method: "POST",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                topicId,
+                moduleId,
+                challengeType: "assessment",
+              }),
+            });
+
+            const data = await response.json();
+            const backendDifficulty =
+              normalizeDifficultyValue(
+                data?.challenge?.difficulty ??
+                data?.challenge_data?.difficulty ??
+                data?.difficulty
+              ) || fallbackDifficulty;
+
+            return {
+              id: `assessment-${topicId}`,
+              title: `${topicTitle} Assessment`,
+              course: `${curriculumTitle} • ${moduleTitle}`,
+              ...backendDifficulty,
+              topicId,
+              moduleId,
+              topicTitle,
+              moduleTitle,
+              curriculumTitle,
+            };
+          } catch (error) {
+            console.warn("Failed to resolve assessment difficulty from backend:", error);
+            return {
+              id: `assessment-${topicId}`,
+              title: `${topicTitle} Assessment`,
+              course: `${curriculumTitle} • ${moduleTitle}`,
+              ...fallbackDifficulty,
+              topicId,
+              moduleId,
+              topicTitle,
+              moduleTitle,
+              curriculumTitle,
+            };
+          }
         })
       );
+
+      const finalAssessments = resolvedAssessments
+        .filter((entry) => entry.status === "fulfilled")
+        .map((entry) => entry.value);
+
+      setAssessments(finalAssessments);
     } catch (error) {
       console.error("Failed to load generated assessments:", error);
       setAssessments([]);

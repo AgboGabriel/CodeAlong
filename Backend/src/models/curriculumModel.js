@@ -10,14 +10,25 @@ class CurriculumModel {
 
       const curriculumResult = await client.query(
         `
-          INSERT INTO user_curriculums (user_id, title, description, status, current_module_index, current_topic_index)
-          VALUES ($1, $2, $3, 'active', 0, 0)
+          INSERT INTO user_curriculums (
+            user_id,
+            title,
+            description,
+            status,
+            difficulty,
+            estimated_duration,
+            current_module_index,
+            current_topic_index
+          )
+          VALUES ($1, $2, $3, 'active', $4, $5, 0, 0)
           RETURNING *
         `,
         [
           userId,
           curriculum.title || "Custom Learning Path",
           curriculum.description || "Your personalized learning path is ready.",
+          curriculum.level || curriculum.difficulty || "Beginner",
+          Number(curriculum.estimatedDuration || curriculum.estimated_duration || 0) || 0,
         ]
       );
 

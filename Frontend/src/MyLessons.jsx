@@ -517,19 +517,116 @@ import {
 const CACHE_KEY = "myLessons_cache";
 const CACHE_TTL_MS = 60 * 1000;
 
-function formatPaths(curriculums) {
-  return curriculums.map((curriculum) => ({
-    id: curriculum.id,
-    title: curriculum.title || "Custom Learning Path",
-    description:
-      curriculum.description ||
-      "A confirmed curriculum that you can continue learning.",
-    progress: curriculum.progress || 0,
-    hours: curriculum.modules?.length ? curriculum.modules.length * 4 : 10,
-    level: curriculum.level || "Beginner",
-    status: curriculum.status || "In Progress",
-    modules: curriculum.modules || [],
-  }));
+function inferDifficultyFromText(text = "") {
+  const normalized = text.toLowerCase();
+
+  const beginnerPatterns = [
+    "intro",
+    "introduction",
+    "beginner",
+    "fundamentals",
+    "basics",
+    "variables",
+    "functions",
+    "conditionals",
+    "loops",
+    "arrays",
+    "objects",
+    "strings",
+    "get started",
+    "foundations",
+  ];
+
+  const advancedPatterns = [
+    "advanced",
+    "architecture",
+    "distributed",
+    "performance",
+    "optimization",
+    "security",
+    "scaling",
+    "deployment",
+    "system design",
+    "production",
+    "microservices",
+    "refactor",
+    "debugging",
+  ];
+
+  if (advancedPatterns.some((pattern) => normalized.includes(pattern))) {
+    return "Advanced";
+  }
+
+  if (beginnerPatterns.some((pattern) => normalized.includes(pattern))) {
+    return "Beginner";
+  }
+
+  return "Intermediate";
+}
+
+function estimatePathDuration(curriculum) {
+  const modules = Array.isArray(curriculum?.modules) ? curriculum.modules : [];
+  const topicCount = modules.reduce((count, module) => {
+    const topics = Array.isArray(module?.topics) ? module.topics : [];
+    return count + topics.length;
+  }, 0);
+
+  if (topicCount === 0) {
+    return 0;
+  }
+
+  const durationHours = Math.max(1, Math.ceil((topicCount * 1.5) + (modules.length * 1.25)));
+  return durationHours;
+}
+
+function computeCurriculumProgress(curriculum, masteryByCurriculum = {}) {
+  const modules = Array.isArray(curriculum?.modules) ? curriculum.modules : [];
+  const allTopics = modules.flatMap((module) => (Array.isArray(module?.topics) ? module.topics : []));
+
+  if (allTopics.length === 0) {
+    return 0;
+  }
+
+  const masteryValues = allTopics.map((topic) => {
+    const topicId = topic?.id;
+    const masteryValue = masteryByCurriculum[topicId];
+
+    if (typeof masteryValue === "number") {
+      return Math.min(1, Math.max(0, masteryValue));
+    }
+
+    const status = String(topic?.status || "").toLowerCase();
+    if (status === "completed" || status === "complete") {
+      return 1;
+    }
+
+    return 0;
+  });
+
+  const average = masteryValues.reduce((sum, value) => sum + value, 0) / masteryValues.length;
+  return Math.round(average * 100);
+}
+
+function formatPaths(curriculums, masteryMap = {}) {
+  return curriculums.map((curriculum) => {
+    const modules = Array.isArray(curriculum.modules) ? curriculum.modules : [];
+    const pathText = [curriculum.title, curriculum.description, ...modules.map((module) => `${module.title || ""} ${module.description || ""}`)].join(" ");
+    const providedLevel = curriculum.level || curriculum.difficulty;
+    const providedDuration = Number(curriculum.estimated_duration ?? curriculum.estimatedDuration ?? 0);
+
+    return {
+      id: curriculum.id,
+      title: curriculum.title || "Custom Learning Path",
+      description:
+        curriculum.description ||
+        "A confirmed curriculum that you can continue learning.",
+      progress: computeCurriculumProgress(curriculum, masteryMap),
+      hours: providedDuration > 0 ? providedDuration : estimatePathDuration(curriculum),
+      level: providedLevel || inferDifficultyFromText(pathText),
+      status: curriculum.status || "In Progress",
+      modules: modules,
+    };
+  });
 }
 
 export default function MyLessons() {
@@ -582,14 +679,34 @@ export default function MyLessons() {
     }
 
     try {
-      const curriculumRes = await fetch("/api/curriculum", { credentials: "include" });
+      const [curriculumRes, analyticsRes] = await Promise.all([
+        fetch("/api/curriculum", { credentials: "include" }),
+        fetch("/api/analytics/me", { credentials: "include" }),
+      ]);
+
       const curriculumData = await curriculumRes.json();
+      const analyticsData = await analyticsRes.json();
 
       if (!curriculumRes.ok || !curriculumData.success) {
         throw new Error(curriculumData.error || "Failed to fetch curriculums");
       }
 
-      const paths = formatPaths(curriculumData.curriculum);
+      if (!analyticsRes.ok) {
+        console.warn("Failed to load mastery analytics for curriculum progress:", analyticsData?.error || "Unknown error");
+      }
+
+      const masteryMap = {};
+      const topicRows = Array.isArray(analyticsData?.topics) ? analyticsData.topics : [];
+
+      topicRows.forEach((topic) => {
+        const topicId = topic?.topic_id;
+        if (!topicId) return;
+
+        const masteryValue = Number(topic?.mastery_probability ?? 0);
+        masteryMap[topicId] = Number.isFinite(masteryValue) ? masteryValue : 0;
+      });
+
+      const paths = formatPaths(curriculumData.curriculum, masteryMap);
 
       sessionStorage.setItem(
         CACHE_KEY,

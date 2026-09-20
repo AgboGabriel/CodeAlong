@@ -74,6 +74,8 @@ CREATE TABLE user_curriculums (
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   description TEXT NOT NULL,
   status VARCHAR(20) DEFAULT 'active',
+  difficulty VARCHAR(20) DEFAULT 'Beginner',
+  estimated_duration INTEGER DEFAULT 0,
   current_module_index INTEGER DEFAULT 0,
   current_topic_index INTEGER DEFAULT 0,
   created_at TIMESTAMP DEFAULT NOW(),

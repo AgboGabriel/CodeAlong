@@ -217,6 +217,8 @@ The JSON must match this shape:
 {
    "title": "A short curriculum title",
   "description": "A short summary of the curriculum.",
+  "level": "Beginner",
+  "estimatedDuration": 8,
   "modules": [
     {
       "title": "Module title",
@@ -238,6 +240,8 @@ Rules:
 - Each module must have 3 to 6 topics.
 - Use one of these colors: blue, purple, green, orange.
 - Use simple icon names: terminal, layers, api, database, code, project.
+- Set "level" to one of: "Beginner", "Intermediate", or "Advanced".
+- Set "estimatedDuration" to a realistic total in hours, usually between 4 and 16.
 ${skipSetupModule ? "- Do not include an installation, setup, environment configuration, or tooling module because this learner will use an embedded IDE for this language." : ""}
 `;
 
@@ -299,11 +303,20 @@ normalizeCurriculum(curriculum, topic = "") {
         throw new Error("Curriculum response must include modules");
     }
 
+    const estimatedDuration = Number(curriculum.estimatedDuration || curriculum.estimated_duration || 0);
+    const normalizedLevel = ["Beginner", "Intermediate", "Advanced"].includes(curriculum.level)
+        ? curriculum.level
+        : ["beginner", "intermediate", "advanced"].includes(String(curriculum.level || "").toLowerCase())
+          ? curriculum.level.charAt(0).toUpperCase() + curriculum.level.slice(1).toLowerCase()
+          : "Beginner";
+
     const normalizedCurriculum = {
         title:
         curriculum.title ||
         "Custom Learning Path",
         description: curriculum.description || "Your personalized learning path is ready.",
+        level: normalizedLevel,
+        estimatedDuration: Number.isFinite(estimatedDuration) && estimatedDuration > 0 ? estimatedDuration : Math.max(4, Math.min(16, (curriculum.modules?.length || 0) * 2 + 4)),
         modules: curriculum.modules.slice(0, 6).map((module, index) => ({
             title: module.title || `Module ${index + 1}`,
             week: module.week || `Week ${index + 1}`,
