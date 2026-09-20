@@ -985,6 +985,8 @@ export default function Videolesson() {
   const video = location.state?.video;
   const moduleId = location.state?.moduleId;
   const topic = location.state?.topic;
+  const selectedModule = location.state?.selectedModule;
+  const selectedPath = location.state?.selectedPath;
 
   const [currentVideo, setCurrentVideo] = useState(video || null);
   const [, setVideos] = useState([]);
@@ -1549,7 +1551,7 @@ export default function Videolesson() {
               : "You've completed this module!"}
           </div>
           <button
-            onClick={() => { setProgressionResult(null); navigate("/Topics"); }}
+            onClick={() => { setProgressionResult(null); navigate("/Topics", { state: { selectedModule, selectedPath } }); }}
             style={{
               background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 6,
               color: "#fff", padding: "6px 14px", cursor: "pointer", fontWeight: 600
@@ -1575,7 +1577,10 @@ export default function Videolesson() {
       >
         {/* VIDEO PANEL */}
         <div className="video-panel">
-          <button className="video-back-btn" onClick={() => navigate("/Topics")}>
+          <button
+            className="video-back-btn"
+            onClick={() => navigate("/Topics", { state: { selectedModule, selectedPath } })}
+          >
             ← Back to Topics
           </button>
 

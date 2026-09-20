@@ -18,6 +18,8 @@ export default function QuizPage() {
 
   const moduleId = location.state?.moduleId;
   const topic = location.state?.topic;
+  const selectedModule = location.state?.selectedModule;
+  const selectedPath = location.state?.selectedPath;
 
   const [quiz, setQuiz] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -172,6 +174,8 @@ export default function QuizPage() {
         topic,
         video: quiz?.context?.video || null,
         canSkipVideo: passed, // ← triggers the skip popup in VideoLesson
+        selectedModule,
+        selectedPath,
       },
     });
   };
@@ -184,6 +188,8 @@ export default function QuizPage() {
         topic,
         video: null,
         canSkipVideo: false,
+        selectedModule,
+        selectedPath,
       },
     });
   };
@@ -272,7 +278,7 @@ export default function QuizPage() {
                   </button>
 
                   <button
-                    onClick={() => navigate("/Topics")}
+                    onClick={() => navigate("/Topics", { state: { selectedModule, selectedPath } })}
                     className="confirm-btn"
                   >
                     Yes

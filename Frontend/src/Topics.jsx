@@ -16,11 +16,23 @@ import {
 
 export default function Topics() {
   const location = useLocation();
-  const selectedModule = location.state?.selectedModule;
   const navigate = useNavigate();
 
+  const storedTopicsState = (() => {
+    try {
+      const raw = sessionStorage.getItem("codealong_topics_state");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  })();
 
-const selectedPath = location.state?.selectedPath;
+  const selectedModule = location.state?.selectedModule || storedTopicsState?.selectedModule;
+  const selectedPath = location.state?.selectedPath || storedTopicsState?.selectedPath;
+
+  if (selectedModule) {
+    sessionStorage.setItem("codealong_topics_state", JSON.stringify({ selectedModule, selectedPath }));
+  }
 
   const [expandedTopics, setExpandedTopics] = useState(new Set());
   const [showQuizPopup, setShowQuizPopup] = useState(false);
@@ -45,7 +57,7 @@ const selectedPath = location.state?.selectedPath;
   const handleHasKnowledge = () => {
     setShowQuizPopup(false);
     navigate("/QuizPage", {
-      state: { selectedModule, selectedTopic }
+      state: { selectedModule, selectedPath, selectedTopic }
     });
   };
 
@@ -53,7 +65,7 @@ const selectedPath = location.state?.selectedPath;
   const handleNoKnowledge = () => {
     setShowQuizPopup(false);
     navigate("/Videolesson", {
-      state: { selectedModule, selectedTopic }
+      state: { selectedModule, selectedPath, selectedTopic }
     });
   };
 
@@ -61,9 +73,36 @@ const selectedPath = location.state?.selectedPath;
     setShowQuizPopup(false);
     setSelectedTopic(null);
   };
+
   const handleBack = () => {
-  navigate("/MyLessons"); 
-};
+    if (selectedModule || selectedPath) {
+      navigate(-1);
+      return;
+    }
+    navigate("/MyLessons");
+  };
+
+  if (!selectedModule) {
+    return (
+      <div className="app-shell">
+        <Sidebar />
+        <main className="main">
+          <Header page="Topics" />
+          <div className="content">
+            <div className="content-inner">
+              <div className="curriculum-page">
+                <div className="curriculum-header">
+                  <button className="back-btn" onClick={() => navigate("/MyLessons")}>← Back</button>
+                  <h1>Topics</h1>
+                  <p>No module was selected. Please open a learning path first.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   
 
