@@ -20,10 +20,10 @@ class PasswordResetModel {
   async findValidToken(token_hash) {
     try {
       const query = `
-        SELECT id, user_id, token_hash, expires_at, used_at, created_at
+        SELECT id, user_id, token_hash, expires_at, used, created_at
         FROM password_reset_tokens
         WHERE token_hash = $1
-          AND used_at IS NULL
+          AND COALESCE(used, false) = false
           AND expires_at > NOW()
         ORDER BY created_at DESC
         LIMIT 1
@@ -41,9 +41,9 @@ class PasswordResetModel {
     try {
       const query = `
         UPDATE password_reset_tokens
-        SET used_at = NOW()
+        SET used = true
         WHERE id = $1
-        RETURNING id, user_id, used_at
+        RETURNING id, user_id, used
       `;
 
       const result = await database.query(query, [id]);
@@ -58,9 +58,9 @@ class PasswordResetModel {
     try {
       const query = `
         UPDATE password_reset_tokens
-        SET used_at = NOW()
+        SET used = true
         WHERE user_id = $1
-          AND used_at IS NULL
+          AND COALESCE(used, false) = false
       `;
 
       await database.query(query, [user_id]);

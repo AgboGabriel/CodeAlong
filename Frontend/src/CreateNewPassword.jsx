@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import AuthFeedbackModal from "./Components/AuthFeedbackModal";
 import "./CreateNewPassword.css";
 
 export default function CreateNewPassword() {
@@ -10,18 +11,21 @@ export default function CreateNewPassword() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
+  const [feedback, setFeedback] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // You can add validation logic here
     if(!token){
-      alert("Invalid or missing token");
+      setFeedback({ type: "error", title: "Reset link is invalid", message: "Request a new password-reset link and use the most recent email we sent." });
       return;
     }
     if(password !== confirmPassword){
-      alert("Passwords do not match!");
+      setFeedback({ type: "error", title: "Passwords do not match", message: "Enter the same new password in both fields and try again." });
       return;
-    };
+    }
+    setFeedback(null);
+    setIsSubmitting(true);
     try{
        const response=await fetch("/auth/reset-password", {
         method: "POST",
@@ -34,11 +38,15 @@ export default function CreateNewPassword() {
       if (!response.ok) {
         throw new Error(data.error || "Failed to reset password");
       }
-        alert("Password successfully changed!");
-        navigate("/login");
+        setFeedback({ type: "success", title: "Password changed", message: "Your password has been updated. You can now sign in with it.", actionLabel: "Go to login" });
+        window.setTimeout(() => {
+          navigate("/login");
+        }, 1200);
     }catch(error){
       console.error("Error occurred while resetting password:", error);
-      alert(error.message || "Unable to connect to the server");
+      setFeedback({ type: "error", title: "We couldn't reset your password", message: error.message || "Please try again or request a new reset link." });
+    } finally {
+      setIsSubmitting(false);
     }
     
     
@@ -85,8 +93,8 @@ export default function CreateNewPassword() {
             </span>
           </div>
 
-          <button type="submit" className="btn-primary">
-            Reset Password
+          <button type="submit" className="btn-primary" disabled={isSubmitting}>
+            {isSubmitting ? "Resetting..." : "Reset Password"}
           </button>
         </form>
 
@@ -94,6 +102,13 @@ export default function CreateNewPassword() {
           Remembered your password? <a href="/login">Login</a>
         </p>
       </div>
+      <AuthFeedbackModal
+        feedback={feedback}
+        onClose={() => {
+          setFeedback(null);
+          if (feedback?.type === "success") navigate("/login");
+        }}
+      />
     </div>
   );
 }
