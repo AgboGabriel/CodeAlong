@@ -9,6 +9,7 @@ import {
   FaLock,
 } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
+import AuthFeedbackModal from "./Components/AuthFeedbackModal";
 import logo from "./assets/Code along_logo-03.png";
 import "./LandingPage.css";
 
@@ -39,6 +40,8 @@ export default function CodeAI() {
     password: "",
     terms: false,
   });
+  const [feedback, setFeedback] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -50,10 +53,16 @@ export default function CodeAI() {
   
   const handleRegister = async (e)=>{
     e.preventDefault();
-    if(!form.terms){
-      alert("You must agree to the terms and conditions");
+    setFeedback(null);
+    if(!form.username.trim() || !form.email.trim() || !form.password){
+      setFeedback({ type: "error", title: "Complete your details", message: "Enter a username, email address, and password before creating your account." });
       return;
     }
+    if(!form.terms){
+      setFeedback({ type: "error", title: "Terms acceptance required", message: "Please agree to the Terms and Privacy Policy before creating your account." });
+      return;
+    }
+    setIsSubmitting(true);
     try{
       const response= await fetch("/auth/register",{
       method: "POST",
@@ -68,17 +77,18 @@ export default function CodeAI() {
       })
     });
     const data= await response.json();
-    console.log("Registration response:", data);
-    
     if(response.ok){
       navigate("/Questionnaire");
     }else{
-      alert(data.error || "Registration failed");
+      setFeedback({ type: "error", title: "We couldn't create your account", message: data.error || "Please review your details and try again." });
     }
 
     }catch(error){
       console.error("Error during registration:", error);
-      alert("Unable to connect to the server");}
+      setFeedback({ type: "error", title: "We couldn't reach the server", message: "Please check your internet connection and try again in a moment." });
+    } finally {
+      setIsSubmitting(false);
+    }
    
   }
 
@@ -168,7 +178,7 @@ export default function CodeAI() {
                 </p>
               </div>
 
-              <div className="Lp-form">
+              <form className="Lp-form" onSubmit={handleRegister}>
 
                 <div className="Lp-field">
                   <label>Username</label>
@@ -181,6 +191,7 @@ export default function CodeAI() {
                       placeholder="Choose a username"
                       value={form.username}
                       onChange={handleChange}
+                      required
                     />
                   </div>
                 </div>
@@ -196,6 +207,7 @@ export default function CodeAI() {
                       placeholder="Enter your email"
                       value={form.email}
                       onChange={handleChange}
+                      required
                     />
                   </div>
                 </div>
@@ -211,6 +223,7 @@ export default function CodeAI() {
                       placeholder="Create a password"
                       value={form.password}
                       onChange={handleChange}
+                      required
                     />
                   </div>
                 </div>
@@ -230,13 +243,14 @@ export default function CodeAI() {
                 </div>
 
                 <button
+                  type="submit"
                   className="Lp-btn-primary Lp-submit"
-                  onClick={handleRegister}
+                  disabled={isSubmitting}
                 >
-                  Get Started Now
+                  {isSubmitting ? "Creating account..." : "Get Started Now"}
                 </button>
 
-              </div>
+              </form>
 
               <div className="Lp-divider">
                 <span>Or continue with</span>
@@ -301,6 +315,7 @@ export default function CodeAI() {
         </div>
 
       </footer>
+      <AuthFeedbackModal feedback={feedback} onClose={() => setFeedback(null)} />
 
     </div>
   );

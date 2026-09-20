@@ -17,18 +17,20 @@ class AuthService{
     async registerUser(userData){
         try{
             const {username,email,password_hash}=userData;
-            if (!username || !email || !password_hash) {
+            const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : email;
+            const normalizedUsername = typeof username === 'string' ? username.trim() : username;
+            if (!normalizedUsername || !normalizedEmail || !password_hash) {
               throw new Error('Username, email, and password are required');
             }
-            const existingUser= await this.userModel.findByEmail(email);
+            const existingUser= await this.userModel.findByEmail(normalizedEmail);
             if(existingUser){
                 throw new Error('Email already in use');
             }
             else{
                 const hashedPassword=await bcrypt.hash(password_hash,saltRounds)
                 const newUser=await this.userModel.createUser({
-                    username,
-                    email,
+                    username: normalizedUsername,
+                    email: normalizedEmail,
                     password_hash: hashedPassword,
                 });
                 return newUser;
@@ -40,19 +42,20 @@ class AuthService{
     }
     async loginUser(email,password){
         try{
-            if (!email || !password) {
+            const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : email;
+            if (!normalizedEmail || !password) {
                 throw new Error('Email and password are required');
             }
-            const user=await this.userModel.findByEmail(email);
+            const user=await this.userModel.findByEmail(normalizedEmail);
             if(!user){
-                throw new Error('User not found');
+                throw new Error('The email address or password is incorrect. Please try again or create an account.');
             }
             if (user.auth_provider === "google" && !user.password_hash) {
                 throw new Error("This account uses Google sign-in. Please continue with Google.");
             }
             const isMatch=await bcrypt.compare(password,user.password_hash);
             if(!isMatch){
-                throw new Error('Invalid credentials');
+                throw new Error('The email address or password is incorrect. Please try again.');
             }
             return user;
         }catch(error){

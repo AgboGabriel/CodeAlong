@@ -1,17 +1,20 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
+import AuthFeedbackModal from "./Components/AuthFeedbackModal";
 import "./Login.css";
 
 export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loginMessage, setLoginMessage] = useState("");
+  const [feedback, setFeedback] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoginMessage("");
+    setFeedback(null);
+    setIsSubmitting(true);
 
     try {
       const response = await fetch("/auth/login", {
@@ -24,16 +27,30 @@ export default function Login() {
       });
 
       const data = await response.json();
-      console.log("Login response:", data);
-
       if (response.ok) {
-        navigate(data.user?.role === "admin" ? "/admin" : "/dashboard");
+        if (data.user?.role === "admin") {
+          navigate("/admin");
+        } else if (!data.user?.questionnaire_completed) {
+          navigate("/Questionnaire");
+        } else {
+          navigate("/dashboard");
+        }
       } else {
-        setLoginMessage(data.error || "Login failed");
+        setFeedback({
+          type: "error",
+          title: "We couldn't sign you in",
+          message: data.error || "Check your email and password, then try again.",
+        });
       }
     } catch (error) {
       console.error("Login error:", error);
-      setLoginMessage("Unable to connect to the server");
+      setFeedback({
+        type: "error",
+        title: "We couldn't reach the server",
+        message: "Please check your internet connection and try again in a moment.",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -63,12 +80,10 @@ export default function Login() {
             required
           />
 
-          <button type="submit" className="btn-primary">
-            Login
+          <button type="submit" className="btn-primary" disabled={isSubmitting}>
+            {isSubmitting ? "Signing in..." : "Login"}
           </button>
         </form>
-
-        {loginMessage ? <p className="forgot-password">{loginMessage}</p> : null}
         
 
         
@@ -93,6 +108,7 @@ export default function Login() {
             Continue with Google
           </button>
       </div>
+      <AuthFeedbackModal feedback={feedback} onClose={() => setFeedback(null)} />
     </div>
   );
 }

@@ -3,7 +3,8 @@ import database from '../config/database.js';
 class UserModel {
   async findByEmail(email) {
     try {
-      const query = 'SELECT * FROM users WHERE email = $1';
+     
+      const query = 'SELECT * FROM users WHERE LOWER(email) = LOWER($1)';
       const result = await database.query(query, [email]);
       return result.rows[0] || null;
     } catch (error) {
