@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import Editor from "@monaco-editor/react";
 import Split from "react-split";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -248,6 +248,7 @@ export default function Challenges() {
   const [adaptiveHelpConfirm, setAdaptiveHelpConfirm] = useState(false);
   const [adaptiveHelpError, setAdaptiveHelpError] = useState("");
   const [isRequestingAdaptiveHelp, setIsRequestingAdaptiveHelp] = useState(false);
+  const detailedFeedbackRef = useRef(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
 
@@ -636,6 +637,10 @@ export default function Challenges() {
     }
   };
 
+  const showDetailedFeedback = () => {
+    detailedFeedbackRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   /* ================= TABS ================= */
   const handleAddTab = () => {
     const newTab = {
@@ -982,7 +987,7 @@ export default function Challenges() {
 
               {/* Submit results */}
               {submitSummary && (
-                <section className="challenge-section">
+                <section className="challenge-section" ref={detailedFeedbackRef} tabIndex="-1">
                   <h3>Results</h3>
                   <p className="challenge-results-summary">
                     Passed {submitSummary.passed} of {submitSummary.total} tests.
@@ -1175,7 +1180,22 @@ export default function Challenges() {
             </div>
 
             <div className="output-panel">
-              {output || "Run your code to see output here."}
+              {submitSummary?.failed > 0 ? (
+                <div className="terminal-feedback" role="status" aria-live="polite">
+                  <strong>⚠ Your solution needs another check.</strong>
+                  <p>
+                    {output} Detailed failed-test results and learner guidance are available in the Challenge panel on the left.
+                  </p>
+                  {learnerFeedback?.nextSteps?.[0] && (
+                    <p className="terminal-feedback-tip"><strong>Start here:</strong> {learnerFeedback.nextSteps[0]}</p>
+                  )}
+                  <button type="button" onClick={showDetailedFeedback}>
+                    View detailed feedback
+                  </button>
+                </div>
+              ) : (
+                output || "Run your code to see output here."
+              )}
             </div>
           </Split>
         </div>

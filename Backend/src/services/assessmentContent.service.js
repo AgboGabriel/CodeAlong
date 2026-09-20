@@ -655,19 +655,13 @@ MANDATORY RULES:
     const topicContext = await curriculumModel.getTopicContext(topicId, userId);
     if (!topicContext) return null;
 
-    const existingVideo = await youtubeVideoModel.findLatestByTopicId(topicId);
-
-    // A learner who explicitly asks for support should be able to reopen an
-    // already-selected simpler video instead of generating duplicates.
-    if (force && existingVideo?.is_replacement) {
-      return {
-        topicId,
-        replacedVideoId: existingVideo.replaced_video_id || null,
-        replacementVideoId: existingVideo.id,
-        video: existingVideo,
-        reason: "A simpler video is ready to help you review this topic.",
-      };
-    }
+    const watchedVideos = await youtubeVideoModel.findByTopicAndUser(topicId, userId);
+    const existingVideo = watchedVideos[watchedVideos.length - 1] || null;
+    // Never recommend a video this learner has already been shown for this
+    // topic, including the original video and all prior adaptive videos.
+    const excludedVideoIds = watchedVideos
+      .map((video) => video.video_id || video.videoId)
+      .filter(Boolean);
 
     // Once the threshold has been reached, keep trying on later failed
     // submissions until a suitable replacement is found. Once one exists,
@@ -692,9 +686,12 @@ MANDATORY RULES:
     const focusTerms = this._getVideoWeaknessTerms(evaluation);
 
     const languageLabel = expectedLanguage?.name || expectedLanguage?.key || "";
-    const fallbackQuery = `${languageLabel} ${topicContext.topic.title} tutorial for beginners explained simply -skit -shorts -meme -reaction`;
+    // Put the concrete weakness in the query, not merely in ranking. This
+    // makes later attempts seek a different explanation of the same topic.
+    const weaknessQuery = focusTerms.slice(0, 3).join(" ");
+    const fallbackQuery = `${languageLabel} ${topicContext.topic.title} ${weaknessQuery} beginner tutorial worked examples -skit -shorts -meme -reaction`;
 
-    const fallbackSearch = await youtubeService.searchVideos(fallbackQuery, 12);
+    const fallbackSearch = await youtubeService.searchVideos(fallbackQuery, 25);
 
     const fallbackCandidates = await youtubeService.getVideoDetails(
       fallbackSearch.map((video) => video.videoId).filter(Boolean)
@@ -702,7 +699,7 @@ MANDATORY RULES:
 
     const rankedFallbacks = await youtubeService.rankVideos(fallbackCandidates, topicContext.topic.title, {
       expectedLanguage,
-      excludedVideoIds: existingVideo ? [existingVideo.video_id || existingVideo.videoId] : [],
+      excludedVideoIds,
       focusTerms,
     });
 
@@ -740,11 +737,18 @@ MANDATORY RULES:
       throw new Error("A signed-in learner and topic are required for adaptive help");
     }
 
+    // A manual request is normally made after a failed attempt. Reuse the
+    // latest saved evaluation so the search targets the learner's actual
+    // weakness (for example compiler errors or incorrect output), rather
+    // than returning a generic topic video.
+    const latestEvaluation = await challengeModel.findLatestFailedEvaluation({ userId, topicId });
+
     return this.maybeTriggerSimplerVideoForTopic({
       userId,
       topicId,
       moduleId,
       curriculumId,
+      evaluation: latestEvaluation || {},
       force: true,
     });
   }

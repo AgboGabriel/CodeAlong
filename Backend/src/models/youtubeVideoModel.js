@@ -14,6 +14,21 @@ class YoutubeVideoModel {
     return result.rows[0] || null;
   }
 
+  // Adaptive support is personal: a video shown to one learner must not
+  // influence another learner's recommendation history.
+  async findByTopicAndUser(topicId, userId) {
+    const query = `
+      SELECT *
+      FROM topic_videos
+      WHERE topic_id = $1
+        AND user_id = $2
+      ORDER BY created_at ASC
+    `;
+
+    const result = await database.query(query, [topicId, userId]);
+    return result.rows;
+  }
+
   async saveTopicVideo({ userId, curriculumId, moduleId, topicId, video, replacement = {} }) {
     const query = `
       INSERT INTO topic_videos

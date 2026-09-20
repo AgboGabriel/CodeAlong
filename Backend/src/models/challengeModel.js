@@ -96,6 +96,25 @@ class ChallengeModel {
     return Number(result.rows[0]?.count || 0);
   }
 
+  async findLatestFailedEvaluation({ userId, topicId }) {
+    const result = await database.query(
+      `
+        SELECT tcs.evaluation
+        FROM topic_challenge_submissions tcs
+        INNER JOIN topic_challenges tc ON tc.id = tcs.challenge_id
+        WHERE tcs.user_id = $1
+          AND tc.topic_id = $2
+          AND tc.challenge_type = 'section'
+          AND tcs.passed = false
+        ORDER BY tcs.created_at DESC
+        LIMIT 1
+      `,
+      [userId, topicId]
+    );
+
+    return result.rows[0]?.evaluation || null;
+  }
+
   async findLatestByTopicId(topicId, userId, challengeType = "section") {
     const query = `
       SELECT
