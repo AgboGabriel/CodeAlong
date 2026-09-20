@@ -1512,7 +1512,9 @@ export default function Videolesson() {
               <button
                 onClick={() => {
                   setShowSkipPopup(false);
-                  navigate("/challenges", { state: { moduleId, topic } });
+                  navigate("/challenges", {
+                    state: { moduleId, topic, selectedModule, selectedPath },
+                  });
                 }}
                 style={{
                   background: "#6366f1", color: "#fff", border: "none",

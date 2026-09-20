@@ -640,7 +640,7 @@ export default function MyLessons() {
   const [pathPendingDeletion, setPathPendingDeletion] = useState(null);
   const [deleteError, setDeleteError] = useState("");
 
-  const [selectedPath, setSelectedPath] = useState(null);
+  const [selectedPath, setSelectedPath] = useState(() => location.state?.selectedPath || null);
   const [filter, setFilter] = useState("All Paths");
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -821,15 +821,20 @@ export default function MyLessons() {
 
   const openModuleTopics = (module, index) => {
     if (!Array.isArray(module.topics) || module.topics.length === 0) return;
-    setSelectedModule({
+    const moduleForTopics = {
       id: module.id,
       title: module.title || `Module ${index + 1}`,
       topics: module.topics.map((topic) =>
         typeof topic === "string" ? { title: topic, videos: [] } : topic
       ),
+    };
+
+    navigate("/Topics", {
+      state: {
+        selectedPath,
+        selectedModule: moduleForTopics,
+      },
     });
-    setExpandedTopics(new Set());
-    setView("topics");
   };
 
   const getModuleState = (module, index) => {

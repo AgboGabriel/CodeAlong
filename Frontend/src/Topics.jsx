@@ -57,7 +57,12 @@ export default function Topics() {
   const handleHasKnowledge = () => {
     setShowQuizPopup(false);
     navigate("/QuizPage", {
-      state: { selectedModule, selectedPath, selectedTopic }
+      state: {
+        moduleId: selectedModule.id,
+        topic: selectedTopic,
+        selectedModule,
+        selectedPath,
+      },
     });
   };
 
@@ -65,7 +70,13 @@ export default function Topics() {
   const handleNoKnowledge = () => {
     setShowQuizPopup(false);
     navigate("/Videolesson", {
-      state: { selectedModule, selectedPath, selectedTopic }
+      state: {
+        moduleId: selectedModule.id,
+        topic: selectedTopic,
+        video: selectedTopic?.videos?.[0] || null,
+        selectedModule,
+        selectedPath,
+      },
     });
   };
 
@@ -75,11 +86,7 @@ export default function Topics() {
   };
 
   const handleBack = () => {
-    if (selectedModule || selectedPath) {
-      navigate(-1);
-      return;
-    }
-    navigate("/MyLessons");
+    navigate("/MyLessons", { state: { selectedPath } });
   };
 
   if (!selectedModule) {
@@ -128,7 +135,7 @@ export default function Topics() {
               </div>
 
               <div className="topics-list">
-                {selectedModule.topics.map((topic, index) => (
+                {(Array.isArray(selectedModule.topics) ? selectedModule.topics : []).map((topic, index) => (
                   <div key={index} className="topic-card">
 
                     <div
@@ -162,25 +169,34 @@ export default function Topics() {
                           <span>{topic.title} Quiz</span>
                         </div>
 
-                        {topic.videos.map((video, i) => (
+                        {(Array.isArray(topic.videos) ? topic.videos : []).map((video, i) => {
+                          const videoTitle = typeof video === "string" ? video : video.title;
+                          return (
                           <Link
                             key={i}
                             to="/Videolesson"
                             state={{
                               selectedModule,
+                              selectedPath,
+                              moduleId: selectedModule.id,
                               topic,
-                              video
+                              video: typeof video === "string" ? { title: video } : video,
                             }}
                             className="video-link"
                           >
                             <div className="video-item">
                               <MdPlayCircleFilled className="video-icon" />
-                              <span>{video}</span>
+                              <span>{videoTitle}</span>
                             </div>
                           </Link>
-                        ))}
+                          );
+                        })}
 
-                        <Link to="/challenges" className="challenge-link">
+                        <Link
+                          to="/challenges"
+                          state={{ selectedModule, selectedPath, moduleId: selectedModule.id, topic }}
+                          className="challenge-link"
+                        >
                           <div className="challenge-item">
                             <MdCode className="challenge-icon" />
                             <span>{topic.title} Coding Challenge</span>

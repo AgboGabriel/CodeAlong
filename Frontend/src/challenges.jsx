@@ -208,6 +208,8 @@ export default function Challenges() {
 
   const moduleId = location.state?.moduleId;
   const topic    = location.state?.topic;
+  const selectedModule = location.state?.selectedModule;
+  const selectedPath = location.state?.selectedPath;
   const challengeType = location.state?.challengeType === "assessment" ? "assessment" : "section";
 
   const [output, setOutput] = useState("");
@@ -700,7 +702,10 @@ export default function Challenges() {
               : "You've completed all topics in this curriculum!"}
           </div>
           <button
-            onClick={() => { setProgressionResult(null); navigate("/MyLessons"); }}
+            onClick={() => {
+              setProgressionResult(null);
+              navigate("/Topics", { state: { selectedModule, selectedPath } });
+            }}
             style={{
               background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 6,
               color: "#fff", padding: "6px 14px", cursor: "pointer", fontWeight: 600,
