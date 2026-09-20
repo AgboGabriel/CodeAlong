@@ -89,6 +89,20 @@ export default function Topics() {
     navigate("/MyLessons", { state: { selectedPath } });
   };
 
+  const getTopicState = (topic, index) => {
+    const status = String(topic?.status || "").toLowerCase();
+    const isCompleted = ["completed", "complete"].includes(status);
+    const isUnlocked = ["active", "unlocked", "in_progress", "in-progress"].includes(status);
+    const isLocked = status
+      ? !isCompleted && !isUnlocked
+      : index > 0;
+
+    return {
+      isCompleted,
+      isLocked,
+    };
+  };
+
   if (!selectedModule) {
     return (
       <div className="app-shell">
@@ -135,20 +149,24 @@ export default function Topics() {
               </div>
 
               <div className="topics-list">
-                {(Array.isArray(selectedModule.topics) ? selectedModule.topics : []).map((topic, index) => (
-                  <div key={index} className="topic-card">
+                {(Array.isArray(selectedModule.topics) ? selectedModule.topics : []).map((topic, index) => {
+                  const topicState = getTopicState(topic, index);
+
+                  return (
+                  <div key={index} className={`topic-card${topicState.isLocked ? " locked-topic-card" : ""}${topicState.isCompleted ? " completed-topic-card" : ""}`}>
 
                     <div
-                      className={`topic-header ${topic.locked ? "locked-topic" : ""}`}
-                      onClick={() => toggleTopic(index, topic.locked)}
+                      className={`topic-header ${topicState.isLocked ? "locked-topic" : ""}`}
+                      onClick={() => toggleTopic(index, topicState.isLocked)}
+                      style={{ cursor: topicState.isLocked ? "not-allowed" : "pointer" }}
                     >
                       <div className="topic-title">
-                        <MdFolder className="topic-icon" />
-                        <h3>{topic.title}</h3>
+                        {topicState.isCompleted ? <MdFolder className="topic-icon" style={{ color: "#22c55e" }} /> : topicState.isLocked ? <MdLock className="topic-icon" style={{ color: "#94a3b8" }} /> : <MdFolder className="topic-icon" />}
+                        <h3 style={{ color: topicState.isLocked ? "#94a3b8" : undefined }}>{topic.title}</h3>
                       </div>
 
                       <span className="chevron-icon">
-                        {topic.locked ? (
+                        {topicState.isLocked ? (
                           <MdLock />
                         ) : expandedTopics.has(index) ? (
                           <MdKeyboardArrowUp />
@@ -158,7 +176,7 @@ export default function Topics() {
                       </span>
                     </div>
 
-                    {!topic.locked && expandedTopics.has(index) && (
+                    {!topicState.isLocked && expandedTopics.has(index) && (
                       <div className="video-list">
 
                         <div
@@ -207,7 +225,8 @@ export default function Topics() {
                     )}
 
                   </div>
-                ))}
+                  );
+                })}
               </div>
 
             </div>
