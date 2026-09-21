@@ -7,6 +7,9 @@ import mailService from "./mailService.js";
 
 const saltRounds = 10;
 const resetTokenTTLMinutes = 30;
+const passwordResetRequestLimit = 3;
+const passwordResetLimitWindowHours = 24;
+const passwordResetCooldownSeconds = 60;
 
 class AuthService{
     constructor(){
@@ -82,19 +85,49 @@ class AuthService{
                 return { message, devReason };
             }
 
+            const [recentRequestCount, latestRequestAt] = await Promise.all([
+                this.passwordResetModel.countRecentTokens(user.id, passwordResetLimitWindowHours),
+                this.passwordResetModel.findLatestTokenCreatedAt(user.id),
+            ]);
+
+            if (recentRequestCount >= passwordResetRequestLimit) {
+                const limitError = new Error("For your security, password reset requests are limited to 3 every 24 hours. Please try again later.");
+                limitError.statusCode = 429;
+                throw limitError;
+            }
+
+            if (latestRequestAt) {
+                const secondsSinceLatest = (Date.now() - new Date(latestRequestAt).getTime()) / 1000;
+                if (secondsSinceLatest < passwordResetCooldownSeconds) {
+                    const waitSeconds = Math.ceil(passwordResetCooldownSeconds - secondsSinceLatest);
+                    const cooldownError = new Error(`Please wait ${waitSeconds} seconds before requesting another reset link.`);
+                    cooldownError.statusCode = 429;
+                    throw cooldownError;
+                }
+            }
+
             const rawToken = crypto.randomBytes(32).toString("hex");
             const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
             const expiresAt = new Date(Date.now() + resetTokenTTLMinutes * 60 * 1000);
             const frontendBaseUrl = process.env.FRONTEND_URL || `http://localhost:${process.env.PORT || 3000}`;
             const resetLink = `${frontendBaseUrl}/create-new-password?token=${rawToken}`;
 
-            await this.passwordResetModel.invalidateUserTokens(user.id);
-            await this.passwordResetModel.createToken({
+            const resetToken = await this.passwordResetModel.createToken({
                 user_id: user.id,
                 token_hash: tokenHash,
                 expires_at: expiresAt,
             });
-            await mailService.sendPasswordResetEmail(normalizedEmail, resetLink);
+            try {
+                await mailService.sendPasswordResetEmail(normalizedEmail, resetLink);
+                // Only invalidate older links after delivery succeeds. This
+                // keeps the previously emailed link usable if SMTP fails.
+                await this.passwordResetModel.invalidateUserTokens(user.id, resetToken?.id || null);
+            } catch (error) {
+                // Do not leave an unusable request in the rate-limit history
+                // when SMTP delivery fails.
+                if (resetToken?.id) await this.passwordResetModel.deleteToken(resetToken.id);
+                throw error;
+            }
 
 
             console.log(`Password reset link for ${normalizedEmail}: ${resetLink}`);

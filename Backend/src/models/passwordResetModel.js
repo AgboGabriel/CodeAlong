@@ -17,6 +17,39 @@ class PasswordResetModel {
     }
   }
 
+  async countRecentTokens(user_id, hours = 24) {
+    const result = await database.query(
+      `
+        SELECT COUNT(*)::int AS count
+        FROM password_reset_tokens
+        WHERE user_id = $1
+          AND created_at >= NOW() - ($2 * INTERVAL '1 hour')
+      `,
+      [user_id, hours]
+    );
+
+    return Number(result.rows[0]?.count || 0);
+  }
+
+  async findLatestTokenCreatedAt(user_id) {
+    const result = await database.query(
+      `
+        SELECT created_at
+        FROM password_reset_tokens
+        WHERE user_id = $1
+        ORDER BY created_at DESC
+        LIMIT 1
+      `,
+      [user_id]
+    );
+
+    return result.rows[0]?.created_at || null;
+  }
+
+  async deleteToken(id) {
+    await database.query("DELETE FROM password_reset_tokens WHERE id = $1", [id]);
+  }
+
   async findValidToken(token_hash) {
     try {
       const query = `
@@ -54,16 +87,17 @@ class PasswordResetModel {
     }
   }
 
-  async invalidateUserTokens(user_id) {
+  async invalidateUserTokens(user_id, keepTokenId = null) {
     try {
       const query = `
         UPDATE password_reset_tokens
         SET used = true
         WHERE user_id = $1
           AND COALESCE(used, false) = false
+          AND ($2::integer IS NULL OR id <> $2)
       `;
 
-      await database.query(query, [user_id]);
+      await database.query(query, [user_id, keepTokenId]);
     } catch (error) {
       console.error("Error in invalidateUserTokens:", error);
       throw error;

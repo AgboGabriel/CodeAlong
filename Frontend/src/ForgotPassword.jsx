@@ -14,6 +14,8 @@ export default function ForgotPassword() {
     setFeedback(null);
     setRequestSent(false);
     setIsSubmitting(true);
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 20000);
 
     try {
       const response = await fetch("/auth/forgot-password", {
@@ -22,6 +24,7 @@ export default function ForgotPassword() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ email: email.trim() }),
+        signal: controller.signal,
       });
       const data = await response.json().catch(() => ({}));
 
@@ -39,8 +42,14 @@ export default function ForgotPassword() {
       }
     } catch (error) {
       console.error("Error occurred while requesting password reset:", error);
-      setFeedback({ type: "error", title: "We couldn't reach the server", message: "Please check your internet connection and try again." });
+      const timedOut = error.name === "AbortError";
+      setFeedback({
+        type: "error",
+        title: timedOut ? "The email request took too long" : "We couldn't reach the server",
+        message: timedOut ? "Please try again in a moment. If the problem continues, contact support." : "Please check your internet connection and try again.",
+      });
     } finally {
+      window.clearTimeout(timeoutId);
       setIsSubmitting(false);
     }
   };

@@ -15,6 +15,9 @@ class MailService {
             secure: true,
             host: "smtp.gmail.com",
             port: 465,
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
+            socketTimeout: 15000,
             auth: {
                 user: this.emailUser,
                 pass: this.emailPassword
@@ -27,16 +30,24 @@ class MailService {
             throw new Error("Mail service is not configured. Set Google_email and Google_app_password in .env.");
         }
 
-        const result = await this.transporter.sendMail({
-            from: `"CodeAlong" <${this.emailUser}>`,
-            to,
-            subject: "Password Reset",
-            html: `
-                <p>You have requested a password reset.</p>
-                <p>Please click the link below to reset your password:</p>
-                <a href="${resetLink}">Reset Password</a>
-            `
-        });
+        let result;
+        try {
+            result = await this.transporter.sendMail({
+                from: `"CodeAlong" <${this.emailUser}>`,
+                to,
+                subject: "Reset your CodeAlong password",
+                html: `
+                    <p>You requested a CodeAlong password reset.</p>
+                    <p>This link expires in 30 minutes. If you did not request it, you can safely ignore this email.</p>
+                    <p><a href="${resetLink}">Reset Password</a></p>
+                `
+            });
+        } catch (error) {
+            console.error("Password reset email delivery failed:", error.message);
+            const deliveryError = new Error("We could not send the password-reset email right now. Please try again shortly.");
+            deliveryError.statusCode = 503;
+            throw deliveryError;
+        }
 
         console.log(`Password reset email accepted for ${to}. Message ID: ${result.messageId}`);
         return result;

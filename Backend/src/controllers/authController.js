@@ -65,7 +65,7 @@ class AuthController {
             });
         } catch (error) {
             console.error("Error in forgotPassword:", error);
-            return res.status(400).json({ error: error.message });
+            return res.status(error.statusCode || 400).json({ error: error.message });
         }
     }
 
