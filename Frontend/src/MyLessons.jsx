@@ -515,7 +515,6 @@ import {
 } from "react-icons/md";
 
 const CACHE_KEY = "myLessons_cache";
-const CACHE_TTL_MS = 60 * 1000;
 
 function inferDifficultyFromText(text = "") {
   const normalized = text.toLowerCase();
@@ -662,22 +661,6 @@ export default function MyLessons() {
       sessionStorage.removeItem(CACHE_KEY);
     }
 
-    if (!cameFromConfirm) {
-      try {
-        const cached = sessionStorage.getItem(CACHE_KEY);
-        if (cached) {
-          const { timestamp, paths } = JSON.parse(cached);
-          if (Date.now() - timestamp < CACHE_TTL_MS) {
-            setLearningPaths(paths);
-            setLoadingPaths(false);
-            return;
-          }
-        }
-      } catch {
-        // Corrupt cache — fall through to fetch
-      }
-    }
-
     try {
       const [curriculumRes, analyticsRes] = await Promise.all([
         fetch("/api/curriculum", { credentials: "include" }),
@@ -714,6 +697,10 @@ export default function MyLessons() {
       );
 
       setLearningPaths(paths);
+      setSelectedPath((currentPath) => {
+        if (!currentPath?.id) return currentPath;
+        return paths.find((path) => String(path.id) === String(currentPath.id)) || currentPath;
+      });
     } catch (error) {
       console.error("Failed to load page data:", error);
     } finally {

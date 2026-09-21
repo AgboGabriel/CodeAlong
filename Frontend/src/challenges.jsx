@@ -610,6 +610,9 @@ export default function Challenges() {
           if (moduleSnapshot?.topics) {
             const updatedModule = {
               ...moduleSnapshot,
+              status: unlockResult?.unlockedModuleId || !unlockResult?.unlockedTopicId
+                ? "completed"
+                : moduleSnapshot.status,
               topics: moduleSnapshot.topics.map((savedTopic) => {
                 if (String(savedTopic.id) === String(topic?.id)) {
                   return { ...savedTopic, status: "completed" };
@@ -735,7 +738,7 @@ export default function Challenges() {
           <button
             onClick={() => {
               setProgressionResult(null);
-              navigate("/Topics", { state: { selectedModule, selectedPath } });
+              navigate("/Topics");
             }}
             style={{
               background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 6,
