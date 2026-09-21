@@ -81,6 +81,20 @@ class AuthController {
         }
     }
 
+    async changePassword(req, res) {
+        try {
+            const result = await this.authService.changePassword(
+                req.user?.id,
+                req.body.currentPassword,
+                req.body.newPassword
+            );
+            return res.status(200).json(result);
+        } catch (error) {
+            console.error("Error in changePassword:", error);
+            return res.status(400).json({ error: error.message });
+        }
+    }
+
     login(req, res, next) {
         if (!req.body.password && req.body.password_hash) {
             req.body.password = req.body.password_hash;

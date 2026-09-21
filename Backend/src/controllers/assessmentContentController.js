@@ -1,4 +1,5 @@
 import assessmentContentService from "../services/assessmentContent.service.js";
+import challengeModel from "../models/challengeModel.js";
 
 class AssessmentContentController {
   async generatePriorKnowledgeQuiz(req, res) {
@@ -29,7 +30,7 @@ class AssessmentContentController {
   async generateTopicChallenge(req, res) {
     try {
       const userId = req.user?.id;
-      const { topicId, moduleId, challengeType = "section" } = req.body;
+      const { topicId, moduleId, challengeType = "section", forceRegenerate = false } = req.body;
 
       if (!userId) {
         return res.status(401).json({ success: false, error: "User not authenticated" });
@@ -40,6 +41,7 @@ class AssessmentContentController {
         topicId,
         moduleId,
         challengeType,
+        forceRegenerate,
       });
 
       return res.status(200).json({ success: true, challenge });
@@ -124,6 +126,17 @@ class AssessmentContentController {
         success: false,
         error: error.message || "Unable to prepare adaptive help",
       });
+    }
+  }
+
+  async getAssessmentAttempts(req, res) {
+    try {
+      if (!req.user?.id) return res.status(401).json({ success: false, error: "User not authenticated" });
+      const attempts = await challengeModel.findAssessmentAttempts(req.user.id);
+      return res.status(200).json({ success: true, attempts });
+    } catch (error) {
+      console.error("Error loading assessment attempts:", error);
+      return res.status(500).json({ success: false, error: "Failed to load completed assessments" });
     }
   }
 }

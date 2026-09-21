@@ -9,7 +9,7 @@ import {
   MdFilterList,
 } from "react-icons/md";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 
 export default function CompletedAssessments() {
@@ -19,7 +19,27 @@ export default function CompletedAssessments() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("All Assessments");
 
-  const completedAssessments = [];
+  const [completedAssessments, setCompletedAssessments] = useState([]);
+
+  useEffect(() => {
+    const loadAttempts = async () => {
+      try {
+        const response = await fetch("/api/assessment/attempts", { credentials: "include" });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || "Unable to load completed assessments");
+        setCompletedAssessments((data.attempts || []).map((attempt) => ({
+          ...attempt,
+          title: `${attempt.topic_title} Assessment`,
+          status: attempt.passed ? "Passed" : "Failed",
+          grade: `${Math.round(Number(attempt.score || 0) * 100)}%`,
+          date: new Date(attempt.created_at).toLocaleDateString(),
+        })));
+      } catch (error) {
+        console.error("Unable to load completed assessments:", error);
+      }
+    };
+    loadAttempts();
+  }, []);
 
 const handleBack = () => {
   navigate(-1);
@@ -121,7 +141,12 @@ const filteredAssessments = completedAssessments.filter((assessment) => {
 
                         <button
                           className="cass-icon-btn"
-                          onClick={() => navigate("/Challenges")}
+                          onClick={() => navigate("/challenges", { state: {
+                            moduleId: assessment.module_id,
+                            challengeType: "assessment",
+                            forceRegenerate: assessment.status === "Passed",
+                            topic: { id: assessment.topic_id, title: assessment.topic_title },
+                          } })}
                         >
                           {assessment.status === "Failed" ? "Retry" : "Generate New"}
                         </button>

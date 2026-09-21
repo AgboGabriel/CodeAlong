@@ -89,6 +89,7 @@ export default function AccountSettings() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPasswords, setShowPasswords] = useState(false);
 
   const [profileImage, setProfileImage] = useState(null);
   const [profileImagePath, setProfileImagePath] = useState(null);
@@ -168,6 +169,32 @@ export default function AccountSettings() {
       alert(error.message || "Unable to save profile");
       throw error;
     }
+  };
+
+  const passwordChecks = [
+    ["At least 12 characters", newPassword.length >= 12],
+    ["An uppercase letter", /[A-Z]/.test(newPassword)],
+    ["A lowercase letter", /[a-z]/.test(newPassword)],
+    ["A number", /[0-9]/.test(newPassword)],
+    ["A special character", /[^A-Za-z0-9]/.test(newPassword)],
+  ];
+
+  const handleChangePassword = async () => {
+    if (newPassword !== confirmPassword) throw new Error("New password and confirmation do not match.");
+    if (passwordChecks.some(([, passed]) => !passed)) {
+      throw new Error("Your new password does not yet meet every requirement.");
+    }
+    const response = await fetch("/auth/change-password", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Unable to update password");
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
   };
 
   const handleImageUpload = async (event) => {
@@ -488,7 +515,7 @@ export default function AccountSettings() {
 
                 <p>
                   Keeping your account secure is our priority.
-                  Ensure your password is at least 10 characters
+                  Use at least 12 characters, including uppercase, lowercase, a number, and a special character.
                   long and contains a mix of numbers and symbols.
                 </p>
 
@@ -522,7 +549,7 @@ export default function AccountSettings() {
 
                     <input
                       id="currentPassword"
-                      type="password"
+                      type={showPasswords ? "text" : "password"}
                       placeholder="••••••••••••"
                       value={currentPassword}
                       onChange={(e)=>setCurrentPassword(e.target.value)}
@@ -540,11 +567,17 @@ export default function AccountSettings() {
 
                     <input
                       id="newPassword"
-                      type="password"
+                      type={showPasswords ? "text" : "password"}
                       placeholder="••••••••••••"
                       value={newPassword}
                       onChange={(e)=>setNewPassword(e.target.value)}
                     />
+
+                    <div className="sett-password-checks" aria-live="polite">
+                      {passwordChecks.map(([label, passed]) => (
+                        <span key={label} className={passed ? "passed" : ""}>{passed ? "✓" : "○"} {label}</span>
+                      ))}
+                    </div>
 
                   </div>
 
@@ -564,11 +597,16 @@ export default function AccountSettings() {
 
                     <input
                       id="confirmPassword"
-                      type="password"
+                      type={showPasswords ? "text" : "password"}
                       placeholder="••••••••••••"
                       value={confirmPassword}
                       onChange={(e)=>setConfirmPassword(e.target.value)}
                     />
+
+                    <label className="sett-password-toggle">
+                      <input type="checkbox" checked={showPasswords} onChange={(e) => setShowPasswords(e.target.checked)} />
+                      Show passwords
+                    </label>
 
                   </div>
 
@@ -579,6 +617,7 @@ export default function AccountSettings() {
                     <ActionButton
                       label="Update Password"
                       variant="primary"
+                      onConfirm={handleChangePassword}
                     />
 
                   </div>

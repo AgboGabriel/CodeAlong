@@ -796,3 +796,22 @@
   height:48px;
 
 }
+
+.sett-password-checks {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-600);
+}
+
+.sett-password-checks .passed { color: #15803d; }
+
+.sett-password-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+  color: var(--text-600);
+  font-size: 14px;
+}

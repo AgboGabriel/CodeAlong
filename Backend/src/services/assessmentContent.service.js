@@ -518,7 +518,7 @@ Rules:
     };
   }
 
-  async generateTopicChallenge({ userId, topicId, moduleId = null, challengeType = "section" }) {
+  async generateTopicChallenge({ userId, topicId, moduleId = null, challengeType = "section", forceRegenerate = false }) {
     if (!["section", "assessment"].includes(challengeType)) {
       throw new Error("Invalid challenge type");
     }
@@ -549,7 +549,7 @@ Rules:
       if (jsCode.includes("function ") && !jsCode.includes("readFileSync") && !jsCode.includes("readline")) return true;
       return false;
     };
-    if (existing?.challenge_data && !isFallbackOnly(existing) && !hasBrokenStarterCode(existing)) {
+    if (!forceRegenerate && existing?.challenge_data && !isFallbackOnly(existing) && !hasBrokenStarterCode(existing)) {
       return {
         id: existing.id,
         challengeType,

@@ -18,6 +18,7 @@ import {
 export default function Assessments() {
   const [user, setUser] = useState(null);
   const [assessments, setAssessments] = useState([]);
+  const [completedAssessments, setCompletedAssessments] = useState([]);
   const [loadingAssessments, setLoadingAssessments] = useState(true);
   const navigate = useNavigate();
 
@@ -214,6 +215,18 @@ export default function Assessments() {
 
   const normalizedSearch = searchTerm.trim().toLowerCase();
 
+  const loadCompletedAssessments = async () => {
+    try {
+      const response = await fetch("/api/assessment/attempts", { credentials: "include" });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || "Failed to load assessment attempts");
+      setCompletedAssessments(data.attempts || []);
+    } catch (error) {
+      console.error("Failed to load completed assessments:", error);
+      setCompletedAssessments([]);
+    }
+  };
+
   const filteredAssessments = useMemo(() => {
     return assessments.filter((assessment) => {
       const searchableText = [
@@ -255,6 +268,7 @@ export default function Assessments() {
 
     fetchUser();
     buildAssessmentList();
+    loadCompletedAssessments();
   }, []);
 
   return (
@@ -295,7 +309,7 @@ export default function Assessments() {
                   <p className="ass-stat__label ass-stat__label--muted">
                     Completed
                   </p>
-                  <h3 className="ass-stat__value">0</h3>
+                  <h3 className="ass-stat__value">{completedAssessments.length}</h3>
                 </div>
                 <MdCheckCircle className="ass-stat__bg-icon" />
               </div>
@@ -375,6 +389,7 @@ export default function Assessments() {
                               state: {
                                 moduleId: assessment.moduleId,
                                 challengeType: "assessment",
+                                forceRegenerate: true,
                                 topic: {
                                   id: assessment.topicId,
                                   title: assessment.topicTitle,
@@ -416,11 +431,38 @@ export default function Assessments() {
                 </div>
 
                 <div className="ass-success-grid">
-                  <div className="ass-no-results">
-                    <MdSearch size={36} className="ass-no-results__icon" />
-                    <h3>No completed assessments yet</h3>
-                    <p>Once you finish an assessment, it will appear here.</p>
-                  </div>
+                  {completedAssessments.length ? completedAssessments.slice(0, 3).map((attempt) => (
+                    <div className="ass-card" key={attempt.id}>
+                      <div className="ass-card__row">
+                        <div className="ass-card__lead">
+                          <div className="ass-card__icon ass-card__icon--primary"><MdCheck /></div>
+                          <div>
+                            <h4 className="ass-card__title">{attempt.topic_title} Assessment</h4>
+                            <div className="ass-card__meta">
+                              <span className="ass-meta-item">{attempt.passed ? "Passed" : "Needs retry"}</span>
+                              <span className="ass-meta-item">{Math.round(Number(attempt.score || 0) * 100)}%</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="ass-card__actions">
+                          <button className="ass-btn ass-btn--outline" onClick={() => navigate("/challenges", { state: {
+                            moduleId: attempt.module_id,
+                            challengeType: "assessment",
+                            forceRegenerate: Boolean(attempt.passed),
+                            topic: { id: attempt.topic_id, title: attempt.topic_title },
+                          } })}>
+                            {attempt.passed ? "Regenerate" : "Retry"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )) : (
+                    <div className="ass-no-results">
+                      <MdSearch size={36} className="ass-no-results__icon" />
+                      <h3>No completed assessments yet</h3>
+                      <p>Once you finish an assessment, it will appear here.</p>
+                    </div>
+                  )}
                 </div>
               </section>
             )}

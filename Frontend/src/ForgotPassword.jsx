@@ -7,12 +7,14 @@ export default function ForgotPassword() {
   const [feedback, setFeedback] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [requestSent, setRequestSent] = useState(false);
+  const [developmentResetLink, setDevelopmentResetLink] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     setFeedback(null);
     setRequestSent(false);
+    setDevelopmentResetLink("");
     setIsSubmitting(true);
     const controller = new AbortController();
     const timeoutId = window.setTimeout(() => controller.abort(), 20000);
@@ -30,10 +32,13 @@ export default function ForgotPassword() {
 
       if (response.ok) {
         setRequestSent(true);
+        setDevelopmentResetLink(data.devResetLink || "");
         setFeedback({
           type: "success",
-          title: "Check your email",
-          message: "If an account exists for this email address, you will find a password-reset link in your inbox shortly. Please also check your spam or junk folder.",
+          title: data.devResetLink ? "Development reset link ready" : "Check your email",
+          message: data.devResetLink
+            ? "Email delivery is not configured in this development environment. Open the reset link below."
+            : "If an account exists for this email address, you will find a password-reset link in your inbox shortly. Please also check your spam or junk folder.",
           actionLabel: "Got it",
         });
       } else {
@@ -75,6 +80,7 @@ export default function ForgotPassword() {
         </form>
 
         {requestSent ? <p className="forgot-message">If an account exists for this email, check your inbox and spam folder for the reset link.</p> : null}
+        {developmentResetLink ? <p className="forgot-message"><a href={developmentResetLink}>Open development reset link</a></p> : null}
 
         <p className="back-login">
           Remembered your password? <a href="/login">Go back to Login</a>

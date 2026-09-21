@@ -159,6 +159,25 @@ class ChallengeModel {
       },
     };
   }
+
+  async findAssessmentAttempts(userId) {
+    const result = await database.query(
+      `SELECT tcs.id, tcs.passed, tcs.score, tcs.created_at,
+              tc.id AS challenge_id, tc.title, tc.topic_id,
+              cm.id AS module_id, cm.title AS module_title,
+              uc.id AS curriculum_id, uc.title AS curriculum_title,
+              ct.title AS topic_title
+       FROM topic_challenge_submissions tcs
+       JOIN topic_challenges tc ON tc.id = tcs.challenge_id
+       JOIN curriculum_topics ct ON ct.id = tc.topic_id
+       JOIN curriculum_modules cm ON cm.id = tc.module_id
+       JOIN user_curriculums uc ON uc.id = tc.curriculum_id
+       WHERE tcs.user_id = $1 AND tc.challenge_type = 'assessment'
+       ORDER BY tcs.created_at DESC`,
+      [userId]
+    );
+    return result.rows;
+  }
 }
 
 export default new ChallengeModel();

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Editor from "@monaco-editor/react";
 import Split from "react-split";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -211,6 +211,7 @@ export default function Challenges() {
   const selectedModule = location.state?.selectedModule;
   const selectedPath = location.state?.selectedPath;
   const challengeType = location.state?.challengeType === "assessment" ? "assessment" : "section";
+  const forceRegenerate = Boolean(location.state?.forceRegenerate);
 
   const [output, setOutput] = useState("");
 
@@ -253,6 +254,11 @@ export default function Challenges() {
   const detailedFeedbackRef = useRef(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
+  const [challengeRevision, setChallengeRevision] = useState(0);
+  // Starter code is a one-time convenience, never the source of truth for a
+  // workspace tab. This prevents tab switches from overwriting user code.
+  const initializedChallengeRef = useRef(null);
+  const regenerateChallengeRef = useRef(false);
 
   /* ================= MONACO ================= */
   const handleEditorBeforeMount = useCallback((monacoInstance) => {
@@ -287,7 +293,12 @@ export default function Challenges() {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ topicId: topic.id, moduleId, challengeType }),
+          body: JSON.stringify({
+            topicId: topic.id,
+            moduleId,
+            challengeType,
+            forceRegenerate: regenerateChallengeRef.current || forceRegenerate,
+          }),
         });
 
         const data = await response.json();
@@ -296,6 +307,7 @@ export default function Challenges() {
           throw new Error(data.error || "Failed to load challenge");
         }
 
+        regenerateChallengeRef.current = false;
         setChallenge(data.challenge);
       } catch (error) {
         console.error("Failed to fetch challenge:", error);
@@ -306,25 +318,18 @@ export default function Challenges() {
     };
 
     fetchChallenge();
-  }, [moduleId, topic?.id]);
+  }, [moduleId, topic?.id, challengeType, forceRegenerate, challengeRevision]);
 
   /* ================= STARTER CODE ================= */
-  const activeTemplate = useMemo(() => {
-    if (!challenge) return FALLBACK_TEMPLATES[selectedLang.monaco] || "";
-    return (
-      challenge.starterCodeByLanguage?.[selectedLang.monaco] ||
-      FALLBACK_TEMPLATES[selectedLang.monaco] ||
-      ""
-    );
-  }, [challenge, selectedLang.monaco]);
-
   useEffect(() => {
-    setTabs((prev) =>
-      prev.map((tab) =>
-        tab.id === activeTab ? { ...tab, code: activeTemplate } : tab
-      )
-    );
-  }, [activeTemplate, activeTab]);
+    if (!challenge?.id || initializedChallengeRef.current === challenge.id) return;
+    setTabs((prev) => prev.map((tab) => {
+      const fallback = FALLBACK_TEMPLATES[tab.language.monaco] || "";
+      if (tab.code !== fallback) return tab;
+      return { ...tab, code: challenge.starterCodeByLanguage?.[tab.language.monaco] || fallback };
+    }));
+    initializedChallengeRef.current = challenge.id;
+  }, [challenge]);
 
   /* ================= LANGUAGE CHANGE ================= */
   const handleLanguageChange = (id) => {
@@ -684,7 +689,7 @@ export default function Challenges() {
       id: Date.now(),
       name: `Tab ${tabs.length + 1}`,
       language: LANGUAGES[0],
-      code: FALLBACK_TEMPLATES.javascript,
+      code: challenge?.starterCodeByLanguage?.javascript || FALLBACK_TEMPLATES.javascript,
     };
 
     setTabs((prev) => [...prev, newTab]);
@@ -699,6 +704,16 @@ export default function Challenges() {
       }
       return updated;
     });
+  };
+
+  const regenerateAssessment = () => {
+    regenerateChallengeRef.current = true;
+    initializedChallengeRef.current = null;
+    setTabs([{ id: 1, name: "Tab 1", language: LANGUAGES[0], code: FALLBACK_TEMPLATES.javascript }]);
+    setActiveTab(1);
+    setSubmitSummary(null);
+    setOutput("");
+    setChallengeRevision((revision) => revision + 1);
   };
 
   /* ================= RENDER ================= */
@@ -1049,6 +1064,18 @@ export default function Challenges() {
                   <p className="challenge-results-summary">
                     Passed {submitSummary.passed} of {submitSummary.total} tests.
                   </p>
+                  {challengeType === "assessment" && (
+                    <div className="challenge-assessment-actions">
+                      <p>
+                        {submitSummary.failed === 0
+                          ? "Assessment completed. Generate another assessment for this topic whenever you want more practice."
+                          : "This assessment attempt is recorded. You can retry it without affecting your topic mastery."}
+                      </p>
+                      <button className="primary-btn" type="button" onClick={regenerateAssessment}>
+                        {submitSummary.failed === 0 ? "Regenerate assessment" : "Retry assessment"}
+                      </button>
+                    </div>
+                  )}
                   {submitSummary.results.map((result) => (
                     <div key={result.id} className="challenge-test-card" style={{
                       borderColor: result.passed
@@ -1212,6 +1239,7 @@ export default function Challenges() {
           >
             <div className="editor-wrapper">
               <Editor
+                key={currentTab?.id}
                 height="100%"
                 theme="custom-dark"
                 beforeMount={handleEditorBeforeMount}

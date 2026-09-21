@@ -42,6 +42,14 @@ export default function CodeAI() {
   });
   const [feedback, setFeedback] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const passwordChecks = [
+    ["12+ characters", form.password.length >= 12],
+    ["uppercase", /[A-Z]/.test(form.password)],
+    ["lowercase", /[a-z]/.test(form.password)],
+    ["number", /[0-9]/.test(form.password)],
+    ["special character", /[^A-Za-z0-9]/.test(form.password)],
+  ];
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -228,7 +236,7 @@ export default function CodeAI() {
                   <div className="Lp-input-wrap">
                     <FaLock className="Lp-input-icon" />
                     <input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       name="password"
                       placeholder="Create a password"
                       value={form.password}
@@ -237,6 +245,12 @@ export default function CodeAI() {
                       autoComplete="new-password"
                       required
                     />
+                  </div>
+                  <div className="Lp-password-tools">
+                    <label><input type="checkbox" checked={showPassword} onChange={(e) => setShowPassword(e.target.checked)} /> Show password</label>
+                    <div className="Lp-password-checks">
+                      {passwordChecks.map(([label, passed]) => <span key={label} className={passed ? "passed" : ""}>{passed ? "✓" : "○"} {label}</span>)}
+                    </div>
                   </div>
                 </div>
 

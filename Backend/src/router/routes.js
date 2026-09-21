@@ -119,6 +119,7 @@ router.post('/generate-audio', audioController.generateAudio);
 router.post('/auth/register', (req, res) => authController.register(req, res));
 router.post('/auth/forgot-password', (req, res) => authController.forgotPassword(req, res));
 router.post('/auth/reset-password', (req, res) => authController.resetPassword(req, res));
+router.post('/auth/change-password', ensureAuthenticated, (req, res) => authController.changePassword(req, res));
 router.post('/auth/login', (req, res, next) => authController.login(req, res, next));
 router.post('/auth/logout', (req, res, next) => authController.logout(req, res, next));
 router.get('/auth/me', (req, res) => authController.me(req, res));
@@ -408,6 +409,12 @@ router.post(
   "/api/assessment/adaptive-help",
   ensureAuthenticated,
   (req, res) => assessmentContentController.requestAdaptiveHelp(req, res)
+);
+
+router.get(
+  "/api/assessment/attempts",
+  ensureAuthenticated,
+  (req, res) => assessmentContentController.getAssessmentAttempts(req, res)
 );
 
 // AST routes kept separate from Judge0 execution for review

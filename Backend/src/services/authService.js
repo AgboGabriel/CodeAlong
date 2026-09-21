@@ -146,8 +146,14 @@ class AuthService{
                 // keeps the previously emailed link usable if SMTP fails.
                 await this.passwordResetModel.invalidateUserTokens(user.id, resetToken?.id || null);
             } catch (error) {
-                // Do not leave an unusable request in the rate-limit history
-                // when SMTP delivery fails.
+                // Local/test environments commonly have no SMTP credentials.
+                // Keep the valid token and return its link there so reset-flow
+                // testing is still possible; production continues to fail
+                // safely instead of pretending an email was delivered.
+                if (process.env.NODE_ENV !== "production") {
+                    console.warn("Password reset email unavailable; returning development reset link.");
+                    return { message: "Password reset link generated for development.", resetLink, deliveryWarning: error.message };
+                }
                 if (resetToken?.id) await this.passwordResetModel.deleteToken(resetToken.id);
                 throw error;
             }
@@ -170,6 +176,8 @@ class AuthService{
             if (!token || !newPassword) {
                 throw new Error("Token and new password are required");
             }
+            const passwordError = validatePasswordStrength(newPassword);
+            if (passwordError) throw new Error(passwordError);
 
             const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
             const resetRecord = await this.passwordResetModel.findValidToken(tokenHash);
@@ -191,6 +199,29 @@ class AuthService{
             console.error("Error in resetPassword:", error);
             throw error;
         }
+    }
+
+    async changePassword(userId, currentPassword, newPassword) {
+        if (!userId || !currentPassword || !newPassword) {
+            throw new Error("Current password and new password are required");
+        }
+        const user = await this.userModel.findUserByID(userId);
+        if (!user?.password_hash) {
+            throw new Error("This account does not have an email password to change.");
+        }
+        if (!(await bcrypt.compare(currentPassword, user.password_hash))) {
+            throw new Error("Your current password is incorrect.");
+        }
+        const passwordError = validatePasswordStrength(newPassword);
+        if (passwordError) throw new Error(passwordError);
+        if (await bcrypt.compare(newPassword, user.password_hash)) {
+            throw new Error("Choose a new password that differs from your current password.");
+        }
+        await this.userModel.update(userId, {
+            password_hash: await bcrypt.hash(newPassword, saltRounds),
+            auth_provider: "email",
+        });
+        return { message: "Password updated successfully" };
     }
 }
 export default new AuthService();
