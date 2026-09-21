@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import "./Topics.css";
 import Sidebar from "./Components/Sidebar";
@@ -27,12 +27,42 @@ export default function Topics() {
     }
   })();
 
-  const selectedModule = location.state?.selectedModule || storedTopicsState?.selectedModule;
+  const initialSelectedModule = location.state?.selectedModule || storedTopicsState?.selectedModule;
   const selectedPath = location.state?.selectedPath || storedTopicsState?.selectedPath;
+  const [selectedModule, setSelectedModule] = useState(initialSelectedModule);
 
   if (selectedModule) {
     sessionStorage.setItem("codealong_topics_state", JSON.stringify({ selectedModule, selectedPath }));
   }
+
+  // The Topics page is sometimes reached after a challenge, quiz, or lesson.
+  // Those pages may have started with an older module snapshot, so always
+  // refresh the topic statuses from the persisted curriculum before showing
+  // locks or completion badges.
+  useEffect(() => {
+    if (!selectedPath?.id || !selectedModule?.id) return undefined;
+
+    let cancelled = false;
+    async function refreshModule() {
+      try {
+        const response = await fetch(`/api/curriculum/${selectedPath.id}`, { credentials: "include" });
+        const data = await response.json();
+        const freshModule = data?.curriculum?.modules?.find(
+          (module) => String(module.id) === String(selectedModule.id)
+        );
+
+        if (response.ok && freshModule && !cancelled) {
+          setSelectedModule(freshModule);
+        }
+      } catch (error) {
+        // Keep rendering the last known snapshot if the refresh is unavailable.
+        console.error("Unable to refresh topic progress:", error);
+      }
+    }
+
+    refreshModule();
+    return () => { cancelled = true; };
+  }, [selectedPath?.id, selectedModule?.id]);
 
   const [expandedTopics, setExpandedTopics] = useState(new Set());
   const [showQuizPopup, setShowQuizPopup] = useState(false);

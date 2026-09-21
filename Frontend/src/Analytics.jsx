@@ -146,7 +146,7 @@ export default function Analytics() {
                                 <div className="analytics-topic-list">
                                   {module.topics.map((topic) => <div className="analytics-topic" key={topic.topic_id}>
                                     <div className={`analytics-status-dot ${topic.topic_status === "completed" ? "complete" : topic.topic_status === "locked" ? "locked" : "active"}`} />
-                                    <div className="analytics-topic-name"><strong>{topic.topic_title}</strong><span>{topic.attempts ? `${topic.attempts} quiz attempt${Number(topic.attempts) === 1 ? "" : "s"}` : "Not assessed"}</span></div>
+                                    <div className="analytics-topic-name"><strong>{topic.topic_title}</strong><span>{topic.attempts ? `${topic.attempts} learning attempt${Number(topic.attempts) === 1 ? "" : "s"}` : "Not assessed"}</span></div>
                                     <div className="analytics-mastery"><div><span>Mastery</span><strong>{percent(topic.mastery_probability)}</strong></div><div className="analytics-progress-track"><i style={{ width: percent(topic.mastery_probability) }} /></div></div>
                                     <span className={`analytics-status-label ${topic.topic_status}`}>{topic.topic_status === "completed" ? "Complete" : topic.topic_status === "locked" ? "Locked" : "In progress"}</span>
                                   </div>)}

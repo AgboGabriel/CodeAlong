@@ -598,6 +598,37 @@ export default function Challenges() {
       // cache so the next visit re-fetches fresh statuses, then show the banner.
       if (canProgress) {
         sessionStorage.removeItem("myLessons_cache");
+        // Topics keeps a lightweight navigation snapshot so Back controls can
+        // return to the same module. Update it now as well, otherwise that
+        // snapshot can briefly render the newly unlocked topic as locked.
+        try {
+          const rawTopicsState = sessionStorage.getItem("codealong_topics_state");
+          const savedTopicsState = rawTopicsState ? JSON.parse(rawTopicsState) : {};
+          const moduleSnapshot = selectedModule || savedTopicsState.selectedModule;
+          const unlockedTopicId = unlockResult?.unlockedTopicId;
+
+          if (moduleSnapshot?.topics) {
+            const updatedModule = {
+              ...moduleSnapshot,
+              topics: moduleSnapshot.topics.map((savedTopic) => {
+                if (String(savedTopic.id) === String(topic?.id)) {
+                  return { ...savedTopic, status: "completed" };
+                }
+                if (unlockedTopicId && String(savedTopic.id) === String(unlockedTopicId)) {
+                  return { ...savedTopic, status: "unlocked" };
+                }
+                return savedTopic;
+              }),
+            };
+            sessionStorage.setItem("codealong_topics_state", JSON.stringify({
+              ...savedTopicsState,
+              selectedPath: selectedPath || savedTopicsState.selectedPath,
+              selectedModule: updatedModule,
+            }));
+          }
+        } catch (cacheError) {
+          console.warn("Unable to refresh the Topics navigation snapshot:", cacheError);
+        }
         setProgressionResult(unlockResult ?? {});
       }
 
