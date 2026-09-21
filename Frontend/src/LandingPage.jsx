@@ -58,6 +58,16 @@ export default function CodeAI() {
       setFeedback({ type: "error", title: "Complete your details", message: "Enter a username, email address, and password before creating your account." });
       return;
     }
+    if(
+      form.password.length < 12 ||
+      !/[A-Z]/.test(form.password) ||
+      !/[a-z]/.test(form.password) ||
+      !/[0-9]/.test(form.password) ||
+      !/[^A-Za-z0-9]/.test(form.password)
+    ){
+      setFeedback({ type: "error", title: "Choose a stronger password", message: "Use at least 12 characters with uppercase, lowercase, a number, and a special character." });
+      return;
+    }
     if(!form.terms){
       setFeedback({ type: "error", title: "Terms acceptance required", message: "Please agree to the Terms and Privacy Policy before creating your account." });
       return;
@@ -223,6 +233,8 @@ export default function CodeAI() {
                       placeholder="Create a password"
                       value={form.password}
                       onChange={handleChange}
+                      minLength={12}
+                      autoComplete="new-password"
                       required
                     />
                   </div>

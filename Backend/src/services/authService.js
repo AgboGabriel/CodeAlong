@@ -1,6 +1,23 @@
 import userModel from "../models/userModel.js";
 import passwordResetModel from "../models/passwordResetModel.js";
 import bcrypt from 'bcrypt';
+
+const PASSWORD_POLICY_MESSAGE = 'Password must be at least 12 characters and include uppercase, lowercase, number, and special character.';
+
+function validatePasswordStrength(password) {
+    if (
+        typeof password !== 'string' ||
+        password.length < 12 ||
+        !/[A-Z]/.test(password) ||
+        !/[a-z]/.test(password) ||
+        !/[0-9]/.test(password) ||
+        !/[^A-Za-z0-9]/.test(password)
+    ) {
+        return PASSWORD_POLICY_MESSAGE;
+    }
+
+    return null;
+}
 import crypto from "crypto";
 import mailService from "./mailService.js";
 
@@ -25,6 +42,12 @@ class AuthService{
             if (!normalizedUsername || !normalizedEmail || !password_hash) {
               throw new Error('Username, email, and password are required');
             }
+                const passwordError = validatePasswordStrength(password_hash);
+                if (passwordError) {
+                    const error = new Error(passwordError);
+                    error.code = 'WEAK_PASSWORD';
+                    throw error;
+                }
             const existingUser= await this.userModel.findByEmail(normalizedEmail);
             if(existingUser){
                 throw new Error('Email already in use');
