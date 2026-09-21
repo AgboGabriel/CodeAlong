@@ -127,7 +127,7 @@ CREATE TABLE topic_videos (
   score NUMERIC DEFAULT 0,
 
   is_replacement BOOLEAN DEFAULT false,
-  replaced_video_id INTEGER REFERENCES topic_videos(id),
+  replaced_video_id INTEGER REFERENCES topic_videos(id) ON DELETE SET NULL,
   replacement_reason TEXT,
 
   created_at TIMESTAMP DEFAULT NOW(),
@@ -157,7 +157,7 @@ CREATE TABLE topic_mastery (
   correct_answers INTEGER DEFAULT 0,
   incorrect_answers INTEGER DEFAULT 0,
 
-  last_quiz_id INTEGER REFERENCES topic_quizzes(id),
+  last_quiz_id INTEGER REFERENCES topic_quizzes(id) ON DELETE SET NULL,
   updated_at TIMESTAMP DEFAULT NOW(),
 
   UNIQUE(user_id, topic_id)
