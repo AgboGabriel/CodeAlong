@@ -139,17 +139,21 @@ const filteredAssessments = completedAssessments.filter((assessment) => {
                           </div>
                         </div>
 
-                        <button
-                          className="cass-icon-btn"
-                          onClick={() => navigate("/challenges", { state: {
-                            moduleId: assessment.module_id,
-                            challengeType: "assessment",
-                            forceRegenerate: assessment.status === "Passed",
-                            topic: { id: assessment.topic_id, title: assessment.topic_title },
-                          } })}
-                        >
-                          {assessment.status === "Failed" ? "Retry" : "Generate New"}
-                        </button>
+                        {assessment.status === "Failed" ? (
+                          <button
+                            className="cass-icon-btn"
+                            onClick={() => navigate("/challenges", { state: {
+                              moduleId: assessment.module_id,
+                              challengeType: "assessment",
+                              forceRegenerate: true,
+                              topic: { id: assessment.topic_id, title: assessment.topic_title },
+                            } })}
+                          >
+                            Retry
+                          </button>
+                        ) : (
+                          <span className="cass-card__status">Completed</span>
+                        )}
                       </div>
                     ))
                   ) : (

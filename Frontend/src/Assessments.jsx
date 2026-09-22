@@ -24,24 +24,7 @@ export default function Assessments() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("All Levels");
-
-  const normalizeDifficultyValue = (value) => {
-    const normalized = String(value || "").trim().toLowerCase();
-
-    if (["beginner", "easy"].includes(normalized)) {
-      return { level: "Beginner", rawDifficulty: "easy" };
-    }
-
-    if (["advanced", "hard", "expert"].includes(normalized)) {
-      return { level: "Advanced", rawDifficulty: "hard" };
-    }
-
-    if (["intermediate", "medium"].includes(normalized)) {
-      return { level: "Intermediate", rawDifficulty: "medium" };
-    }
-
-    return null;
-  };
+  const [selectedDifficulty, setSelectedDifficulty] = useState("medium");
 
   const inferAssessmentDifficulty = (topicTitle = "", moduleTitle = "", curriculumTitle = "") => {
     const combinedText = `${topicTitle} ${moduleTitle} ${curriculumTitle}`.toLowerCase();
@@ -99,11 +82,13 @@ export default function Assessments() {
     try {
       setLoadingAssessments(true);
 
-      const curriculumResponse = await fetch("/api/curriculum", {
-        credentials: "include",
-      });
+      const [curriculumResponse, attemptsResponse] = await Promise.all([
+        fetch("/api/curriculum", { credentials: "include" }),
+        fetch("/api/assessment/attempts", { credentials: "include" }),
+      ]);
 
       const curriculumData = await curriculumResponse.json();
+      const attemptsData = await attemptsResponse.json();
 
       if (!curriculumResponse.ok || !curriculumData.success) {
         throw new Error(curriculumData.error || "Failed to fetch curriculum data");
@@ -112,6 +97,11 @@ export default function Assessments() {
       const curriculumItems = Array.isArray(curriculumData.curriculum)
         ? curriculumData.curriculum
         : [];
+      const passedTopicIds = new Set(
+        (Array.isArray(attemptsData?.attempts) ? attemptsData.attempts : [])
+          .filter((attempt) => attempt.passed)
+          .map((attempt) => String(attempt.topic_id))
+      );
 
       const completedEntries = [];
 
@@ -124,7 +114,7 @@ export default function Assessments() {
           topics.forEach((topic) => {
             const status = String(topic.status || "").toLowerCase();
 
-            if (status === "completed" || status === "complete") {
+            if ((status === "completed" || status === "complete") && !passedTopicIds.has(String(topic.id))) {
               completedEntries.push({
                 topicId: topic.id,
                 moduleId: module.id,
@@ -142,69 +132,17 @@ export default function Assessments() {
         return;
       }
 
-      // Assessment content is generated only after the learner clicks Start.
-      // This keeps the list fast and avoids unnecessary AI-generation calls.
-      const resolvedAssessments = await Promise.allSettled(
-        completedEntries.map(async ({ topicId, moduleId, curriculumTitle, moduleTitle, topicTitle }) => {
-          const fallbackDifficulty = inferAssessmentDifficulty(
-            topicTitle,
-            moduleTitle,
-            curriculumTitle
-          );
-
-          try {
-            const response = await fetch("/api/assessment/challenge", {
-              method: "POST",
-              credentials: "include",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                topicId,
-                moduleId,
-                challengeType: "assessment",
-              }),
-            });
-
-            const data = await response.json();
-            const backendDifficulty =
-              normalizeDifficultyValue(
-                data?.challenge?.difficulty ??
-                data?.challenge_data?.difficulty ??
-                data?.difficulty
-              ) || fallbackDifficulty;
-
-            return {
-              id: `assessment-${topicId}`,
-              title: `${topicTitle} Assessment`,
-              course: `${curriculumTitle} • ${moduleTitle}`,
-              ...backendDifficulty,
-              topicId,
-              moduleId,
-              topicTitle,
-              moduleTitle,
-              curriculumTitle,
-            };
-          } catch (error) {
-            console.warn("Failed to resolve assessment difficulty from backend:", error);
-            return {
-              id: `assessment-${topicId}`,
-              title: `${topicTitle} Assessment`,
-              course: `${curriculumTitle} • ${moduleTitle}`,
-              ...fallbackDifficulty,
-              topicId,
-              moduleId,
-              topicTitle,
-              moduleTitle,
-              curriculumTitle,
-            };
-          }
-        })
-      );
-
-      const finalAssessments = resolvedAssessments
-        .filter((entry) => entry.status === "fulfilled")
-        .map((entry) => entry.value);
-
-      setAssessments(finalAssessments);
+      setAssessments(completedEntries.map(({ topicId, moduleId, curriculumTitle, moduleTitle, topicTitle }) => ({
+        id: `assessment-${topicId}`,
+        title: `${topicTitle} Assessment`,
+        course: `${curriculumTitle} • ${moduleTitle}`,
+        ...inferAssessmentDifficulty(topicTitle, moduleTitle, curriculumTitle),
+        topicId,
+        moduleId,
+        topicTitle,
+        moduleTitle,
+        curriculumTitle,
+      })));
     } catch (error) {
       console.error("Failed to load generated assessments:", error);
       setAssessments([]);
@@ -345,6 +283,16 @@ export default function Assessments() {
                       <option>Advanced</option>
                     </select>
                   </div>
+                  <select
+                    className="ass-lesson-filter"
+                    value={selectedDifficulty}
+                    onChange={(e) => setSelectedDifficulty(e.target.value)}
+                    aria-label="Assessment difficulty"
+                  >
+                    <option value="easy">Beginner difficulty</option>
+                    <option value="medium">Intermediate difficulty</option>
+                    <option value="hard">Advanced difficulty</option>
+                  </select>
                 </div>
               </div>
 
@@ -352,8 +300,8 @@ export default function Assessments() {
                 {loadingAssessments ? (
                   <div className="ass-no-results">
                     <MdSearch size={48} className="ass-no-results__icon" />
-                    <h3>Loading AI-generated assessments...</h3>
-                    <p>We are checking your completed topics and generating challenge-based assessments.</p>
+                    <h3>Loading completed topics...</h3>
+                    <p>We are checking which completed topics are eligible for a new assessment.</p>
                   </div>
                 ) : filteredAssessments.length > 0 ? (
                   filteredAssessments.map((assessment) => (
@@ -390,6 +338,7 @@ export default function Assessments() {
                                 moduleId: assessment.moduleId,
                                 challengeType: "assessment",
                                 forceRegenerate: true,
+                                difficulty: selectedDifficulty,
                                 topic: {
                                   id: assessment.topicId,
                                   title: assessment.topicTitle,
@@ -409,7 +358,7 @@ export default function Assessments() {
                     <h3>No results found</h3>
                     <p>
                       {assessments.length === 0
-                        ? "Complete a topic first so we can generate AI assessments for it."
+                        ? "Complete a topic first, or finish the available assessments before generating another one."
                         : "Try searching with a different keyword or change the filter."}
                     </p>
                   </div>
@@ -445,14 +394,19 @@ export default function Assessments() {
                           </div>
                         </div>
                         <div className="ass-card__actions">
-                          <button className="ass-btn ass-btn--outline" onClick={() => navigate("/challenges", { state: {
-                            moduleId: attempt.module_id,
-                            challengeType: "assessment",
-                            forceRegenerate: Boolean(attempt.passed),
-                            topic: { id: attempt.topic_id, title: attempt.topic_title },
-                          } })}>
-                            {attempt.passed ? "Regenerate" : "Retry"}
-                          </button>
+                          {attempt.passed ? (
+                            <span className="ass-tag ass-tag--green">Completed</span>
+                          ) : (
+                            <button className="ass-btn ass-btn--outline" onClick={() => navigate("/challenges", { state: {
+                              moduleId: attempt.module_id,
+                              challengeType: "assessment",
+                              forceRegenerate: true,
+                              difficulty: selectedDifficulty,
+                              topic: { id: attempt.topic_id, title: attempt.topic_title },
+                            } })}>
+                              Retry
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>

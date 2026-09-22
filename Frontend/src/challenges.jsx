@@ -212,6 +212,7 @@ export default function Challenges() {
   const selectedPath = location.state?.selectedPath;
   const challengeType = location.state?.challengeType === "assessment" ? "assessment" : "section";
   const forceRegenerate = Boolean(location.state?.forceRegenerate);
+  const requestedDifficulty = location.state?.difficulty || "medium";
 
   const [output, setOutput] = useState("");
 
@@ -233,6 +234,7 @@ export default function Challenges() {
   const [challenge,    setChallenge]    = useState(null);
   const [loading,      setLoading]      = useState(true);
   const [submitSummary, setSubmitSummary] = useState(null);
+  const [assessmentCompleted, setAssessmentCompleted] = useState(false);
 
   // Hint state
   const [hintLoading,  setHintLoading]  = useState(false);
@@ -298,6 +300,7 @@ export default function Challenges() {
             moduleId,
             challengeType,
             forceRegenerate: regenerateChallengeRef.current || forceRegenerate,
+            difficulty: requestedDifficulty,
           }),
         });
 
@@ -353,6 +356,7 @@ export default function Challenges() {
 
     setOutput("");
     setSubmitSummary(null);
+    setAssessmentCompleted(false);
     setAstFeedback([]);
     setLearnerFeedback(null);
     setHintFeedback(null);
@@ -567,6 +571,9 @@ export default function Challenges() {
 
       setSubmitSummary(evaluation);
       setOutput(`Passed ${evaluation.passed} of ${evaluation.total} test cases.`);
+      if (challengeType === "assessment" && evaluation.failed === 0) {
+        setAssessmentCompleted(true);
+      }
 
       // AST structural feedback — only keep genuinely actionable
       // warning/error diagnostics; drop info-level noise and decorative
@@ -765,6 +772,31 @@ export default function Challenges() {
           <button
             onClick={() => setProgressionResult(null)}
             style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", fontSize: 18 }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {assessmentCompleted && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, zIndex: 999,
+          background: "linear-gradient(90deg, #16a34a, #15803d)",
+          color: "#fff", padding: "14px 24px", display: "flex",
+          alignItems: "center", gap: 16,
+        }}>
+          <span style={{ fontSize: 22 }}>🎉</span>
+          <strong style={{ flex: 1 }}>Congratulations! You passed this assessment.</strong>
+          <button
+            onClick={() => navigate("/Assessments")}
+            style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 6, color: "#fff", padding: "6px 14px", cursor: "pointer", fontWeight: 600 }}
+          >
+            Back to Assessments
+          </button>
+          <button
+            onClick={() => setAssessmentCompleted(false)}
+            style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", fontSize: 18 }}
+            aria-label="Dismiss congratulations"
           >
             ✕
           </button>
@@ -1068,12 +1100,14 @@ export default function Challenges() {
                     <div className="challenge-assessment-actions">
                       <p>
                         {submitSummary.failed === 0
-                          ? "Assessment completed. Generate another assessment for this topic whenever you want more practice."
+                          ? "Assessment completed successfully. It has been moved to Completed Assessments."
                           : "This assessment attempt is recorded. You can retry it without affecting your topic mastery."}
                       </p>
-                      <button className="primary-btn" type="button" onClick={regenerateAssessment}>
-                        {submitSummary.failed === 0 ? "Regenerate assessment" : "Retry assessment"}
-                      </button>
+                      {submitSummary.failed > 0 && (
+                        <button className="primary-btn" type="button" onClick={regenerateAssessment}>
+                          Retry assessment
+                        </button>
+                      )}
                     </div>
                   )}
                   {submitSummary.results.map((result) => (
