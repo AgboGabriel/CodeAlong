@@ -518,10 +518,13 @@ Rules:
     };
   }
 
-  async generateTopicChallenge({ userId, topicId, moduleId = null, challengeType = "section", forceRegenerate = false }) {
+  async generateTopicChallenge({ userId, topicId, moduleId = null, challengeType = "section", forceRegenerate = false, difficulty = "medium" }) {
     if (!["section", "assessment"].includes(challengeType)) {
       throw new Error("Invalid challenge type");
     }
+    const requestedDifficulty = ["easy", "medium", "hard"].includes(String(difficulty).toLowerCase())
+      ? String(difficulty).toLowerCase()
+      : "medium";
     const context = await getTopicContext({ userId, topicId, moduleId });
     const topicTitle = context.topic.title;
     const moduleTitle = context.module.title;
@@ -564,13 +567,13 @@ Rules:
     }
 
     const challengeLabel = challengeType === "assessment" ? "coding assessment" : "coding challenge";
-    const prompt = `Generate a ${challengeLabel}. Topic: "${topicTitle}". Module: "${moduleTitle}". Language: ${languageName}.
+    const prompt = `Generate a ${requestedDifficulty} difficulty ${challengeLabel}. Topic: "${topicTitle}". Module: "${moduleTitle}". Language: ${languageName}.
 
 Return ONLY valid JSON with this exact shape (no markdown, no extra keys):
 {"title":"string","prompt":"string","instructions":["string"],"expectedConcepts":["string"],"difficulty":"easy","starterCodeByLanguage":{"${languageName}":"<complete runnable solution in ${languageName}>"},"publicTests":[{"id":"test1","input":"","expectedOutput":""},{"id":"test2","input":"","expectedOutput":""}],"hiddenTests":[{"id":"test3","input":"","expectedOutput":""},{"id":"test4","input":"","expectedOutput":""},{"id":"test5","input":"","expectedOutput":""}],"structuralExpectations":{"requireFunction":false,"requireConditional":false,"requireLoop":false,"requireBranching":false,"minimumFunctions":0,"minimumConditionals":0,"minimumLoops":0},"source":"ai_generated_topic_aligned"}
 
 MANDATORY RULES:
-1. Only test concepts from "${topicTitle}". No advanced concepts.
+1. Only test concepts from "${topicTitle}". Match the requested ${requestedDifficulty} difficulty without introducing unrelated concepts.
 2. Every starterCodeByLanguage value must be a minimal placeholder — just the language name and "// solution here". The real starter code is injected server-side and any AI-provided code beyond the placeholder will be ignored. Do NOT write actual code in starterCodeByLanguage.
 3. publicTests: exactly 2 items (test1, test2). hiddenTests: exactly 3 items (test3, test4, test5). All expectedOutput values must be non-empty strings.
 4. expectedOutput = the exact text printed to stdout, trailing whitespace trimmed.
@@ -811,6 +814,12 @@ MANDATORY RULES:
 
     if (!Array.isArray(testCases) || testCases.length === 0) {
       throw new Error("At least one test case is required for evaluation");
+    }
+
+    if (challengeType === "assessment" && await challengeModel.hasPassedAssessment({ userId, topicId })) {
+      const error = new Error("This topic already has a passed assessment.");
+      error.statusCode = 409;
+      throw error;
     }
 
     // One batch POST plus shared polling, instead of a POST and many GETs for

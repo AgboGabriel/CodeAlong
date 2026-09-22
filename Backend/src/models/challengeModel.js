@@ -178,6 +178,21 @@ class ChallengeModel {
     );
     return result.rows;
   }
+
+  async hasPassedAssessment({ userId, topicId }) {
+    const result = await database.query(
+      `SELECT 1
+       FROM topic_challenge_submissions tcs
+       JOIN topic_challenges tc ON tc.id = tcs.challenge_id
+       WHERE tcs.user_id = $1
+         AND tc.topic_id = $2
+         AND tc.challenge_type = 'assessment'
+         AND tcs.passed = true
+       LIMIT 1`,
+      [userId, topicId]
+    );
+    return result.rowCount > 0;
+  }
 }
 
 export default new ChallengeModel();

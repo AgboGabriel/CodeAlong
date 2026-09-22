@@ -30,7 +30,7 @@ class AssessmentContentController {
   async generateTopicChallenge(req, res) {
     try {
       const userId = req.user?.id;
-      const { topicId, moduleId, challengeType = "section", forceRegenerate = false } = req.body;
+      const { topicId, moduleId, challengeType = "section", forceRegenerate = false, difficulty = "medium" } = req.body;
 
       if (!userId) {
         return res.status(401).json({ success: false, error: "User not authenticated" });
@@ -42,6 +42,7 @@ class AssessmentContentController {
         moduleId,
         challengeType,
         forceRegenerate,
+        difficulty,
       });
 
       return res.status(200).json({ success: true, challenge });
@@ -86,7 +87,7 @@ class AssessmentContentController {
       });
     } catch (error) {
       console.error("Error evaluating challenge submission:", error);
-      return res.status(500).json({
+      return res.status(error.statusCode || 500).json({
         success: false,
         error: error.message || "Failed to evaluate challenge submission",
       });
