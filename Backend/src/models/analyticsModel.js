@@ -2,7 +2,7 @@ import database from "../config/database.js";
 
 class AnalyticsModel {
   async getLearnerAnalytics(userId) {
-    const [topicsResult, quizzesResult, challengesResult] = await Promise.all([
+    const [topicsResult, quizzesResult, challengesResult, assessmentsResult] = await Promise.all([
       database.query(
         `
           SELECT
@@ -66,9 +66,24 @@ class AnalyticsModel {
           JOIN curriculum_modules cm ON cm.id = tc.module_id
           LEFT JOIN topic_challenge_submissions tcs
             ON tcs.challenge_id = tc.id AND tcs.user_id = $1
-          WHERE tc.user_id = $1
+          WHERE tc.user_id = $1 AND tc.challenge_type = 'section'
           GROUP BY tc.id, tc.topic_id, ct.title, cm.title, tc.title, tc.created_at
           ORDER BY COALESCE(MAX(tcs.created_at), tc.created_at) DESC
+        `,
+        [userId]
+      ),
+      database.query(
+        `
+          SELECT tcs.id, tcs.passed, tcs.score, tcs.created_at AS submitted_at,
+                 tc.topic_id, ct.title AS topic_title, cm.title AS module_title,
+                 tc.difficulty
+          FROM topic_challenge_submissions tcs
+          JOIN topic_challenges tc ON tc.id = tcs.challenge_id
+          JOIN curriculum_topics ct ON ct.id = tc.topic_id
+          JOIN curriculum_modules cm ON cm.id = tc.module_id
+          WHERE tcs.user_id = $1 AND tc.challenge_type = 'assessment'
+          ORDER BY tcs.created_at DESC
+          LIMIT 30
         `,
         [userId]
       ),
@@ -78,6 +93,7 @@ class AnalyticsModel {
       topics: topicsResult.rows,
       quizzes: quizzesResult.rows,
       challenges: challengesResult.rows,
+      assessments: assessmentsResult.rows,
     };
   }
 }

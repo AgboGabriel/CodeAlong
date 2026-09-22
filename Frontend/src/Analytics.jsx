@@ -43,7 +43,7 @@ function EmptyState({ title, description }) {
 
 export default function Analytics() {
   const navigate = useNavigate();
-  const [analytics, setAnalytics] = useState({ topics: [], quizzes: [], challenges: [] });
+  const [analytics, setAnalytics] = useState({ topics: [], quizzes: [], challenges: [], assessments: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -70,9 +70,9 @@ export default function Analytics() {
     const averageMastery = attemptedTopics.length
       ? attemptedTopics.reduce((sum, topic) => sum + Number(topic.mastery_probability || 0), 0) / attemptedTopics.length
       : 0;
-    const passedQuizzes = analytics.quizzes.filter((quiz) => quiz.passed).length;
+    const passedAssessments = analytics.assessments.filter((assessment) => assessment.passed).length;
     const passedChallenges = analytics.challenges.filter((challenge) => Number(challenge.passed_submission_count) > 0).length;
-    return { total, completed, attemptedTopics, averageMastery, passedQuizzes, passedChallenges };
+    return { total, completed, attemptedTopics, averageMastery, passedAssessments, passedChallenges };
   }, [analytics]);
 
   const curriculums = useMemo(() => {
@@ -122,8 +122,8 @@ export default function Analytics() {
                 <section className="analytics-metrics" aria-label="Learning summary">
                   <MetricCard icon={MdAssessment} tone="blue" label="Curriculum progress" value={overview.total ? `${overview.completed}/${overview.total}` : "—"} helper={overview.total ? `${Math.round((overview.completed / overview.total) * 100)}% topics completed` : "Create a learning path to begin"} />
                   <MetricCard icon={MdTrendingUp} tone="purple" label="Average mastery" value={overview.attemptedTopics.length ? percent(overview.averageMastery) : "—"} helper={overview.attemptedTopics.length ? `Across ${overview.attemptedTopics.length} attempted topics` : "Complete a quiz to measure mastery"} />
-                  <MetricCard icon={MdQuiz} tone="orange" label="Quiz outcomes" value={`${overview.passedQuizzes}/${analytics.quizzes.length}`} helper="Passed assessments" />
-                  <MetricCard icon={MdCode} tone="green" label="Challenges solved" value={`${overview.passedChallenges}/${analytics.challenges.length}`} helper="Topics with a passing submission" />
+                  <MetricCard icon={MdAssessment} tone="orange" label="Assessments completed" value={`${overview.passedAssessments}/${analytics.assessments.length}`} helper="Passed learner-generated assessments" />
+                  <MetricCard icon={MdCode} tone="green" label="Section challenges solved" value={`${overview.passedChallenges}/${analytics.challenges.length}`} helper="Topics with a passing section challenge" />
                 </section>
 
                 <section className="analytics-panel">
@@ -162,12 +162,12 @@ export default function Analytics() {
 
                 <div className="analytics-two-column">
                   <section className="analytics-panel">
-                    <div className="analytics-panel-heading"><div><span>Assessments</span><h2>Quiz pass/fail history</h2></div><MdQuiz className="analytics-heading-icon" /></div>
-                    {!analytics.quizzes.length ? <EmptyState title="No quiz attempts yet" description="Your pretest and posttest results will be shown here." /> : <div className="analytics-history-list">
-                      {analytics.quizzes.map((quiz) => <div className="analytics-history-item" key={quiz.id}>
-                        <div className={`analytics-result-icon ${quiz.passed ? "pass" : "fail"}`}>{quiz.passed ? <MdCheckCircle size={20} /> : <MdAssessment size={20} />}</div>
-                        <div><strong>{quiz.topic_title}</strong><span>{quiz.quiz_type === "pretest" ? "Pretest" : "Posttest"} · {quiz.module_title} · {formatDate(quiz.submitted_at)}</span></div>
-                        <div className="analytics-result-score"><strong>{scorePercent(quiz.score)}</strong><span className={quiz.passed ? "pass-text" : "fail-text"}>{quiz.passed ? "Passed" : "Not passed"}</span></div>
+                    <div className="analytics-panel-heading"><div><span>Assessments</span><h2>Assessment pass/fail history</h2></div><MdAssessment className="analytics-heading-icon" /></div>
+                    {!analytics.assessments.length ? <EmptyState title="No assessment attempts yet" description="Generate an assessment from a completed topic to see its result here." /> : <div className="analytics-history-list">
+                      {analytics.assessments.map((assessment) => <div className="analytics-history-item" key={assessment.id}>
+                        <div className={`analytics-result-icon ${assessment.passed ? "pass" : "fail"}`}>{assessment.passed ? <MdCheckCircle size={20} /> : <MdAssessment size={20} />}</div>
+                        <div><strong>{assessment.topic_title}</strong><span>{assessment.difficulty} difficulty · {assessment.module_title} · {formatDate(assessment.submitted_at)}</span></div>
+                        <div className="analytics-result-score"><strong>{scorePercent(assessment.score)}</strong><span className={assessment.passed ? "pass-text" : "fail-text"}>{assessment.passed ? "Passed" : "Not passed"}</span></div>
                       </div>)}
                     </div>}
                   </section>
@@ -186,6 +186,17 @@ export default function Analytics() {
                     </div>}
                   </section>
                 </div>
+
+                <section className="analytics-panel">
+                  <div className="analytics-panel-heading"><div><span>Mastery inputs</span><h2>Prior-knowledge quiz history</h2></div><MdQuiz className="analytics-heading-icon" /></div>
+                  {!analytics.quizzes.length ? <EmptyState title="No prior-knowledge quizzes yet" description="These diagnostic quizzes still inform mastery, but are reported separately from assessments." /> : <div className="analytics-history-list">
+                    {analytics.quizzes.map((quiz) => <div className="analytics-history-item" key={quiz.id}>
+                      <div className={`analytics-result-icon ${quiz.passed ? "pass" : "fail"}`}>{quiz.passed ? <MdCheckCircle size={20} /> : <MdQuiz size={20} />}</div>
+                      <div><strong>{quiz.topic_title}</strong><span>{quiz.quiz_type === "pretest" ? "Prior knowledge" : "Post-lesson quiz"} · {quiz.module_title} · {formatDate(quiz.submitted_at)}</span></div>
+                      <div className="analytics-result-score"><strong>{scorePercent(quiz.score)}</strong><span className={quiz.passed ? "pass-text" : "fail-text"}>{quiz.passed ? "Passed" : "Not passed"}</span></div>
+                    </div>)}
+                  </div>}
+                </section>
               </>
             )}
           </div>

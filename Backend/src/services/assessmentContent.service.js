@@ -518,7 +518,7 @@ Rules:
     };
   }
 
-  async generateTopicChallenge({ userId, topicId, moduleId = null, challengeType = "section", forceRegenerate = false, difficulty = "medium" }) {
+  async generateTopicChallenge({ userId, topicId, moduleId = null, challengeType = "section", forceRegenerate = false, difficulty = "medium", language = null }) {
     if (!["section", "assessment"].includes(challengeType)) {
       throw new Error("Invalid challenge type");
     }
@@ -530,7 +530,13 @@ Rules:
     const moduleTitle = context.module.title;
     const videoTitle = context.video?.title || "No matched video yet";
     const videoDescription = context.video?.description || "No video description is available yet.";
-    const languageName = context.expectedLanguage?.name || context.expectedLanguage?.key || "the curriculum language";
+    const requestedLanguage = SUPPORTED_LANGUAGES.find((entry) => entry.key === String(language).toLowerCase());
+    // The learner chooses the implementation language for an assessment;
+    // section challenges remain aligned with the curriculum language.
+    const languageName = (challengeType === "assessment" && requestedLanguage?.name)
+      || context.expectedLanguage?.name
+      || context.expectedLanguage?.key
+      || "the curriculum language";
 
     // -- Cache lookup: reuse an existing challenge for this topic/user --
     // Skip cache if the stored challenge only has fallback tests (bad generation).
@@ -814,12 +820,6 @@ MANDATORY RULES:
 
     if (!Array.isArray(testCases) || testCases.length === 0) {
       throw new Error("At least one test case is required for evaluation");
-    }
-
-    if (challengeType === "assessment" && await challengeModel.hasPassedAssessment({ userId, topicId })) {
-      const error = new Error("This topic already has a passed assessment.");
-      error.statusCode = 409;
-      throw error;
     }
 
     // One batch POST plus shared polling, instead of a POST and many GETs for

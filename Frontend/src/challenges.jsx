@@ -213,6 +213,8 @@ export default function Challenges() {
   const challengeType = location.state?.challengeType === "assessment" ? "assessment" : "section";
   const forceRegenerate = Boolean(location.state?.forceRegenerate);
   const requestedDifficulty = location.state?.difficulty || "medium";
+  const requestedLanguage = location.state?.initialLanguage || "javascript";
+  const initialLanguage = LANGUAGES.find((language) => language.monaco === requestedLanguage) || LANGUAGES[0];
 
   const [output, setOutput] = useState("");
 
@@ -220,8 +222,8 @@ export default function Challenges() {
     {
       id: 1,
       name: "Tab 1",
-      language: LANGUAGES[0],
-      code: FALLBACK_TEMPLATES.javascript,
+      language: initialLanguage,
+      code: FALLBACK_TEMPLATES[initialLanguage.monaco] || FALLBACK_TEMPLATES.javascript,
     },
   ]);
 
@@ -301,6 +303,7 @@ export default function Challenges() {
             challengeType,
             forceRegenerate: regenerateChallengeRef.current || forceRegenerate,
             difficulty: requestedDifficulty,
+            language: requestedLanguage,
           }),
         });
 
@@ -321,7 +324,7 @@ export default function Challenges() {
     };
 
     fetchChallenge();
-  }, [moduleId, topic?.id, challengeType, forceRegenerate, challengeRevision]);
+  }, [moduleId, topic?.id, challengeType, forceRegenerate, requestedDifficulty, requestedLanguage, challengeRevision]);
 
   /* ================= STARTER CODE ================= */
   useEffect(() => {
@@ -716,7 +719,7 @@ export default function Challenges() {
   const regenerateAssessment = () => {
     regenerateChallengeRef.current = true;
     initializedChallengeRef.current = null;
-    setTabs([{ id: 1, name: "Tab 1", language: LANGUAGES[0], code: FALLBACK_TEMPLATES.javascript }]);
+    setTabs([{ id: 1, name: "Tab 1", language: initialLanguage, code: FALLBACK_TEMPLATES[initialLanguage.monaco] || FALLBACK_TEMPLATES.javascript }]);
     setActiveTab(1);
     setSubmitSummary(null);
     setOutput("");
@@ -779,6 +782,10 @@ export default function Challenges() {
       )}
 
       {assessmentCompleted && (
+        <>
+        <div className="assessment-confetti" aria-hidden="true">
+          {Array.from({ length: 24 }, (_, index) => <i key={index} />)}
+        </div>
         <div style={{
           position: "fixed", top: 0, left: 0, right: 0, zIndex: 999,
           background: "linear-gradient(90deg, #16a34a, #15803d)",
@@ -801,6 +808,7 @@ export default function Challenges() {
             ✕
           </button>
         </div>
+        </>
       )}
 
       {/* ── Non-fatal BKT/unlock error ── */}

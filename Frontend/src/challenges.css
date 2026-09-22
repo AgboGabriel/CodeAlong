@@ -822,3 +822,16 @@
 .adaptive-help-copy { margin: 0; color: #cbd5e1; line-height: 1.65; }
 .adaptive-help-error { margin: 1rem 0 0; color: #fca5a5; line-height: 1.5; }
 .adaptive-help-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 1.5rem; }
+
+@keyframes assessment-confetti-fall {
+  from { transform: translateY(-12vh) rotate(0deg); opacity: 1; }
+  to { transform: translate(var(--drift), 105vh) rotate(540deg); opacity: 0; }
+}
+.assessment-confetti { position: fixed; inset: 0; z-index: 998; pointer-events: none; overflow: hidden; }
+.assessment-confetti i { position: absolute; top: 0; left: calc(var(--piece) * 4%); width: 9px; height: 15px; background: hsl(calc(var(--piece) * 43), 82%, 62%); animation: assessment-confetti-fall 2.2s ease-out both; animation-delay: calc(var(--piece) * 35ms); }
+.assessment-confetti i:nth-child(1) { --piece: 1; --drift: 72px; } .assessment-confetti i:nth-child(2) { --piece: 2; --drift: -80px; } .assessment-confetti i:nth-child(3) { --piece: 3; --drift: 110px; } .assessment-confetti i:nth-child(4) { --piece: 4; --drift: -60px; }
+.assessment-confetti i:nth-child(5) { --piece: 5; --drift: 95px; } .assessment-confetti i:nth-child(6) { --piece: 6; --drift: -100px; } .assessment-confetti i:nth-child(7) { --piece: 7; --drift: 65px; } .assessment-confetti i:nth-child(8) { --piece: 8; --drift: -90px; }
+.assessment-confetti i:nth-child(9) { --piece: 9; --drift: 80px; } .assessment-confetti i:nth-child(10) { --piece: 10; --drift: -70px; } .assessment-confetti i:nth-child(11) { --piece: 11; --drift: 120px; } .assessment-confetti i:nth-child(12) { --piece: 12; --drift: -45px; }
+.assessment-confetti i:nth-child(13) { --piece: 13; --drift: 60px; } .assessment-confetti i:nth-child(14) { --piece: 14; --drift: -110px; } .assessment-confetti i:nth-child(15) { --piece: 15; --drift: 75px; } .assessment-confetti i:nth-child(16) { --piece: 16; --drift: -85px; }
+.assessment-confetti i:nth-child(17) { --piece: 17; --drift: 100px; } .assessment-confetti i:nth-child(18) { --piece: 18; --drift: -55px; } .assessment-confetti i:nth-child(19) { --piece: 19; --drift: 90px; } .assessment-confetti i:nth-child(20) { --piece: 20; --drift: -75px; }
+.assessment-confetti i:nth-child(21) { --piece: 21; --drift: 115px; } .assessment-confetti i:nth-child(22) { --piece: 22; --drift: -95px; } .assessment-confetti i:nth-child(23) { --piece: 23; --drift: 70px; } .assessment-confetti i:nth-child(24) { --piece: 24; --drift: -65px; }

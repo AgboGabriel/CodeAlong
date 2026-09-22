@@ -25,6 +25,8 @@ export default function Assessments() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("All Levels");
   const [selectedDifficulty, setSelectedDifficulty] = useState("medium");
+  const [selectedTopicId, setSelectedTopicId] = useState("");
+  const [selectedLanguage, setSelectedLanguage] = useState("javascript");
 
   const inferAssessmentDifficulty = (topicTitle = "", moduleTitle = "", curriculumTitle = "") => {
     const combinedText = `${topicTitle} ${moduleTitle} ${curriculumTitle}`.toLowerCase();
@@ -82,13 +84,9 @@ export default function Assessments() {
     try {
       setLoadingAssessments(true);
 
-      const [curriculumResponse, attemptsResponse] = await Promise.all([
-        fetch("/api/curriculum", { credentials: "include" }),
-        fetch("/api/assessment/attempts", { credentials: "include" }),
-      ]);
+      const curriculumResponse = await fetch("/api/curriculum", { credentials: "include" });
 
       const curriculumData = await curriculumResponse.json();
-      const attemptsData = await attemptsResponse.json();
 
       if (!curriculumResponse.ok || !curriculumData.success) {
         throw new Error(curriculumData.error || "Failed to fetch curriculum data");
@@ -97,12 +95,6 @@ export default function Assessments() {
       const curriculumItems = Array.isArray(curriculumData.curriculum)
         ? curriculumData.curriculum
         : [];
-      const passedTopicIds = new Set(
-        (Array.isArray(attemptsData?.attempts) ? attemptsData.attempts : [])
-          .filter((attempt) => attempt.passed)
-          .map((attempt) => String(attempt.topic_id))
-      );
-
       const completedEntries = [];
 
       curriculumItems.forEach((curriculum) => {
@@ -114,7 +106,9 @@ export default function Assessments() {
           topics.forEach((topic) => {
             const status = String(topic.status || "").toLowerCase();
 
-            if ((status === "completed" || status === "complete") && !passedTopicIds.has(String(topic.id))) {
+            // An assessment is learner-initiated. Every completed topic stays
+            // selectable, including topics the learner wants to assess again.
+            if (status === "completed" || status === "complete") {
               completedEntries.push({
                 topicId: topic.id,
                 moduleId: module.id,
@@ -132,7 +126,7 @@ export default function Assessments() {
         return;
       }
 
-      setAssessments(completedEntries.map(({ topicId, moduleId, curriculumTitle, moduleTitle, topicTitle }) => ({
+      const availableAssessments = completedEntries.map(({ topicId, moduleId, curriculumTitle, moduleTitle, topicTitle }) => ({
         id: `assessment-${topicId}`,
         title: `${topicTitle} Assessment`,
         course: `${curriculumTitle} • ${moduleTitle}`,
@@ -142,7 +136,13 @@ export default function Assessments() {
         topicTitle,
         moduleTitle,
         curriculumTitle,
-      })));
+      }));
+      setAssessments(availableAssessments);
+      setSelectedTopicId((current) =>
+        availableAssessments.some((assessment) => String(assessment.topicId) === String(current))
+          ? current
+          : String(availableAssessments[0]?.topicId || "")
+      );
     } catch (error) {
       console.error("Failed to load generated assessments:", error);
       setAssessments([]);
@@ -186,6 +186,24 @@ export default function Assessments() {
       return matchesSearch && matchesFilter;
     });
   }, [assessments, filter, normalizedSearch]);
+
+  const selectedAssessment = assessments.find(
+    (assessment) => String(assessment.topicId) === String(selectedTopicId)
+  );
+
+  const startAssessment = () => {
+    if (!selectedAssessment) return;
+    navigate("/challenges", {
+      state: {
+        moduleId: selectedAssessment.moduleId,
+        challengeType: "assessment",
+        forceRegenerate: true,
+        difficulty: selectedDifficulty,
+        initialLanguage: selectedLanguage,
+        topic: { id: selectedAssessment.topicId, title: selectedAssessment.topicTitle },
+      },
+    });
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -258,6 +276,29 @@ export default function Assessments() {
               <div>
                 <h2 className="ass-section__title">Available Assessments</h2>
 
+                <div className="ass-card ass-card--accent" style={{ marginBottom: 20 }}>
+                  <h3 className="ass-card__title">Generate an assessment</h3>
+                  <p className="ass-card__meta" style={{ margin: "8px 0 16px" }}>
+                    Choose a topic you have completed, then set the difficulty and coding language before generating its test-case assessment.
+                  </p>
+                  <div className="ass-lesson-controls">
+                    <select className="ass-lesson-filter" value={selectedTopicId} onChange={(e) => setSelectedTopicId(e.target.value)} aria-label="Completed topic">
+                      {assessments.length === 0 ? <option value="">No completed topics available</option> : assessments.map((assessment) => (
+                        <option key={assessment.topicId} value={assessment.topicId}>{assessment.topicTitle} — {assessment.moduleTitle}</option>
+                      ))}
+                    </select>
+                    <select className="ass-lesson-filter" value={selectedDifficulty} onChange={(e) => setSelectedDifficulty(e.target.value)} aria-label="Assessment difficulty">
+                      <option value="easy">Beginner difficulty</option>
+                      <option value="medium">Intermediate difficulty</option>
+                      <option value="hard">Advanced difficulty</option>
+                    </select>
+                    <select className="ass-lesson-filter" value={selectedLanguage} onChange={(e) => setSelectedLanguage(e.target.value)} aria-label="Assessment language">
+                      <option value="javascript">JavaScript</option><option value="python">Python</option><option value="java">Java</option><option value="cpp">C++</option><option value="c">C</option><option value="csharp">C#</option><option value="go">Go</option><option value="ruby">Ruby</option><option value="rust">Rust</option>
+                    </select>
+                    <button className="ass-btn ass-btn--outline" onClick={startAssessment} disabled={!selectedAssessment}>Generate assessment</button>
+                  </div>
+                </div>
+
                 <div className="ass-lesson-controls">
                   <div className="ass-lesson-search">
                     <MdSearch className="ass-lesson-search-icon" size={22} />
@@ -283,16 +324,6 @@ export default function Assessments() {
                       <option>Advanced</option>
                     </select>
                   </div>
-                  <select
-                    className="ass-lesson-filter"
-                    value={selectedDifficulty}
-                    onChange={(e) => setSelectedDifficulty(e.target.value)}
-                    aria-label="Assessment difficulty"
-                  >
-                    <option value="easy">Beginner difficulty</option>
-                    <option value="medium">Intermediate difficulty</option>
-                    <option value="hard">Advanced difficulty</option>
-                  </select>
                 </div>
               </div>
 
@@ -333,20 +364,9 @@ export default function Assessments() {
                         <div className="ass-card__actions">
                           <button
                             className="ass-btn ass-btn--outline"
-                            onClick={() => navigate("/challenges", {
-                              state: {
-                                moduleId: assessment.moduleId,
-                                challengeType: "assessment",
-                                forceRegenerate: true,
-                                difficulty: selectedDifficulty,
-                                topic: {
-                                  id: assessment.topicId,
-                                  title: assessment.topicTitle,
-                                },
-                              },
-                            })}
+                            onClick={() => setSelectedTopicId(String(assessment.topicId))}
                           >
-                            Start
+                            Select
                           </button>
                         </div>
                       </div>

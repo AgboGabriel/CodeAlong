@@ -30,7 +30,7 @@ class AssessmentContentController {
   async generateTopicChallenge(req, res) {
     try {
       const userId = req.user?.id;
-      const { topicId, moduleId, challengeType = "section", forceRegenerate = false, difficulty = "medium" } = req.body;
+      const { topicId, moduleId, challengeType = "section", forceRegenerate = false, difficulty = "medium", language = null } = req.body;
 
       if (!userId) {
         return res.status(401).json({ success: false, error: "User not authenticated" });
@@ -43,6 +43,7 @@ class AssessmentContentController {
         challengeType,
         forceRegenerate,
         difficulty,
+        language,
       });
 
       return res.status(200).json({ success: true, challenge });
