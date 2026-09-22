@@ -276,26 +276,44 @@ export default function Assessments() {
               <div>
                 <h2 className="ass-section__title">Available Assessments</h2>
 
-                <div className="ass-card ass-card--accent" style={{ marginBottom: 20 }}>
-                  <h3 className="ass-card__title">Generate an assessment</h3>
-                  <p className="ass-card__meta" style={{ margin: "8px 0 16px" }}>
-                    Choose a topic you have completed, then set the difficulty and coding language before generating its test-case assessment.
-                  </p>
-                  <div className="ass-lesson-controls">
-                    <select className="ass-lesson-filter" value={selectedTopicId} onChange={(e) => setSelectedTopicId(e.target.value)} aria-label="Completed topic">
-                      {assessments.length === 0 ? <option value="">No completed topics available</option> : assessments.map((assessment) => (
-                        <option key={assessment.topicId} value={assessment.topicId}>{assessment.topicTitle} — {assessment.moduleTitle}</option>
-                      ))}
-                    </select>
-                    <select className="ass-lesson-filter" value={selectedDifficulty} onChange={(e) => setSelectedDifficulty(e.target.value)} aria-label="Assessment difficulty">
-                      <option value="easy">Beginner difficulty</option>
-                      <option value="medium">Intermediate difficulty</option>
-                      <option value="hard">Advanced difficulty</option>
-                    </select>
-                    <select className="ass-lesson-filter" value={selectedLanguage} onChange={(e) => setSelectedLanguage(e.target.value)} aria-label="Assessment language">
-                      <option value="javascript">JavaScript</option><option value="python">Python</option><option value="java">Java</option><option value="cpp">C++</option><option value="c">C</option><option value="csharp">C#</option><option value="go">Go</option><option value="ruby">Ruby</option><option value="rust">Rust</option>
-                    </select>
-                    <button className="ass-btn ass-btn--outline" onClick={startAssessment} disabled={!selectedAssessment}>Generate assessment</button>
+                <div className="assessment-generator">
+                  <div className="assessment-generator__header">
+                    <div className="assessment-generator__icon"><MdTerminal /></div>
+                    <div>
+                      <span className="assessment-generator__eyebrow">Personalized practice</span>
+                      <h3>Build a coding assessment</h3>
+                      <p>Select a completed lesson and configure the assessment you want to take. It will include runnable test cases and instant feedback.</p>
+                    </div>
+                  </div>
+
+                  <div className="assessment-generator__fields">
+                    <label className="assessment-generator__field assessment-generator__field--topic">
+                      <span>Completed topic</span>
+                      <select value={selectedTopicId} onChange={(e) => setSelectedTopicId(e.target.value)} aria-label="Completed topic">
+                        {assessments.length === 0 ? <option value="">No completed topics available</option> : assessments.map((assessment) => (
+                          <option key={assessment.topicId} value={assessment.topicId}>{assessment.topicTitle} — {assessment.moduleTitle}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="assessment-generator__field">
+                      <span>Difficulty</span>
+                      <select value={selectedDifficulty} onChange={(e) => setSelectedDifficulty(e.target.value)} aria-label="Assessment difficulty">
+                        <option value="easy">Beginner</option>
+                        <option value="medium">Intermediate</option>
+                        <option value="hard">Advanced</option>
+                      </select>
+                    </label>
+                    <label className="assessment-generator__field">
+                      <span>Coding language</span>
+                      <select value={selectedLanguage} onChange={(e) => setSelectedLanguage(e.target.value)} aria-label="Assessment language">
+                        <option value="javascript">JavaScript</option><option value="python">Python</option><option value="java">Java</option><option value="cpp">C++</option><option value="c">C</option><option value="csharp">C#</option><option value="go">Go</option><option value="ruby">Ruby</option><option value="rust">Rust</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <div className="assessment-generator__footer">
+                    <p>{selectedAssessment ? <><strong>{selectedAssessment.topicTitle}</strong> is ready to assess.</> : "Complete a topic to create your first assessment."}</p>
+                    <button className="ass-btn ass-btn--outline" onClick={startAssessment} disabled={!selectedAssessment}>Generate assessment <span aria-hidden="true">→</span></button>
                   </div>
                 </div>
 
