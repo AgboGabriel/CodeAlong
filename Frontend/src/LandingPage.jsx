@@ -31,8 +31,11 @@ const features = [
   },
 ];
 
+const PROMO_VIDEO_URL = "https://fjpdbrvusppbkkejdqnn.supabase.co/storage/v1/object/public/CodeAlong_Promo_video/CodeAlong_Video.mp4";
+
 export default function CodeAI() {
   const navigate = useNavigate();
+  const [showPromoVideo, setShowPromoVideo] = useState(false);
 
   const [form, setForm] = useState({
     username: "",
@@ -157,29 +160,45 @@ export default function CodeAI() {
 
             {/* Video / Code Mockup */}
             <div className="Lp-video-preview">
+              {showPromoVideo ? (
+                <video
+                  className="Lp-promo-video"
+                  src={PROMO_VIDEO_URL}
+                  controls
+                  autoPlay
+                  playsInline
+                  aria-label="CodeAlong demo video"
+                />
+              ) : (
+                <>
+                  <div className="Lp-video-overlay" />
 
-              <div className="Lp-video-overlay" />
+                  <button
+                    className="Lp-play-btn"
+                    aria-label="Play demo video"
+                    onClick={() => setShowPromoVideo(true)}
+                    type="button"
+                  >
+                    <span className="Lp-play-icon">▶</span>
+                    <span>Play demo video</span>
+                  </button>
 
-              <button className="Lp-play-btn" aria-label="Play demo video">
-                <span className="Lp-play-icon">▶</span>
-              </button>
+                  <div className="Lp-code-mockup">
+                    <div className="Lp-dots">
+                      <span className="dot red" />
+                      <span className="dot yellow" />
+                      <span className="dot green" />
+                    </div>
 
-              <div className="Lp-code-mockup">
-
-                <div className="Lp-dots">
-                  <span className="dot red" />
-                  <span className="dot yellow" />
-                  <span className="dot green" />
-                </div>
-
-                <div className="Lp-code-lines">
-                  <div className="Lp-code-line w75 pulse" />
-                  <div className="Lp-code-line w50 pulse delay1" />
-                  <div className="Lp-code-line w85 pulse delay2" />
-                  <div className="Lp-code-line w60 pulse delay3" />
-                </div>
-
-              </div>
+                    <div className="Lp-code-lines">
+                      <div className="Lp-code-line w75 pulse" />
+                      <div className="Lp-code-line w50 pulse delay1" />
+                      <div className="Lp-code-line w85 pulse delay2" />
+                      <div className="Lp-code-line w60 pulse delay3" />
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
           </div>
