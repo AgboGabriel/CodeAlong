@@ -224,7 +224,14 @@ class ChallengeModel {
          WHERE challenge_id = tc.id AND user_id = $1
          ORDER BY created_at DESC LIMIT 1
        ) latest ON true
-       WHERE tc.user_id = $1 AND tc.challenge_type = 'assessment'
+       WHERE tc.user_id = $1
+         AND tc.challenge_type = 'assessment'
+         AND NOT EXISTS (
+           SELECT 1 FROM topic_challenge_submissions passed_submission
+           WHERE passed_submission.challenge_id = tc.id
+             AND passed_submission.user_id = $1
+             AND passed_submission.passed = true
+         )
        ORDER BY tc.created_at DESC`,
       [userId]
     );
