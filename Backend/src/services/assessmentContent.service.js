@@ -518,7 +518,7 @@ Rules:
     };
   }
 
-  async generateTopicChallenge({ userId, topicId, moduleId = null, challengeType = "section", forceRegenerate = false, difficulty = "medium", language = null }) {
+  async generateTopicChallenge({ userId, topicId, moduleId = null, challengeType = "section", forceRegenerate = false, difficulty = "medium", language = null, challengeId = null }) {
     if (!["section", "assessment"].includes(challengeType)) {
       throw new Error("Invalid challenge type");
     }
@@ -537,6 +537,13 @@ Rules:
       || context.expectedLanguage?.name
       || context.expectedLanguage?.key
       || "the curriculum language";
+
+    if (challengeId && challengeType === "assessment") {
+      const existingAssessment = await challengeModel.findById(challengeId, userId, "assessment");
+      if (!existingAssessment) throw new Error("Assessment not found or unavailable.");
+      return { id: existingAssessment.id, challengeType, ...existingAssessment.challenge_data,
+        context: { topic: context.topic, module: context.module, video: context.video }, supportedLanguages: getSupportedLanguages() };
+    }
 
     // -- Cache lookup: reuse an existing challenge for this topic/user --
     // Skip cache if the stored challenge only has fallback tests (bad generation).
@@ -580,10 +587,11 @@ Return ONLY valid JSON with this exact shape (no markdown, no extra keys):
 
 MANDATORY RULES:
 1. Only test concepts from "${topicTitle}". Match the requested ${requestedDifficulty} difficulty without introducing unrelated concepts.
-2. Every starterCodeByLanguage value must be a minimal placeholder — just the language name and "// solution here". The real starter code is injected server-side and any AI-provided code beyond the placeholder will be ignored. Do NOT write actual code in starterCodeByLanguage.
-3. publicTests: exactly 2 items (test1, test2). hiddenTests: exactly 3 items (test3, test4, test5). All expectedOutput values must be non-empty strings.
-4. expectedOutput = the exact text printed to stdout, trailing whitespace trimmed.
-5. source must equal "ai_generated_topic_aligned".
+2. Give the assessment a concise, action-oriented title that identifies the skill being assessed. Do not use the plain topic title followed by "Assessment".
+3. Every starterCodeByLanguage value must be a minimal placeholder — just the language name and "// solution here". The real starter code is injected server-side and any AI-provided code beyond the placeholder will be ignored. Do NOT write actual code in starterCodeByLanguage.
+4. publicTests: exactly 2 items (test1, test2). hiddenTests: exactly 3 items (test3, test4, test5). All expectedOutput values must be non-empty strings.
+5. expectedOutput = the exact text printed to stdout, trailing whitespace trimmed.
+6. source must equal "ai_generated_topic_aligned".
 `;
     // -- LLM call with up to 3 retries --
     let normalized = null;

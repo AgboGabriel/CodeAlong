@@ -41,6 +41,16 @@ function EmptyState({ title, description }) {
   return <div className="analytics-empty"><MdInsights size={30} /><h3>{title}</h3><p>{description}</p></div>;
 }
 
+function groupByLearningPath(items = []) {
+  const paths = new Map();
+  items.forEach((item) => {
+    const id = String(item.curriculum_id || "unknown");
+    if (!paths.has(id)) paths.set(id, { id, title: item.curriculum_title || "Learning path", items: [] });
+    paths.get(id).items.push(item);
+  });
+  return [...paths.values()];
+}
+
 export default function Analytics() {
   const navigate = useNavigate();
   const [analytics, setAnalytics] = useState({ topics: [], quizzes: [], challenges: [], assessments: [] });
@@ -98,6 +108,9 @@ export default function Analytics() {
       modules: [...curriculum.modules.values()],
     }));
   }, [analytics.topics]);
+
+  const assessmentsByPath = useMemo(() => groupByLearningPath(analytics.assessments), [analytics.assessments]);
+  const challengesByPath = useMemo(() => groupByLearningPath(analytics.challenges), [analytics.challenges]);
 
   return (
     <div className="app-shell">
@@ -163,26 +176,28 @@ export default function Analytics() {
                 <div className="analytics-two-column">
                   <section className="analytics-panel">
                     <div className="analytics-panel-heading"><div><span>Assessments</span><h2>Assessment pass/fail history</h2></div><MdAssessment className="analytics-heading-icon" /></div>
-                    {!analytics.assessments.length ? <EmptyState title="No assessment attempts yet" description="Generate an assessment from a completed topic to see its result here." /> : <div className="analytics-history-list">
-                      {analytics.assessments.map((assessment) => <div className="analytics-history-item" key={assessment.id}>
+                    {!analytics.assessments.length ? <EmptyState title="No assessment attempts yet" description="Generate an assessment from a completed topic to see its result here." /> : <div className="analytics-path-history">
+                      {assessmentsByPath.map((path) => <section className="analytics-history-path" key={path.id}><h3>{path.title}</h3><div className="analytics-history-list">
+                      {path.items.map((assessment) => <div className="analytics-history-item" key={assessment.id}>
                         <div className={`analytics-result-icon ${assessment.passed ? "pass" : "fail"}`}>{assessment.passed ? <MdCheckCircle size={20} /> : <MdAssessment size={20} />}</div>
-                        <div><strong>{assessment.topic_title}</strong><span>{assessment.difficulty} difficulty · {assessment.module_title} · {formatDate(assessment.submitted_at)}</span></div>
+                        <div><strong>{assessment.assessment_title || `${assessment.topic_title} practice assessment`}</strong><span>{assessment.difficulty} difficulty · {assessment.module_title} · {formatDate(assessment.submitted_at)}</span></div>
                         <div className="analytics-result-score"><strong>{scorePercent(assessment.score)}</strong><span className={assessment.passed ? "pass-text" : "fail-text"}>{assessment.passed ? "Passed" : "Not passed"}</span></div>
                       </div>)}
+                      </div></section>)}
                     </div>}
                   </section>
 
                   <section className="analytics-panel">
                     <div className="analytics-panel-heading"><div><span>Practice</span><h2>Challenge progress</h2></div><MdEmojiEvents className="analytics-heading-icon" /></div>
-                    {!analytics.challenges.length ? <EmptyState title="No challenges generated yet" description="Topic challenges and your submissions will appear here." /> : <div className="analytics-history-list">
-                      {analytics.challenges.map((challenge) => {
+                    {!analytics.challenges.length ? <EmptyState title="No challenges generated yet" description="Topic challenges and your submissions will appear here." /> : <div className="analytics-path-history">
+                      {challengesByPath.map((path) => <section className="analytics-history-path" key={path.id}><h3>{path.title}</h3><div className="analytics-history-list">{path.items.map((challenge) => {
                         const passed = Number(challenge.passed_submission_count) > 0;
-                        return <div className="analytics-history-item" key={challenge.topic_id}>
+                        return <div className="analytics-history-item" key={`${challenge.curriculum_id}-${challenge.topic_id}`}>
                           <div className={`analytics-result-icon ${passed ? "pass" : "neutral"}`}><MdCode size={20} /></div>
                           <div><strong>{challenge.topic_title}</strong><span>{Number(challenge.submission_count) ? `${challenge.submission_count} submission${Number(challenge.submission_count) === 1 ? "" : "s"} · ${formatDate(challenge.last_attempt_at)}` : "Challenge ready to start"}</span></div>
                           <div className="analytics-result-score"><strong>{Number(challenge.submission_count) ? scorePercent(challenge.best_score) : "—"}</strong><span className={passed ? "pass-text" : "neutral-text"}>{passed ? "Solved" : "Pending"}</span></div>
                         </div>;
-                      })}
+                      })}</div></section>)}
                     </div>}
                   </section>
                 </div>

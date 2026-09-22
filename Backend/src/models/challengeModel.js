@@ -2,12 +2,27 @@ import database from "../config/database.js";
 
 class ChallengeModel {
   async createTopicChallenge({ userId, curriculumId, moduleId, topicId, challengeType = "section", challenge }) {
+    if (challengeType === "assessment") {
+      const result = await database.query(
+        `INSERT INTO topic_challenges
+          (user_id, curriculum_id, module_id, topic_id, challenge_type, title, prompt, instructions, expected_concepts, difficulty, starter_code_by_language, public_tests, hidden_tests, structural_expectations, source)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+         RETURNING *`,
+        [userId, curriculumId, moduleId, topicId, challengeType, challenge.title, challenge.prompt,
+          JSON.stringify(challenge.instructions || []), challenge.expectedConcepts || [], challenge.difficulty || "medium",
+          JSON.stringify(challenge.starterCodeByLanguage || {}), JSON.stringify(challenge.publicTests || []),
+          JSON.stringify(challenge.hiddenTests || []), JSON.stringify(challenge.structuralExpectations || {}),
+          challenge.source || "ai_generated_topic_aligned"]
+      );
+      return result.rows[0];
+    }
+
     const query = `
       INSERT INTO topic_challenges
         (user_id, curriculum_id, module_id, topic_id, challenge_type, title, prompt, instructions, expected_concepts, difficulty, starter_code_by_language, public_tests, hidden_tests, structural_expectations, source)
       VALUES
         ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-      ON CONFLICT (user_id, topic_id, challenge_type) DO UPDATE SET
+      ON CONFLICT (user_id, topic_id) WHERE challenge_type = 'section' DO UPDATE SET
         title                    = EXCLUDED.title,
         prompt                   = EXCLUDED.prompt,
         instructions             = EXCLUDED.instructions,
@@ -162,7 +177,7 @@ class ChallengeModel {
 
   async findAssessmentAttempts(userId) {
     const result = await database.query(
-      `SELECT tcs.id, tcs.passed, tcs.score, tcs.created_at,
+      `SELECT tcs.id, tcs.passed, tcs.score, tcs.language_id, tcs.created_at,
               tc.id AS challenge_id, tc.title, tc.topic_id,
               cm.id AS module_id, cm.title AS module_title,
               uc.id AS curriculum_id, uc.title AS curriculum_title,
@@ -174,6 +189,43 @@ class ChallengeModel {
        JOIN user_curriculums uc ON uc.id = tc.curriculum_id
        WHERE tcs.user_id = $1 AND tc.challenge_type = 'assessment'
        ORDER BY tcs.created_at DESC`,
+      [userId]
+    );
+    return result.rows;
+  }
+
+  async findById(challengeId, userId, challengeType = "assessment") {
+    const result = await database.query(
+      `SELECT id, title, prompt, instructions, expected_concepts, difficulty, starter_code_by_language,
+              public_tests, hidden_tests, structural_expectations, source, challenge_type
+       FROM topic_challenges WHERE id = $1 AND user_id = $2 AND challenge_type = $3`,
+      [challengeId, userId, challengeType]
+    );
+    if (!result.rows[0]) return null;
+    const row = result.rows[0];
+    return { id: row.id, challenge_type: row.challenge_type, challenge_data: {
+      title: row.title, prompt: row.prompt, instructions: row.instructions || [], expectedConcepts: row.expected_concepts || [],
+      difficulty: row.difficulty || "medium", starterCodeByLanguage: row.starter_code_by_language || {},
+      publicTests: row.public_tests || [], hiddenTests: row.hidden_tests || [], structuralExpectations: row.structural_expectations || {}, source: row.source || "ai_generated_topic_aligned",
+    }};
+  }
+
+  async findGeneratedAssessments(userId) {
+    const result = await database.query(
+      `SELECT tc.id AS challenge_id, tc.title, tc.difficulty, tc.topic_id, tc.module_id,
+              ct.title AS topic_title, cm.title AS module_title, uc.title AS curriculum_title,
+              tc.created_at, latest.language_id
+       FROM topic_challenges tc
+       JOIN curriculum_topics ct ON ct.id = tc.topic_id
+       JOIN curriculum_modules cm ON cm.id = tc.module_id
+       JOIN user_curriculums uc ON uc.id = tc.curriculum_id
+       LEFT JOIN LATERAL (
+         SELECT language_id FROM topic_challenge_submissions
+         WHERE challenge_id = tc.id AND user_id = $1
+         ORDER BY created_at DESC LIMIT 1
+       ) latest ON true
+       WHERE tc.user_id = $1 AND tc.challenge_type = 'assessment'
+       ORDER BY tc.created_at DESC`,
       [userId]
     );
     return result.rows;

@@ -214,6 +214,7 @@ export default function Challenges() {
   const forceRegenerate = Boolean(location.state?.forceRegenerate);
   const requestedDifficulty = location.state?.difficulty || "medium";
   const requestedLanguage = location.state?.initialLanguage || "javascript";
+  const requestedChallengeId = location.state?.challengeId || null;
   const initialLanguage = LANGUAGES.find((language) => language.monaco === requestedLanguage) || LANGUAGES[0];
 
   const [output, setOutput] = useState("");
@@ -258,7 +259,6 @@ export default function Challenges() {
   const detailedFeedbackRef = useRef(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
-  const [challengeRevision, setChallengeRevision] = useState(0);
   // Starter code is a one-time convenience, never the source of truth for a
   // workspace tab. This prevents tab switches from overwriting user code.
   const initializedChallengeRef = useRef(null);
@@ -304,6 +304,7 @@ export default function Challenges() {
             forceRegenerate: regenerateChallengeRef.current || forceRegenerate,
             difficulty: requestedDifficulty,
             language: requestedLanguage,
+            challengeId: requestedChallengeId,
           }),
         });
 
@@ -324,7 +325,7 @@ export default function Challenges() {
     };
 
     fetchChallenge();
-  }, [moduleId, topic?.id, challengeType, forceRegenerate, requestedDifficulty, requestedLanguage, challengeRevision]);
+  }, [moduleId, topic?.id, challengeType, forceRegenerate, requestedDifficulty, requestedLanguage, requestedChallengeId]);
 
   /* ================= STARTER CODE ================= */
   useEffect(() => {
@@ -716,16 +717,6 @@ export default function Challenges() {
     });
   };
 
-  const regenerateAssessment = () => {
-    regenerateChallengeRef.current = true;
-    initializedChallengeRef.current = null;
-    setTabs([{ id: 1, name: "Tab 1", language: initialLanguage, code: FALLBACK_TEMPLATES[initialLanguage.monaco] || FALLBACK_TEMPLATES.javascript }]);
-    setActiveTab(1);
-    setSubmitSummary(null);
-    setOutput("");
-    setChallengeRevision((revision) => revision + 1);
-  };
-
   /* ================= RENDER ================= */
   // astFeedback is already filtered down to actionable warning/error
   // diagnostics by the time it reaches state (see filterActionableDiagnostics
@@ -1109,13 +1100,8 @@ export default function Challenges() {
                       <p>
                         {submitSummary.failed === 0
                           ? "Assessment completed successfully. It has been moved to Completed Assessments."
-                          : "This assessment attempt is recorded. You can retry it without affecting your topic mastery."}
+                          : "This attempt is recorded. Revise your solution and submit again to retry the same assessment and test cases."}
                       </p>
-                      {submitSummary.failed > 0 && (
-                        <button className="primary-btn" type="button" onClick={regenerateAssessment}>
-                          Retry assessment
-                        </button>
-                      )}
                     </div>
                   )}
                   {submitSummary.results.map((result) => (

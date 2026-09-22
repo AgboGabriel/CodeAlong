@@ -417,6 +417,12 @@ router.get(
   (req, res) => assessmentContentController.getAssessmentAttempts(req, res)
 );
 
+router.get(
+  "/api/assessment/available",
+  ensureAuthenticated,
+  (req, res) => assessmentContentController.getGeneratedAssessments(req, res)
+);
+
 // AST routes kept separate from Judge0 execution for review
 router.get("/api/ast/languages", (req, res) => {
     astController.getSupportedLanguages(req, res);

@@ -55,6 +55,8 @@ class AnalyticsModel {
             tc.topic_id,
             ct.title AS topic_title,
             cm.title AS module_title,
+            uc.id AS curriculum_id,
+            uc.title AS curriculum_title,
             tc.title AS challenge_title,
             tc.created_at,
             COUNT(tcs.id)::int AS submission_count,
@@ -64,10 +66,11 @@ class AnalyticsModel {
           FROM topic_challenges tc
           JOIN curriculum_topics ct ON ct.id = tc.topic_id
           JOIN curriculum_modules cm ON cm.id = tc.module_id
+          JOIN user_curriculums uc ON uc.id = tc.curriculum_id
           LEFT JOIN topic_challenge_submissions tcs
             ON tcs.challenge_id = tc.id AND tcs.user_id = $1
           WHERE tc.user_id = $1 AND tc.challenge_type = 'section'
-          GROUP BY tc.id, tc.topic_id, ct.title, cm.title, tc.title, tc.created_at
+          GROUP BY tc.id, tc.topic_id, ct.title, cm.title, uc.id, uc.title, tc.title, tc.created_at
           ORDER BY COALESCE(MAX(tcs.created_at), tc.created_at) DESC
         `,
         [userId]
@@ -75,12 +78,14 @@ class AnalyticsModel {
       database.query(
         `
           SELECT tcs.id, tcs.passed, tcs.score, tcs.created_at AS submitted_at,
-                 tc.topic_id, ct.title AS topic_title, cm.title AS module_title,
+                 tc.title AS assessment_title, tc.topic_id, ct.title AS topic_title, cm.title AS module_title,
+                 uc.id AS curriculum_id, uc.title AS curriculum_title,
                  tc.difficulty
           FROM topic_challenge_submissions tcs
           JOIN topic_challenges tc ON tc.id = tcs.challenge_id
           JOIN curriculum_topics ct ON ct.id = tc.topic_id
           JOIN curriculum_modules cm ON cm.id = tc.module_id
+          JOIN user_curriculums uc ON uc.id = tc.curriculum_id
           WHERE tcs.user_id = $1 AND tc.challenge_type = 'assessment'
           ORDER BY tcs.created_at DESC
           LIMIT 30

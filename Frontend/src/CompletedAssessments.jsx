@@ -29,7 +29,7 @@ export default function CompletedAssessments() {
         if (!response.ok || !data.success) throw new Error(data.error || "Unable to load completed assessments");
         setCompletedAssessments((data.attempts || []).map((attempt) => ({
           ...attempt,
-          title: `${attempt.topic_title} Assessment`,
+          title: attempt.title || `${attempt.topic_title} practice assessment`,
           status: attempt.passed ? "Passed" : "Failed",
           grade: `${Math.round(Number(attempt.score || 0) * 100)}%`,
           date: new Date(attempt.created_at).toLocaleDateString(),
@@ -145,7 +145,9 @@ const filteredAssessments = completedAssessments.filter((assessment) => {
                             onClick={() => navigate("/challenges", { state: {
                               moduleId: assessment.module_id,
                               challengeType: "assessment",
-                              forceRegenerate: true,
+                              forceRegenerate: false,
+                              challengeId: assessment.challenge_id,
+                              initialLanguage: ({ 63: "javascript", 71: "python", 62: "java", 54: "cpp", 50: "c", 51: "csharp", 60: "go", 72: "ruby", 73: "rust" })[assessment.language_id] || "javascript",
                               topic: { id: assessment.topic_id, title: assessment.topic_title },
                             } })}
                           >

@@ -30,7 +30,7 @@ class AssessmentContentController {
   async generateTopicChallenge(req, res) {
     try {
       const userId = req.user?.id;
-      const { topicId, moduleId, challengeType = "section", forceRegenerate = false, difficulty = "medium", language = null } = req.body;
+      const { topicId, moduleId, challengeType = "section", forceRegenerate = false, difficulty = "medium", language = null, challengeId = null } = req.body;
 
       if (!userId) {
         return res.status(401).json({ success: false, error: "User not authenticated" });
@@ -44,6 +44,7 @@ class AssessmentContentController {
         forceRegenerate,
         difficulty,
         language,
+        challengeId,
       });
 
       return res.status(200).json({ success: true, challenge });
@@ -139,6 +140,17 @@ class AssessmentContentController {
     } catch (error) {
       console.error("Error loading assessment attempts:", error);
       return res.status(500).json({ success: false, error: "Failed to load completed assessments" });
+    }
+  }
+
+  async getGeneratedAssessments(req, res) {
+    try {
+      if (!req.user?.id) return res.status(401).json({ success: false, error: "User not authenticated" });
+      const assessments = await challengeModel.findGeneratedAssessments(req.user.id);
+      return res.status(200).json({ success: true, assessments });
+    } catch (error) {
+      console.error("Error loading generated assessments:", error);
+      return res.status(500).json({ success: false, error: "Failed to load available assessments" });
     }
   }
 }

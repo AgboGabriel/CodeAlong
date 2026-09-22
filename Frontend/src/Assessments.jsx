@@ -18,8 +18,11 @@ import {
 export default function Assessments() {
   const [user, setUser] = useState(null);
   const [assessments, setAssessments] = useState([]);
+  const [completedTopics, setCompletedTopics] = useState([]);
   const [completedAssessments, setCompletedAssessments] = useState([]);
   const [loadingAssessments, setLoadingAssessments] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatorMessage, setGeneratorMessage] = useState("");
   const navigate = useNavigate();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -27,58 +30,6 @@ export default function Assessments() {
   const [selectedDifficulty, setSelectedDifficulty] = useState("medium");
   const [selectedTopicId, setSelectedTopicId] = useState("");
   const [selectedLanguage, setSelectedLanguage] = useState("javascript");
-
-  const inferAssessmentDifficulty = (topicTitle = "", moduleTitle = "", curriculumTitle = "") => {
-    const combinedText = `${topicTitle} ${moduleTitle} ${curriculumTitle}`.toLowerCase();
-
-    const beginnerPatterns = [
-      "intro",
-      "introduction",
-      "beginner",
-      "basic",
-      "basics",
-      "fundamentals",
-      "variables",
-      "functions",
-      "loops",
-      "conditionals",
-      "arrays",
-      "objects",
-      "strings",
-      "operators",
-      "syntax",
-      "data types",
-      "getting started",
-    ];
-
-    const advancedPatterns = [
-      "advanced",
-      "architecture",
-      "performance",
-      "security",
-      "concurrency",
-      "microservices",
-      "distributed",
-      "optimization",
-      "scaling",
-      "system design",
-      "deployment",
-      "refactor",
-      "testing",
-      "debugging",
-      "production",
-    ];
-
-    if (beginnerPatterns.some((pattern) => combinedText.includes(pattern))) {
-      return { level: "Beginner", rawDifficulty: "easy" };
-    }
-
-    if (advancedPatterns.some((pattern) => combinedText.includes(pattern))) {
-      return { level: "Advanced", rawDifficulty: "hard" };
-    }
-
-    return { level: "Intermediate", rawDifficulty: "medium" };
-  };
 
   const buildAssessmentList = async () => {
     try {
@@ -122,30 +73,26 @@ export default function Assessments() {
       });
 
       if (completedEntries.length === 0) {
-        setAssessments([]);
+        setCompletedTopics([]);
         return;
       }
 
-      const availableAssessments = completedEntries.map(({ topicId, moduleId, curriculumTitle, moduleTitle, topicTitle }) => ({
-        id: `assessment-${topicId}`,
-        title: `${topicTitle} Assessment`,
-        course: `${curriculumTitle} • ${moduleTitle}`,
-        ...inferAssessmentDifficulty(topicTitle, moduleTitle, curriculumTitle),
+      const availableTopics = completedEntries.map(({ topicId, moduleId, curriculumTitle, moduleTitle, topicTitle }) => ({
         topicId,
         moduleId,
         topicTitle,
         moduleTitle,
         curriculumTitle,
       }));
-      setAssessments(availableAssessments);
+      setCompletedTopics(availableTopics);
       setSelectedTopicId((current) =>
-        availableAssessments.some((assessment) => String(assessment.topicId) === String(current))
+        availableTopics.some((assessment) => String(assessment.topicId) === String(current))
           ? current
-          : String(availableAssessments[0]?.topicId || "")
+          : String(availableTopics[0]?.topicId || "")
       );
     } catch (error) {
-      console.error("Failed to load generated assessments:", error);
-      setAssessments([]);
+      console.error("Failed to load completed topics:", error);
+      setCompletedTopics([]);
     } finally {
       setLoadingAssessments(false);
     }
@@ -187,22 +134,46 @@ export default function Assessments() {
     });
   }, [assessments, filter, normalizedSearch]);
 
-  const selectedAssessment = assessments.find(
+  const loadGeneratedAssessments = async () => {
+    try {
+      const response = await fetch("/api/assessment/available", { credentials: "include" });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || "Failed to load available assessments");
+      setAssessments((data.assessments || []).map((assessment) => ({
+        ...assessment, id: assessment.challenge_id, topicId: assessment.topic_id, moduleId: assessment.module_id,
+        topicTitle: assessment.topic_title, moduleTitle: assessment.module_title,
+        title: assessment.title || `${assessment.topic_title} practice assessment`,
+        course: `${assessment.curriculum_title} • ${assessment.module_title}`,
+        level: ({ easy: "Beginner", medium: "Intermediate", hard: "Advanced" })[assessment.difficulty] || "Intermediate",
+      })));
+    } catch (error) {
+      console.error("Failed to load available assessments:", error);
+      setAssessments([]);
+    }
+  };
+
+  const selectedAssessment = completedTopics.find(
     (assessment) => String(assessment.topicId) === String(selectedTopicId)
   );
 
-  const startAssessment = () => {
+  const startAssessment = async () => {
     if (!selectedAssessment) return;
-    navigate("/challenges", {
-      state: {
-        moduleId: selectedAssessment.moduleId,
-        challengeType: "assessment",
-        forceRegenerate: true,
-        difficulty: selectedDifficulty,
-        initialLanguage: selectedLanguage,
-        topic: { id: selectedAssessment.topicId, title: selectedAssessment.topicTitle },
-      },
-    });
+    setIsGenerating(true);
+    setGeneratorMessage("");
+    try {
+      const response = await fetch("/api/assessment/challenge", {
+        method: "POST", credentials: "include", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topicId: selectedAssessment.topicId, moduleId: selectedAssessment.moduleId, challengeType: "assessment", forceRegenerate: true, difficulty: selectedDifficulty, language: selectedLanguage }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || "Unable to generate the assessment");
+      await loadGeneratedAssessments();
+      setGeneratorMessage(`“${data.challenge.title}” is ready in Available Assessments.`);
+    } catch (error) {
+      setGeneratorMessage(error.message || "Unable to generate the assessment. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   useEffect(() => {
@@ -224,6 +195,7 @@ export default function Assessments() {
 
     fetchUser();
     buildAssessmentList();
+    loadGeneratedAssessments();
     loadCompletedAssessments();
   }, []);
 
@@ -290,7 +262,7 @@ export default function Assessments() {
                     <label className="assessment-generator__field assessment-generator__field--topic">
                       <span>Completed topic</span>
                       <select value={selectedTopicId} onChange={(e) => setSelectedTopicId(e.target.value)} aria-label="Completed topic">
-                        {assessments.length === 0 ? <option value="">No completed topics available</option> : assessments.map((assessment) => (
+                        {completedTopics.length === 0 ? <option value="">No completed topics available</option> : completedTopics.map((assessment) => (
                           <option key={assessment.topicId} value={assessment.topicId}>{assessment.topicTitle} — {assessment.moduleTitle}</option>
                         ))}
                       </select>
@@ -312,8 +284,8 @@ export default function Assessments() {
                   </div>
 
                   <div className="assessment-generator__footer">
-                    <p>{selectedAssessment ? <><strong>{selectedAssessment.topicTitle}</strong> is ready to assess.</> : "Complete a topic to create your first assessment."}</p>
-                    <button className="ass-btn ass-btn--outline" onClick={startAssessment} disabled={!selectedAssessment}>Generate assessment <span aria-hidden="true">→</span></button>
+                    <p>{generatorMessage || (selectedAssessment ? <><strong>{selectedAssessment.topicTitle}</strong> is ready to assess.</> : "Complete a topic to create your first assessment.")}</p>
+                    <button className="ass-btn ass-btn--outline" onClick={startAssessment} disabled={!selectedAssessment || isGenerating}>{isGenerating ? "Generating…" : <>Generate assessment <span aria-hidden="true">→</span></>}</button>
                   </div>
                 </div>
 
@@ -382,9 +354,17 @@ export default function Assessments() {
                         <div className="ass-card__actions">
                           <button
                             className="ass-btn ass-btn--outline"
-                            onClick={() => setSelectedTopicId(String(assessment.topicId))}
+                            onClick={() => navigate("/challenges", { state: {
+                              moduleId: assessment.moduleId,
+                              challengeType: "assessment",
+                              forceRegenerate: false,
+                              challengeId: assessment.challenge_id,
+                              difficulty: assessment.difficulty,
+                              initialLanguage: ({ 63: "javascript", 71: "python", 62: "java", 54: "cpp", 50: "c", 51: "csharp", 60: "go", 72: "ruby", 73: "rust" })[assessment.language_id] || "javascript",
+                              topic: { id: assessment.topicId, title: assessment.topicTitle },
+                            }})}
                           >
-                            Select
+                            Start
                           </button>
                         </div>
                       </div>
@@ -396,7 +376,7 @@ export default function Assessments() {
                     <h3>No results found</h3>
                     <p>
                       {assessments.length === 0
-                        ? "Complete a topic first, or finish the available assessments before generating another one."
+                        ? "Generate an assessment from a completed topic to see it here."
                         : "Try searching with a different keyword or change the filter."}
                     </p>
                   </div>
@@ -405,7 +385,7 @@ export default function Assessments() {
             </section>
 
             {/* Recently Completed */}
-            {assessments.length > 0 && (
+            {completedAssessments.length > 0 && (
               <section className="ass-section ass-section--pad-bottom">
                 <div className="ass-section__head ass-section__head--bordered">
                   <h2 className="ass-section__title">Recently Completed</h2>
@@ -424,7 +404,7 @@ export default function Assessments() {
                         <div className="ass-card__lead">
                           <div className="ass-card__icon ass-card__icon--primary"><MdCheck /></div>
                           <div>
-                            <h4 className="ass-card__title">{attempt.topic_title} Assessment</h4>
+                            <h4 className="ass-card__title">{attempt.title || `${attempt.topic_title} practice assessment`}</h4>
                             <div className="ass-card__meta">
                               <span className="ass-meta-item">{attempt.passed ? "Passed" : "Needs retry"}</span>
                               <span className="ass-meta-item">{Math.round(Number(attempt.score || 0) * 100)}%</span>
@@ -438,8 +418,10 @@ export default function Assessments() {
                             <button className="ass-btn ass-btn--outline" onClick={() => navigate("/challenges", { state: {
                               moduleId: attempt.module_id,
                               challengeType: "assessment",
-                              forceRegenerate: true,
+                              forceRegenerate: false,
+                              challengeId: attempt.challenge_id,
                               difficulty: selectedDifficulty,
+                              initialLanguage: ({ 63: "javascript", 71: "python", 62: "java", 54: "cpp", 50: "c", 51: "csharp", 60: "go", 72: "ruby", 73: "rust" })[attempt.language_id] || "javascript",
                               topic: { id: attempt.topic_id, title: attempt.topic_title },
                             } })}>
                               Retry
