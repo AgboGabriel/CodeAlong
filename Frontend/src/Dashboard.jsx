@@ -10,7 +10,6 @@ import {
   MdAssessment,
   MdCode,
   MdPlayCircle,
-  MdQuiz,
   MdTrendingUp,
 } from "react-icons/md";
 
@@ -76,20 +75,20 @@ function ProgressCard({ icon, tone, label, value, helper }) {
 
 function ProgressSection({ analytics, loading }) {
   const topics = analytics.topics || [];
-  const quizzes = analytics.quizzes || [];
+  const assessments = analytics.assessments || [];
   const challenges = analytics.challenges || [];
   const completedTopics = topics.filter((topic) => topic.topic_status === "completed").length;
   const attemptedTopics = topics.filter((topic) => Number(topic.attempts) > 0);
   const averageMastery = attemptedTopics.length
     ? Math.round((attemptedTopics.reduce((sum, topic) => sum + Number(topic.mastery_probability || 0), 0) / attemptedTopics.length) * 100)
     : 0;
-  const passedQuizzes = quizzes.filter((quiz) => quiz.passed).length;
+  const passedAssessments = assessments.filter((assessment) => assessment.passed).length;
   const passedChallenges = challenges.filter((challenge) => Number(challenge.passed_submission_count) > 0).length;
   const summary = [
     { icon: MdAssessment, tone: "blue", label: "Curriculum progress", value: topics.length ? `${completedTopics}/${topics.length}` : "—", helper: topics.length ? `${Math.round((completedTopics / topics.length) * 100)}% topics completed` : "Create a learning path to begin" },
-    { icon: MdTrendingUp, tone: "purple", label: "Average mastery", value: attemptedTopics.length ? `${averageMastery}%` : "—", helper: attemptedTopics.length ? `Across ${attemptedTopics.length} attempted topic${attemptedTopics.length === 1 ? "" : "s"}` : "Complete a quiz to measure mastery" },
-    { icon: MdQuiz, tone: "orange", label: "Quiz outcomes", value: `${passedQuizzes}/${quizzes.length}`, helper: "Passed assessments" },
-    { icon: MdCode, tone: "green", label: "Challenges solved", value: `${passedChallenges}/${challenges.length}`, helper: "Topics with a passing submission" },
+    { icon: MdTrendingUp, tone: "purple", label: "Average mastery", value: attemptedTopics.length ? `${averageMastery}%` : "—", helper: attemptedTopics.length ? `Across ${attemptedTopics.length} attempted topic${attemptedTopics.length === 1 ? "" : "s"}` : "Complete a prior-knowledge quiz to measure mastery" },
+    { icon: MdAssessment, tone: "orange", label: "Assessments completed", value: `${passedAssessments}/${assessments.length}`, helper: "Passed learner-generated assessments" },
+    { icon: MdCode, tone: "green", label: "Section challenges solved", value: `${passedChallenges}/${challenges.length}`, helper: "Topics with a passing section challenge" },
   ];
 
   return (
@@ -229,7 +228,7 @@ function LearnerDashboard({ user, navigate }) {
   const [hasStartedLearning] = useState(false);
   const [recommendedVideos, setRecommendedVideos] = useState([]);
   const [loadingRecommendations, setLoadingRecommendations] = useState(true);
-  const [analytics, setAnalytics] = useState({ topics: [], quizzes: [], challenges: [] });
+  const [analytics, setAnalytics] = useState({ topics: [], quizzes: [], challenges: [], assessments: [] });
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
 
   useEffect(() => {
